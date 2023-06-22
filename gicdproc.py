@@ -36,8 +36,8 @@ from scipy import stats
 from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
-    
-def pproc(stid, data_dir='/home/lorien/Doctorado/work_data/gicdata/raw_data'):
+import matplotlib.pyplot as plt    
+def pproc(stid, data_dir='/home/isaac/MEGAsync/datos/gics_obs/'):
     
     """ Procesamiento de datos de los sensores de CIG de ORTO en la red de 
         Potencia de México.  
@@ -61,7 +61,7 @@ def pproc(stid, data_dir='/home/lorien/Doctorado/work_data/gicdata/raw_data'):
    
     for st in stid:
        
-        fname = "gic_" + st + "*.csv"
+        fname = "gic_" + st + "*.dat"
         
         files = glob.glob(fname)
         
@@ -159,4 +159,26 @@ def reproc(df, mod=1):
         
         # dfp['gic_corr'] = signal.detrend(dfi.gic.values)
         # dfp['dT1'] = signal.detrend(dfi.T1.values)
-        # dfp['dT2'] = signal.detrend(dfi.T2.values)    
+        # dfp['dT2'] = signal.detrend(dfi.T2.values)  
+        
+df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/QRO/')
+df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/LAV/')
+df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/RMY/')
+df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/MZT/')
+
+
+#print(df_lav['LAV'].gic[0:])
+
+idate = input("write initial date in format yyyy-mm-dd \n >  " )
+fdate = input("write final date in format yyyy-mm-dd \n >  " )
+
+    
+gicTW_lav = (df_lav['LAV'].gic_proc[idate:fdate])
+gicTW_qro = (df_qro['QRO'].gic_proc[idate:fdate])
+gicTW_rmy = (df_rmy['RMY'].gic_proc[idate:fdate])
+gicTW_mzt = (df_mzt['MZT'].gic_proc[idate:fdate])
+
+plt.plot(gicTW_lav)
+plt.plot(gicTW_qro)
+plt.plot(gicTW_rmy)
+plt.plot(gicTW_mzt)
