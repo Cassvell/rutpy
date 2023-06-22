@@ -178,7 +178,32 @@ gicTW_qro = (df_qro['QRO'].gic_proc[idate:fdate])
 gicTW_rmy = (df_rmy['RMY'].gic_proc[idate:fdate])
 gicTW_mzt = (df_mzt['MZT'].gic_proc[idate:fdate])
 
-plt.plot(gicTW_lav)
-plt.plot(gicTW_qro)
-plt.plot(gicTW_rmy)
-plt.plot(gicTW_mzt)
+inicio = gicTW_lav.index[0]
+final  = gicTW_lav.index[-1]
+
+fig, ax = plt.subplots(3, figsize=(12,12))
+fig.suptitle('Estudio de GICs, 2023', fontsize=24, fontweight='bold')
+
+ax[0].plot(gicTW_lav)
+ax[0].grid()
+ax[0].set_xlim(inicio,final)
+ax[0].set_title('LAV st', fontsize=18)
+ax[0].set_ylabel(' GIC [A]', fontweight='bold')
+
+ax[1].plot(gicTW_qro)
+ax[1].grid()
+ax[1].set_xlim(inicio,final)
+ax[1].set_title('QRO st', fontsize=18)
+ax[1].set_ylabel(' GIC [A]', fontweight='bold')
+
+ax[2].plot(gicTW_rmy)
+ax[2].grid()
+ax[2].set_xlim(inicio,final)
+ax[2].set_title('RMY st', fontsize=18)
+ax[2].set_ylabel(' GIC [A]', fontweight='bold')
+
+ax[3].plot(gicTW_mzt)
+ax[3].grid()
+ax[3].set_xlim(inicio,final)
+ax[3].set_title('MZT st', fontsize=18)
+ax[3].set_ylabel(' GIC [A]', fontweight='bold')
