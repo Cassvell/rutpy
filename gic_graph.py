@@ -20,7 +20,7 @@ date_name = input("write initial date in format yyyy-mm-dd \n >  " )
 node = ['LAV', 'MZT', 'RMY', 'QRO']
 
 def node_dataframe(node, date):
-    dir_path = '/home/isaac/MEGAsync/datos/gics_obs/'
+    dir_path = '/home/isaac/MEGAsync/datos/gics_obs/2023/'
 
     df = pd.read_csv(dir_path+'Datos_GICS_'+date+' '+node+'.csv', header=0, sep=',',\
                  skip_blank_lines=True, encoding='latin1')    
@@ -127,7 +127,7 @@ for value in k/10:
 plt.bar(df.index, k/10, width = 0.1, color=colorsValue, edgecolor= 'black')
 #plt.bar(df.index[disturb], k[disturb]/10, color='yellow' , edgecolor= 'black')
 #plt.bar(df.index[storm], k[storm]/10, color='red' , edgecolor= 'black')
-    return(k)
+   # return(k)
 
 H = dH_coe(idate, fdate)
 k = k_coe(idate, fdate)
