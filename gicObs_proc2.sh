@@ -1,6 +1,8 @@
 #!/bin/bash
 
-download_dir="/home/isaac/snap/firefox/common"
+download_dir="$HOME/snap/firefox/common"
+download_dir2="$HOME/Descargas"
+
 data_dir="$HOME/MEGAsync/datos/gics_obs/2023"
 #find $fdir -type f -name "*QRO.csv"
 declare -a st=("QRO" "LAV" "RMY" "MZT")
@@ -14,6 +16,11 @@ for i in ${!st[@]};do
         #               mkdir ${data_dir}/${st[$i]}     
         #       fi
                 echo "${st[$i]} moved"
+
+	elif ls ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
+	then
+		mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}
+	 	echo "${st[$i]} moved"	 
         else
                 echo "there is no new files from ${st[$i]} station"
         fi
