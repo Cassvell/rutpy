@@ -8,16 +8,16 @@ data_dir="$HOME/MEGAsync/datos/gics_obs/2023"
 declare -a st=("QRO" "LAV" "RMY" "MZT")
 
 for i in ${!st[@]};do
-        if ls ${download_dir}/*${st[$i]}.csv &>/dev/null
+        if ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
         then
         #       if [ -d ${data_dir}/${st[$i]}]; then 
-                        mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}
+                        mv ${download_dir2}/*${st[$i]}.csv ${data_dir}/${st[$i]}
         #       else
         #               mkdir ${data_dir}/${st[$i]}     
         #       fi
                 echo "${st[$i]} moved"
 
-	elif ls ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
+	elif ls ls ${download_dir}/*${st[$i]}.csv &>/dev/null
 	then
 		mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}
 	 	echo "${st[$i]} moved"	 

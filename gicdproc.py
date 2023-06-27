@@ -240,7 +240,7 @@ df = df.set_index(idx1)
     
 df = df.loc[idate:fdate]
 
-k  = df.iloc[:,2]
+k  = df.iloc[:,0]
 
 quiet   = round(k/10) < 4
 disturb = round(k/10) == 4
@@ -260,7 +260,7 @@ for value in k/10:
 inicio = gicTW_lav.index[0]
 final  = gicTW_lav.index[-1]
 
-fig, ax = plt.subplots(5, figsize=(12,14))
+fig, ax = plt.subplots(6, figsize=(12,14))
 fig.suptitle('Estudio de GICs, 2023', fontsize=24, fontweight='bold')
 
 ax[0].plot(gicTW_lav)
@@ -282,25 +282,30 @@ ax[2].set_title('RMY st', fontsize=18)
 ax[2].set_ylabel(' GIC [A]', fontweight='bold')
 
 
-ax[3].plot(H, color='k')
-ax[3].set_ylabel(' DH [nT]', fontweight='bold')
-ax[3].set_title('Indices geomagnéticos, Estación Coeneo', fontsize=18)
-ax[3].grid()
-ax[3].set_xlim(inicio,final)
-
-
-ax[4].bar(df.index, round(k/10), width = 0.1, align='edge', color=colorsValue,\
-          edgecolor= 'black')
-ax[4].set_ylim(0,9)
-ax[4].set_xlim(inicio,final)
-ax[4].set_ylabel(' Kcoe', fontweight='bold')
-ax[4].grid()
-
-fig.tight_layout()
-'''
 ax[3].plot(gicTW_mzt)
 ax[3].grid()
 ax[3].set_xlim(inicio,final)
 ax[3].set_title('MZT st', fontsize=18)
 ax[3].set_ylabel(' GIC [A]', fontweight='bold')
+
+ax[4].plot(H, color='k')
+ax[4].set_ylabel(' DH [nT]', fontweight='bold')
+ax[4].set_title('Indices geomagnéticos, Estación Coeneo', fontsize=18)
+ax[4].grid()
+ax[4].set_xlim(inicio,final)
+
+
+ax[5].bar(df.index, round(k/10), width = 0.1, align='edge', color=colorsValue)
+ax[5].set_ylim(0,9)
+ax[5].set_xlim(inicio,final)
+ax[5].set_ylabel(' Kcoe', fontweight='bold')
+ax[5].grid()
+
+fig.tight_layout()
+
+fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/gic_obs_"+str(idate1)+"_"\
+            +str(fdate1)+".png")
+plt.show()
+'''
+
 '''
