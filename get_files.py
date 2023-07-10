@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
 
-This is a temporary script file.
 """
 
 ## para ejecutar es python Plot_V1.py  arch1.m arch2.m yyyy-mm-dd HH:MM:SS
@@ -21,13 +19,9 @@ import glob, os
 import fnmatch 
 
 import paramiko
+"""
 
-idate = input("write initial date in format yyyymmdd \n >  " )
-fdate = input("write final date in format yyyymmdd \n >  " )   
-
-remote_path= '/data/output/indexes/coeneo/'
-localfilepath  = '/home/isaac/MEGAsync/datos/dH_coe/'
-
+"""
 def get_files(initial_date, final_date, remote_path, localfilepath, select_fnames):
     
     ssh = paramiko.SSHClient()
@@ -50,26 +44,16 @@ def get_files(initial_date, final_date, remote_path, localfilepath, select_fname
     
     return()
 
-idx_daylist = pd.date_range(start = pd.Timestamp(idate), \
-                                      end = pd.Timestamp(fdate), freq='D')
-idx_list = (idx_daylist.strftime('%Y%m%d')) 
-
-str1 = "coe_"
-ext = ".delta_H.early"
 def list_names(daterange, string1, string2):
     select_fnames = []
-    for i in idx_list:
+    for i in daterange:
         tmp_name = string1+str(i)+string2
         select_fnames.append(tmp_name)
     return(select_fnames)
-
-
-list_fnames = list_names(idx_list, str1, ext)
-
-wget = get_files(idate, fdate, remote_path, localfilepath, list_fnames)
-
 """
 
 """
+
+
 
        
