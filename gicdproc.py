@@ -37,6 +37,9 @@ from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
 import matplotlib.pyplot as plt    
+
+from get_files import get_files, list_names
+
 def pproc(stid, data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/'):
     
     """ Procesamiento de datos de los sensores de CIG de ORTO en la red de 
@@ -167,26 +170,45 @@ def reproc(df, mod=1):
 ###############################################################################
 ###############################################################################
 def df_dH(date1, date2, dir_path):
-  #  dir_path = '/home/isaac/MEGAsync/datos/dH_coe/'
+       
     file_names  = sorted(glob.glob(dir_path+'*.early') )
-    dfs_c = []
-        
-    for file_name in file_names:    
-        df_c = pd.read_csv(file_name, header=None, sep='\s+', skip_blank_lines=True).T
-        df_c = df_c.iloc[:-1, :]   
-        dfs_c.append(df_c) 
-                
-    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-    df = df.replace(999999.0, np.NaN)
-        
+    
     day1 = file_names[0]
     dayn = file_names[-1]
     idate1 = day1[38:46]
     fdate1 = dayn[38:46] 
-    idx1 = pd.date_range(start = pd.Timestamp(idate1), \
-                                      end = pd.Timestamp(fdate1+' 23:00:00'), freq='H')
-      
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
+                         pd.Timestamp(date2+' 23:00:00'), freq='H')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                                          end = pd.Timestamp(date2), freq='D')
         
+    idx_list = (idx_daylist.strftime('%Y%m%d')) 
+    str1 = "coe_"
+    ext = ".delta_H.early"
+    remote_path= '/data/output/indexes/coeneo/'
+    list_fnames = list_names(idx_list, str1, ext)
+    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+    
+    fnames = []
+    for i in list_fnames:
+        tmp_name = dir_path+i
+        fnames.append(tmp_name)
+    
+  #  if not any(fnames):
+   #     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+
+    dfs_c = []
+        
+    for file_name in list_fnames: 
+  #  for file_name in file_names:    
+        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
+                           skip_blank_lines=True).T
+        df_c = df_c.iloc[:-1, :]   
+        dfs_c.append(df_c) 
+                
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
+    df = df.replace(999999.0, np.NaN)        
  #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
   #                                    end = pd.Timestamp(date2), freq='H')
         
@@ -205,7 +227,8 @@ def df_Kloc(date1, date2, dir_path):
     dfs_c = []
             
     for file_name in file_names:    
-        df_c = pd.read_csv(file_name, header=None, sep='\s+', skip_blank_lines=True).T
+        df_c = pd.read_csv(file_name, header=None, sep='\s+', \
+                           skip_blank_lines=True).T
         df_c = df_c.iloc[:-1, :]   
         dfs_c.append(df_c) 
                     
@@ -216,8 +239,8 @@ def df_Kloc(date1, date2, dir_path):
     dayn = file_names[-1]
     idate1 = day1[36:44]
     fdate1 = dayn[36:44] 
-    idx1 = pd.date_range(start = pd.Timestamp(idate1), \
-                                          end = pd.Timestamp(fdate1+' 21:00:00'), freq='3H')
+    idx1 = pd.date_range(start = pd.Timestamp(idate1), end = \
+                         pd.Timestamp(fdate1+' 21:00:00'), freq='3H')
           
             
    # idx2 = pd.date_range(start = pd.Timestamp(date1), \

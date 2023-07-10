@@ -126,8 +126,8 @@ ax[5].grid()
 
 fig.tight_layout()
 
-#fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/gic_obs_"+str(idate1)+"_"\
- #           +str(fdate1)+".png")
+fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/gic_obs_"+\
+            str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
 '''
 
