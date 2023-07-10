@@ -6,16 +6,7 @@ Created on Fri Jun 16 10:11:27 2023
 @author: isaac
 """
 
-import pandas as pd
-import numpy as np
-import datetime
-from datetime import date, datetime
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib as mpl
-import glob, os
-
-
 from gicdproc import pproc, reproc, df_dH, df_Kloc
 """
 date_name = input("write initial date in format yyyy-mm-dd \n >  " )
@@ -63,7 +54,7 @@ dir_path = '/home/isaac/MEGAsync/datos/dH_coe/'
 H = df_dH(idate, fdate, dir_path)
 ###############################################################################
 ###############################################################################
-dir_path = '/home/isaac/MEGAsync/datos/Kmex/coe'
+dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
 k = df_Kloc(idate, fdate, dir_path)
 quiet   = round(k) < 4
 disturb = round(k) == 4

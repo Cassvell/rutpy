@@ -4,20 +4,6 @@
 """
 
 ## para ejecutar es python Plot_V1.py  arch1.m arch2.m yyyy-mm-dd HH:MM:SS
-import sys
-import pandas as pd
-import numpy as np
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib as mpl
-import paramiko
-
-from PIL import Image
-from datetime import datetime, timedelta
-import glob, os
-import fnmatch 
-
 import paramiko
 """
 

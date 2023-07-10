@@ -17,17 +17,12 @@ reproc:  Reproceso todos los datasets de GIC
 """
 
 import os
-import io
+
 import glob
 #import gzip
-import re
-import sys
-import fnmatch
 import pandas as pd
 import numpy as np
 #import cmath
-import datetime
-from datetime import date
 #import shutil
 import ftplib
 import ftputil
@@ -36,7 +31,7 @@ from scipy import stats
 from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
-import matplotlib.pyplot as plt    
+  
 
 from get_files import get_files, list_names
 
@@ -170,13 +165,6 @@ def reproc(df, mod=1):
 ###############################################################################
 ###############################################################################
 def df_dH(date1, date2, dir_path):
-       
-    file_names  = sorted(glob.glob(dir_path+'*.early') )
-    
-    day1 = file_names[0]
-    dayn = file_names[-1]
-    idate1 = day1[38:46]
-    fdate1 = dayn[38:46] 
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
                          pd.Timestamp(date2+' 23:00:00'), freq='H')
     
@@ -188,15 +176,15 @@ def df_dH(date1, date2, dir_path):
     ext = ".delta_H.early"
     remote_path= '/data/output/indexes/coeneo/'
     list_fnames = list_names(idx_list, str1, ext)
-    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+   # wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     
     fnames = []
     for i in list_fnames:
         tmp_name = dir_path+i
         fnames.append(tmp_name)
     
-  #  if not any(fnames):
-   #     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+    if not all(fnames):
+        wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
 
     dfs_c = []
         
@@ -223,24 +211,41 @@ def df_dH(date1, date2, dir_path):
 ###############################################################################
 def df_Kloc(date1, date2, dir_path):
   #  dir_path = '/home/isaac/MEGAsync/datos/Kmex/coe'
-    file_names  = sorted(glob.glob(dir_path+'*.early') )
+
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end = \
+                             pd.Timestamp(date2+' 21:00:00'), freq='3H')
+
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                  end = pd.Timestamp(date2), freq='D')
+                
+    idx_list = (idx_daylist.strftime('%Y%m%d')) 
+        
+    str1 = "coe_"
+    ext = ".k_index.early"
+    remote_path= '/data/output/indexes/coeneo/'
+    
+    list_fnames = list_names(idx_list, str1, ext)
+    
+    fnames = []
+    for i in list_fnames:
+        tmp_name = dir_path+i
+        fnames.append(tmp_name)
+    
+    if not all(fnames):
+        wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+
     dfs_c = []
             
-    for file_name in file_names:    
-        df_c = pd.read_csv(file_name, header=None, sep='\s+', \
+    for file_name in list_fnames:    
+        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
                            skip_blank_lines=True).T
         df_c = df_c.iloc[:-1, :]   
         dfs_c.append(df_c) 
                     
     df = pd.concat(dfs_c, axis=0, ignore_index=True)    
     df = df.replace(99.9, np.NaN)
-            
-    day1 = file_names[0]
-    dayn = file_names[-1]
-    idate1 = day1[36:44]
-    fdate1 = dayn[36:44] 
-    idx1 = pd.date_range(start = pd.Timestamp(idate1), end = \
-                         pd.Timestamp(fdate1+' 21:00:00'), freq='3H')
+
+
           
             
    # idx2 = pd.date_range(start = pd.Timestamp(date1), \
