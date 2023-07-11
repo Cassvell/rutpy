@@ -8,6 +8,10 @@ Created on Fri Jun 16 10:11:27 2023
 
 import matplotlib.pyplot as plt
 from gicdproc import pproc, reproc, df_dH, df_Kloc
+from timeit import default_timer as timer
+import sys
+start = timer()
+
 """
 date_name = input("write initial date in format yyyy-mm-dd \n >  " )
 
@@ -40,8 +44,13 @@ df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/MZT/')
 
 #print(df_lav['LAV'].gic[0:])
 
-idate = input("write initial date in format yyyy-mm-dd \n >  " )
-fdate = input("write final date in format yyyy-mm-dd \n >  " )
+idate = sys.argv[1]
+fdate = sys.argv[2]
+
+#idate = input("write initial date in format yyyy-mm-dd \n >  " )
+#fdate = input("write final date in format yyyy-mm-dd \n >  " )
+
+
 
     
 gicTW_lav = (df_lav['LAV'].gic_proc[idate:fdate])
@@ -120,6 +129,9 @@ fig.tight_layout()
 fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/gic_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
+
+end = timer()
+print(end - start)
 '''
 
 '''
