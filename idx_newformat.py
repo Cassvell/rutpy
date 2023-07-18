@@ -29,7 +29,7 @@ else:
 code_stat = 'D' #código que indica el estado de los archivos, D, P o Q
                 #(Definitivos, Provisionales o Rápidos)
 
-path='/home/isaac/geomstorm/datos/'+file_type+'/'
+path='/home/isaac/MEGAsync/datos/'+file_type+'/'
 
 code_name = 0   #código que indica el tipo de índice geomagnético en el nombre 
                 #del archivo
@@ -121,7 +121,7 @@ if  file_type == 'kp':
     df = df.drop(columns=['|'])
 
 elif file_type == 'dst':
-    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, delim_whitespace=True)
+    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\s+')
     df = df.drop(columns=['|'])
         
 elif file_type == 'ip':
@@ -130,7 +130,7 @@ elif file_type == 'ip':
 
 else:
 #sym-H
-    df = pd.read_csv(path+code_name+'_'+idate+'_'+fdate+code_stat+'.dat', header=head, delim_whitespace=True)
+    df = pd.read_csv(path+code_name+'_'+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\s+')
     df = df.drop(columns=['|'])                                          
 
 ################################################################################
@@ -210,8 +210,8 @@ for i in range(0,len(idx),step):
     date = date[0:10]
     
     if file_type == 'dst' or file_type == 'kp':
-        name_new = file_type+'_'+date+'.txt'
-        new_path = '/home/isaac/geomstorm/datos/'+\
+        name_new = file_type+'_'+date+'.dat'
+        new_path = '/home/isaac/MEGAsync/datos/'+\
         file_type+'/daily/'
         df_new = df_new.drop(columns=['DOY'])
         df_new.to_csv(new_path+name_new, sep= '\t', index=False)  
@@ -220,8 +220,8 @@ for i in range(0,len(idx),step):
         df_new = df.drop(columns=['combined', 'dt'])
         df_new = df_new.reset_index()
         df_new = df_new.drop(columns=['index'])
-        name_new = file_type+'_'+date+'.txt'
-        new_path = '/home/isaac/geomstorm/datos/'+\
+        name_new = file_type+'_'+date+'.dat'
+        new_path = '/home/isaac/MEGAsync/datos/'+\
         file_type+'/daily/'
         df_new = df_new.T        
         df_new.to_csv(new_path+name_new, sep= '', index=False)
@@ -232,7 +232,7 @@ for i in range(0,len(idx),step):
             df_new.rename(columns={'level_0':'index'})
             df_new = df_new.drop(columns=['index'])            
             name_new = file_type+'_'+date+code_stat+'.dat'
-            new_path = '/home/isaac/geomstorm/datos/'+\
+            new_path = '/home/isaac/MEGAsync/datos/'+\
             file_type+'/daily/'
             
             df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
@@ -241,7 +241,7 @@ for i in range(0,len(idx),step):
             df_new = df_new.drop(columns=['ASY-D', 'ASY-D']) 
             df_new = df_new.drop(columns=['index'])       
             name_new = file_type+'_'+date+code_stat+'h.dat'
-            new_path = '/home/isaac/geomstorm/datos/'+\
+            new_path = '/home/isaac/MEGAsync/datos/'+\
             file_type+'/daily/'
             
             sym_H.to_csv(new_path+name_new, sep= '\t', index=False)             

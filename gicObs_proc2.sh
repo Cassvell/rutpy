@@ -16,7 +16,6 @@ for i in ${!st[@]};do
         #               mkdir ${data_dir}/${st[$i]}     
         #       fi
                 echo "${st[$i]} moved"
-
 	elif ls ls ${download_dir}/*${st[$i]}.csv &>/dev/null
 	then
 		mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}

@@ -44,7 +44,7 @@ df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/MZT/')
 
 #print(df_lav['LAV'].gic[0:])
 
-idate = sys.argv[1]
+idate = sys.argv[1]# "formato(yyyymmdd)"
 fdate = sys.argv[2]
 
 #idate = input("write initial date in format yyyy-mm-dd \n >  " )
@@ -65,9 +65,10 @@ H = df_dH(idate, fdate, dir_path)
 ###############################################################################
 dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
 k = df_Kloc(idate, fdate, dir_path)
-quiet   = round(k) < 4
-disturb = round(k) == 4
-storm   = round(k) > 5
+k = round(k)
+quiet   = k < 4
+disturb = k == 4
+storm   = k > 5
 
 colorsValue = []
 for value in k:
@@ -118,7 +119,7 @@ ax[4].grid()
 ax[4].set_xlim(inicio,final)
 
 
-ax[5].bar(k.index, round(k), width = 0.1, align='edge', color=colorsValue)
+ax[5].bar(k.index, k, width = 0.1, align='edge', color=colorsValue)
 ax[5].set_ylim(0,9)
 ax[5].set_xlim(inicio,final)
 ax[5].set_ylabel(' Kcoe', fontweight='bold')

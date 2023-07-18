@@ -176,16 +176,7 @@ def df_dH(date1, date2, dir_path):
     ext = ".delta_H.early"
     remote_path= '/data/output/indexes/coeneo/'
     list_fnames = list_names(idx_list, str1, ext)
-   # wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
-    
-    fnames = []
-    for i in list_fnames:
-        tmp_name = dir_path+i
-        fnames.append(tmp_name)
-    
-    if not all(fnames):
-        wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
-
+    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     dfs_c = []
         
     for file_name in list_fnames: 
@@ -225,14 +216,7 @@ def df_Kloc(date1, date2, dir_path):
     remote_path= '/data/output/indexes/coeneo/'
     
     list_fnames = list_names(idx_list, str1, ext)
-    
-    fnames = []
-    for i in list_fnames:
-        tmp_name = dir_path+i
-        fnames.append(tmp_name)
-    
-    if not all(fnames):
-        wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
 
     dfs_c = []
             
