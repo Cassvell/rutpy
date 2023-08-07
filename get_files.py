@@ -8,6 +8,18 @@ import paramiko
 """
 
 """
+def get_file(date, remote_path, localfilepath, selected_fname):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname='132.247.181.60', username='carlos', password='c4rl0s1s44c')
+    
+    
+    sftp = ssh.open_sftp()
+    sftp.chdir(remote_path)    
+
+    sftp.get(remote_path, localfilepath)         # get a remote file
+    return()
+
 def get_files(initial_date, final_date, remote_path, localfilepath, select_fnames):
     
     ssh = paramiko.SSHClient()
