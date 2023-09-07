@@ -3,18 +3,26 @@
 download_dir="$HOME/snap/firefox/common"
 download_dir2="$HOME/Descargas"
 
-data_dir="$HOME/MEGAsync/datos/gics_obs/2023"
+echo "enter year [yyyy]"
+read year
+data_dir="$HOME/MEGAsync/datos/gics_obs/$year"
+echo $data_dir
+if [[ ! -e $data_dir ]]; then
+	mkdir $data_dir
+fi	
+
 #find $fdir -type f -name "*QRO.csv"
 declare -a st=("QRO" "LAV" "RMY" "MZT")
 
 for i in ${!st[@]};do
         if ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
         then
-        #       if [ -d ${data_dir}/${st[$i]}]; then 
+               if [[ -e ${data_dir}/${st[$i]} ]]
+	       then 
                         mv ${download_dir2}/*${st[$i]}.csv ${data_dir}/${st[$i]}
-        #       else
-        #               mkdir ${data_dir}/${st[$i]}     
-        #       fi
+               else
+                       mkdir ${data_dir}/${st[$i]}     
+               fi
                 echo "${st[$i]} moved"
 	elif ls ls ${download_dir}/*${st[$i]}.csv &>/dev/null
 	then
@@ -28,7 +36,7 @@ done
 
 echo "preparing gic files..."
 
-#gic_dir="/home/isaac/MEGAsync/datos/gics_obs/2023"
+#gic_dir="/home/isaac/MEGAsync/datos/gics_obs/$year"
 
 for i in ${!st[@]};do
 #	echo "$gic_dir/${st[$i]}"
