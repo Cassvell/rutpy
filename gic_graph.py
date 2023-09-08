@@ -11,7 +11,7 @@ from gicdproc import pproc, reproc, df_dH, df_Kloc
 from timeit import default_timer as timer
 import sys
 start = timer()
-
+year_dir = str(idate[0:4])
 """
 date_name = input("write initial date in format yyyy-mm-dd \n >  " )
 
@@ -36,10 +36,10 @@ def node_dataframe(node, date):
 
 """
 
-df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/')
-df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/LAV/')
-df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/RMY/')
-df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/MZT/')
+df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/QRO/')
+df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/LAV/')
+df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/RMY/')
+df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'//MZT/')
 
 
 #print(df_lav['LAV'].gic[0:])
@@ -66,16 +66,13 @@ T2TW_rmy = (df_rmy['RMY'].T2_proc[idate:fdate])
 T2TW_mzt = (df_mzt['MZT'].T2_proc[idate:fdate])
 ###############################################################################
 ###############################################################################
-dir_path = '/home/isaac/MEGAsync/datos/dH_coe/'
+dir_path = '/home/isaac/MEGAsync/datos/dH_teo/'
 H = df_dH(idate, fdate, dir_path)
 ###############################################################################
 ###############################################################################
 dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
 k = df_Kloc(idate, fdate, dir_path)
 k = round(k)
-quiet   = k < 4
-disturb = k == 4
-storm   = k > 5
 
 colorsValue = []
 for value in k:
