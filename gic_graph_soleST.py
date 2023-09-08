@@ -163,7 +163,7 @@ ax[3].grid()
 
 fig.tight_layout()
 
-fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/2020/gic_obs_"+\
+fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/gic_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+"QRO.png")
 plt.show()
 ##############################################################################################

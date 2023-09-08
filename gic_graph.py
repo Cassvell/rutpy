@@ -133,7 +133,7 @@ ax[5].grid()
 
 fig.tight_layout()
 
-fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/gic_obs_"+\
+fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/gic_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
 ##############################################################################################
@@ -189,7 +189,7 @@ ax[5].grid()
 
 fig.tight_layout()
 
-fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/T_obs_"+\
+fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/T_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
 end = timer()
