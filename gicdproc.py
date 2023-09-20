@@ -35,7 +35,7 @@ from ts_acc import fixer, mz_score, despike, dejump
 
 from get_files import get_files, list_names
 
-def pproc(stid, data_dir='/home/isaac/MEGAsync/datos/gics_obs/2020/'):
+def pproc(stid, data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/'):
     
     """ Procesamiento de datos de los sensores de CIG de ORTO en la red de 
         Potencia de México.  
@@ -172,9 +172,9 @@ def df_dH(date1, date2, dir_path):
                                           end = pd.Timestamp(date2), freq='D')
         
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
-    str1 = "teo_"
+    str1 = "coe_"
     ext = ".delta_H.early"
-    remote_path= '/data/output/indexes/teoloyucan/'
+    remote_path= '/data/output/indexes/coeneo/'
     list_fnames = list_names(idx_list, str1, ext)
     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     dfs_c = []
@@ -211,9 +211,9 @@ def df_Kloc(date1, date2, dir_path):
                 
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
         
-    str1 = "teo_"
+    str1 = "coe_"
     ext = ".k_index.early"
-    remote_path= '/data/output/indexes/teoloyucan/'
+    remote_path= '/data/output/indexes/coeneo/'
     
     list_fnames = list_names(idx_list, str1, ext)
     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)

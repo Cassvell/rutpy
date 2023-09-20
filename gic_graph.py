@@ -10,7 +10,11 @@ import matplotlib.pyplot as plt
 from gicdproc import pproc, reproc, df_dH, df_Kloc
 from timeit import default_timer as timer
 import sys
+import numpy as np
 start = timer()
+
+idate = sys.argv[1]# "formato(yyyymmdd)"
+fdate = sys.argv[2]
 year_dir = str(idate[0:4])
 """
 date_name = input("write initial date in format yyyy-mm-dd \n >  " )
@@ -42,14 +46,16 @@ df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'
 df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'//MZT/')
 
 
-#print(df_lav['LAV'].gic[0:])
-
-idate = sys.argv[1]# "formato(yyyymmdd)"
-fdate = sys.argv[2]
-
 #idate = input("write initial date in format yyyy-mm-dd \n >  " )
 #fdate = input("write final date in format yyyy-mm-dd \n >  " )    
 gicTW_lav = (df_lav['LAV'].gic_proc[idate:fdate])
+gicTW_lav_median = gicTW_lav.median()
+
+lav_baseline = np.repeat(gicTW_lav_median, len(gicTW_lav))
+
+#baseline_offset = np.linspace(0, len(gicTW_lav))
+gicTW_lav = gicTW_lav-lav_baseline
+
 gicTW_qro = (df_qro['QRO'].gic_proc[idate:fdate])
 gicTW_rmy = (df_rmy['RMY'].gic_proc[idate:fdate])
 gicTW_mzt = (df_mzt['MZT'].gic_proc[idate:fdate])
@@ -66,7 +72,7 @@ T2TW_rmy = (df_rmy['RMY'].T2_proc[idate:fdate])
 T2TW_mzt = (df_mzt['MZT'].T2_proc[idate:fdate])
 ###############################################################################
 ###############################################################################
-dir_path = '/home/isaac/MEGAsync/datos/dH_teo/'
+dir_path = '/home/isaac/MEGAsync/datos/dH_coe/'
 H = df_dH(idate, fdate, dir_path)
 ###############################################################################
 ###############################################################################
