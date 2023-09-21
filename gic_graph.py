@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 10:11:27 2023
-
+H stations = [Coeneo, Teoloyucan, Iturbide]
 @author: isaac
 """
 
 import matplotlib.pyplot as plt
-from gicdproc import pproc, reproc, df_dH, df_Kloc
+from gicdproc import pproc, reproc, df_dH, df_Kloc, fix_offset
 from timeit import default_timer as timer
 import sys
-import numpy as np
 start = timer()
 
-idate = sys.argv[1]# "formato(yyyymmdd)"
-fdate = sys.argv[2]
+H_stat= sys.argv[1]
+idate = sys.argv[2]# "formato(yyyymmdd)"
+fdate = sys.argv[3]
+
 year_dir = str(idate[0:4])
 """
 date_name = input("write initial date in format yyyy-mm-dd \n >  " )
@@ -43,18 +44,13 @@ def node_dataframe(node, date):
 df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/QRO/')
 df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/LAV/')
 df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/RMY/')
-df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'//MZT/')
+df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/MZT/')
 
 
 #idate = input("write initial date in format yyyy-mm-dd \n >  " )
 #fdate = input("write final date in format yyyy-mm-dd \n >  " )    
 gicTW_lav = (df_lav['LAV'].gic_proc[idate:fdate])
-gicTW_lav_median = gicTW_lav.median()
-
-lav_baseline = np.repeat(gicTW_lav_median, len(gicTW_lav))
-
-#baseline_offset = np.linspace(0, len(gicTW_lav))
-gicTW_lav = gicTW_lav-lav_baseline
+gicTW_lav = fix_offset(gicTW_lav)
 
 gicTW_qro = (df_qro['QRO'].gic_proc[idate:fdate])
 gicTW_rmy = (df_rmy['RMY'].gic_proc[idate:fdate])
@@ -72,8 +68,9 @@ T2TW_rmy = (df_rmy['RMY'].T2_proc[idate:fdate])
 T2TW_mzt = (df_mzt['MZT'].T2_proc[idate:fdate])
 ###############################################################################
 ###############################################################################
-dir_path = '/home/isaac/MEGAsync/datos/dH_coe/'
-H = df_dH(idate, fdate, dir_path)
+
+dir_path = '/home/isaac/MEGAsync/datos/dH_'+str(H_stat)+'/'
+H = df_dH(idate, fdate, dir_path, H_stat)
 ###############################################################################
 ###############################################################################
 dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
@@ -90,7 +87,7 @@ for value in k:
         colorsValue.append('red')
 
 
-
+#modificar dependiendo de la disp de estaciones
 inicio = gicTW_lav.index[0]
 final  = gicTW_lav.index[-1]
 ##############################################################################################

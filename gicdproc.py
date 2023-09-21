@@ -35,7 +35,7 @@ from ts_acc import fixer, mz_score, despike, dejump
 
 from get_files import get_files, list_names
 
-def pproc(stid, data_dir='/home/isaac/MEGAsync/datos/gics_obs/2023/'):
+def pproc(stid, data_dir):
     
     """ Procesamiento de datos de los sensores de CIG de ORTO en la red de 
         Potencia de México.  
@@ -164,7 +164,7 @@ def reproc(df, mod=1):
 #print(df_lav['LAV'].gic[0:])
 ###############################################################################
 ###############################################################################
-def df_dH(date1, date2, dir_path):
+def df_dH(date1, date2, dir_path, H_stat):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
                          pd.Timestamp(date2+' 23:00:00'), freq='H')
     
@@ -172,9 +172,17 @@ def df_dH(date1, date2, dir_path):
                                           end = pd.Timestamp(date2), freq='D')
         
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
-    str1 = "coe_"
+    str1 = str(H_stat)+"_"
     ext = ".delta_H.early"
-    remote_path= '/data/output/indexes/coeneo/'
+    station = ''
+    if H_stat == 'coe':
+       station =  'coeneo'
+    elif H_stat == 'teo':
+        station = 'teoloyucan'
+    elif H_stat == 'itu':
+        station = 'iturbide'
+
+    remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     dfs_c = []
@@ -242,3 +250,14 @@ def df_Kloc(date1, date2, dir_path):
     k  = df.iloc[:,0]
     k = k/10
     return(k)
+
+def fix_offset(f):
+    
+    f_med = f.median()
+    
+    f_baseline = np.repeat(f_med, len(f))
+    
+    #baseline_offset = np.linspace(0, len(gicTW_lav))
+    f_fixed = f-f_baseline    
+    
+    return(f_fixed)
