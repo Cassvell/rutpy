@@ -95,7 +95,7 @@ for col in col_names[1:]:
         
 #output.update({stat:df})
 df = df.reset_index()  
-print(df)
+
 ################################################################################
 ################################################################################
 #fragmentación del archivo original en varios archivos con un día de ventana de

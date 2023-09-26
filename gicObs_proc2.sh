@@ -4,6 +4,7 @@ download_dir="$HOME/snap/firefox/common"
 download_dir2="$HOME/Descargas"
 
 echo "enter year [yyyy]"
+echo ">"
 read year
 data_dir="$HOME/MEGAsync/datos/gics_obs/$year"
 
@@ -59,3 +60,21 @@ for i in ${!st[@]}; do
 	python3 dailifrag_gic_week.py $year ${st[$i]}
 done	
 echo "done"
+
+echo "enter idate [yyyymmdd]"
+echo ">"
+read idate
+
+echo "enter fdate[yyyymmdd]"
+echo ">"
+read fdate
+
+echo "enter geomagnetic station (coe, teo, itu...)"
+echo ">"
+read geo_stat
+
+echo "ejecutando gráfica de gics"
+
+
+python3 gic_graph.py coe 20230918 20230924
+
