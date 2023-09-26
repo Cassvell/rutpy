@@ -12,7 +12,7 @@ if [[ ! -e $data_dir ]]; then
 fi	
 
 #find $fdir -type f -name "*QRO.csv"
-declare -a st=("QRO" "LAV" "RMY" "MZT")
+declare -a st=("LAV" "QRO" "RMY" "MZT")
 
 for i in ${!st[@]};do
         if ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
@@ -53,12 +53,9 @@ done
 
 echo "done"
 
-#for i in "$gic_dir/*.csv" ;do cat $i >> $gic_dir/gic_$gic_st.output ;done
+echo "generating daily files..."
 
-#awk '{if ($1 ~ /^[2]...-..-../){gsub(/[T]/, " "); gsub(/[Z]/, ""); print} \
-#else if ($1 ~ /^"2...-..-../){gsub(/['\"']/, ""); print}}' $gic_dir/gic_$gic_st.output >> $gic_dir/gic_$gic_st.dat 
-
-#rm $gic_dir/gic_$gic_st.output
-
- 
-#echo "done" 
+for i in ${!st[@]}; do
+	python3 dailifrag_gic_week.py $year ${st[$i]}
+done	
+echo "done"

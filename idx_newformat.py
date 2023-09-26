@@ -109,7 +109,7 @@ elif file_type == 'sym':
         file_type = 'sym'
         code_name = 'ASY'
         head    = 24 
-                         
+                         print(idx1)
 else:
     print('file does not exist.\n Try again with another date or another name')        
 ################################################################################

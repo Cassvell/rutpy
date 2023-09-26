@@ -164,6 +164,50 @@ def reproc(df, mod=1):
 #print(df_lav['LAV'].gic[0:])
 ###############################################################################
 ###############################################################################
+def df_gic(date1, date2, dir_path, stat):
+    col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
+    date3 = int(date2)+1
+    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:00:00' ), end =\
+                         pd.Timestamp(str(date3)+' 11:59:00'), freq='T')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
+                                          end = pd.Timestamp(str(date2)), freq='D')
+        
+    idx_list = (idx_daylist.strftime('%Y-%m-%d')) 
+    str1 = "GIC_"
+    ext = "_"+stat+".dat"
+
+   # remote_path= '/data/output/indexes/'+station+'/'
+    list_fnames = list_names(idx_list, str1, ext)
+    #print(list_fnames)
+   # wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+    dfs_c = []
+    missing_vals = ["NaN", "NO DATA"]    
+    for file_name in list_fnames: 
+  #  for file_name in file_names:    
+        df_c = pd.read_csv(dir_path+file_name, header=None, skiprows = 1, sep='\s+', \
+                           parse_dates = [0], na_values = missing_vals,)
+        #df_c = df_c.iloc[:-1, :]   
+        dfs_c.append(df_c) 
+                
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)
+      
+    df = df.replace(-999.999, np.NaN)        
+ #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
+  #                                    end = pd.Timestamp(date2), freq='H')  
+    df = df.set_index(idx1)
+
+    df = df.drop(columns=[0, 1, 2, 3, 4])
+    df = df.rename(columns={5:'gic', 6:'T1', 7:'T2'})
+    #gic = df.iloc[:,5]
+    #T1  = df.iloc[:,6]
+    #T2  = df.iloc[:,7]
+    output = {}
+    output.update({stat:df})
+    return(output)
+
+###############################################################################
+###############################################################################
 def df_dH(date1, date2, dir_path, H_stat):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
                          pd.Timestamp(date2+' 23:00:00'), freq='H')

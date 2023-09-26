@@ -7,7 +7,7 @@ H stations = [Coeneo, Teoloyucan, Iturbide]
 """
 
 import matplotlib.pyplot as plt
-from gicdproc import pproc, reproc, df_dH, df_Kloc, fix_offset
+from gicdproc import pproc, reproc, df_gic, df_dH, df_Kloc, fix_offset
 from timeit import default_timer as timer
 import sys
 start = timer()
@@ -39,33 +39,38 @@ def node_dataframe(node, date):
 
 #rank = np.arange(float(min(gic)), 5, float(max(gic)))
 
-"""
+
 
 df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/QRO/')
 df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/LAV/')
 df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/RMY/')
 df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/MZT/')
+"""
 
 
-#idate = input("write initial date in format yyyy-mm-dd \n >  " )
-#fdate = input("write final date in format yyyy-mm-dd \n >  " )    
-gicTW_lav = (df_lav['LAV'].gic_proc[idate:fdate])
+df_lav = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/LAV/daily/', 'LAV')
+df_rmy = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/RMY/daily/', 'RMY')
+df_mzt = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/MZT/daily/', 'MZT')
+df_qro = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/daily/', 'QRO')
+
+  
+gicTW_lav = df_lav['LAV'].gic
 gicTW_lav = fix_offset(gicTW_lav)
 
-gicTW_qro = (df_qro['QRO'].gic_proc[idate:fdate])
-gicTW_rmy = (df_rmy['RMY'].gic_proc[idate:fdate])
-gicTW_mzt = (df_mzt['MZT'].gic_proc[idate:fdate])
+gicTW_qro = df_qro['QRO'].gic
+gicTW_rmy = df_rmy['RMY'].gic
+gicTW_mzt = df_mzt['MZT'].gic
 
 
-T1TW_lav = (df_lav['LAV'].T1_proc[idate:fdate])
-T1TW_qro = (df_qro['QRO'].T1_proc[idate:fdate])
-T1TW_rmy = (df_rmy['RMY'].T1_proc[idate:fdate])
-T1TW_mzt = (df_mzt['MZT'].T1_proc[idate:fdate])
+T1TW_lav = df_lav['LAV'].T1
+T1TW_qro = df_qro['QRO'].T1
+T1TW_rmy = df_rmy['RMY'].T1
+T1TW_mzt = df_mzt['MZT'].T1
 
-T2TW_lav = (df_lav['LAV'].T2_proc[idate:fdate])
-T2TW_qro = (df_qro['QRO'].T2_proc[idate:fdate])
-T2TW_rmy = (df_rmy['RMY'].T2_proc[idate:fdate])
-T2TW_mzt = (df_mzt['MZT'].T2_proc[idate:fdate])
+T2TW_lav = df_lav['LAV'].T2
+T2TW_qro = df_qro['QRO'].T2
+T2TW_rmy = df_rmy['RMY'].T2
+T2TW_mzt = df_mzt['MZT'].T2
 ###############################################################################
 ###############################################################################
 

@@ -30,17 +30,20 @@ from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
 from gicdproc import pproc
 import sys
+import warnings
 
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=RuntimeWarning)
 year_dir = sys.argv[1]# "formato(yyyymmdd)"
 stat = sys.argv[2]
 
 data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
-last2files = list_fnames[-3:-1]
-print(last2files)
-
+lastfile = list_fnames[-1] #last 2 weeks: [-2:]
+#print(last2files)
+print(lastfile)
 dfs_c = []
-
+#output={}
 missing_vals = ["NaN", "NO DATA"]
 col_names=['Datetime','gic', 'T1','T2']
 convert_dict = {#'Datetime': 'datetime64[ns]', #no se precisa esto
@@ -49,22 +52,25 @@ convert_dict = {#'Datetime': 'datetime64[ns]', #no se precisa esto
                 'T2' : float }
 
         
-for file_name in last2files: 
-  #  for file_name in file_names:    
-    df_c = pd.read_csv(file_name, 
+   
+df = pd.read_csv(lastfile, 
                        header=None, 
                        skiprows = 1,
                        usecols = [0,1,2,3],
                        names = col_names,
+                       na_values = missing_vals,
                        parse_dates = [0])  
-    dfs_c.append(df_c) 
-df = pd.concat(dfs_c, axis=0, ignore_index=True)
 
 
 
 df.dropna(axis=1, how='all', inplace=True)
         # Drop all axis full of NaN values
 
+for i in col_names:
+    if i not in df.columns:
+        df[i] = -999.999
+
+df = df.replace(np.NaN, -999.999)
 
         # Set index, sort and remove duplicated values keeping the first occurrence
 df.set_index('Datetime', inplace=True);
@@ -80,7 +86,16 @@ ts_end = df.index[-1];
 idx = pd.date_range(start=ts_start, end=ts_end, freq='min');
         
 df = df.reindex(idx, copy=False)
+
+for col in col_names[1:]:
+    x = df[col].values
+    u = fixer(x)
+            
+    df[col+"_proc"] = u.tolist()
+        
+#output.update({stat:df})
 df = df.reset_index()  
+print(df)
 ################################################################################
 ################################################################################
 #fragmentación del archivo original en varios archivos con un día de ventana de
@@ -105,4 +120,3 @@ for i in range(0,len(idx)-1,step):
     new_path = data_dir+'/daily/'
             
     df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
-
