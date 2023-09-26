@@ -24,19 +24,19 @@ from gicdproc import pproc
 import sys
 
 year_dir = sys.argv[1]# "formato(yyyymmdd)"
-stat = sys.argv[2]
+st = sys.argv[2]
 
-data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/'+stat+'/'
+data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/'+st+'/'
 list_fnames = glob.glob(data_dir + "/*.dat")
 dfs_c = []
 
 missing_vals = ["NaN", "NO DATA"]
 col_names=['Datetime','gic', 'T1','T2']
+output = {}
 convert_dict = {#'Datetime': 'datetime64[ns]', #no se precisa esto
                 'gic': float,
                 'T1' : float,
                 'T2' : float }
-
         
 for file_name in list_fnames: 
   #  for file_name in file_names:    
@@ -69,6 +69,15 @@ ts_end = df.index[-1];
 idx = pd.date_range(start=ts_start, end=ts_end, freq='min');
         
 df = df.reindex(idx, copy=False)
+
+for col in col_names[1:]:
+    x = df[col].values
+    u = fixer(x)
+            
+    df[col+"_proc"] = u.tolist()
+        
+output.update({st:df})
+
 df = df.reset_index()  
 ################################################################################
 ################################################################################
@@ -90,7 +99,7 @@ for i in range(0,len(idx)-1,step):
     #df_new = df_new.drop(columns=['DOY', 'ASY-D', 'SYM-D', 'ASY-H'])
     df_new = df_new.rename(columns={'index':'Datetime'})
                
-    name_new = 'GIC_'+date+'_'+stat+'.dat'
+    name_new = 'GIC_'+date+'_'+st+'.dat'
     new_path = data_dir+'/daily/'
             
     df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
