@@ -4,7 +4,7 @@ download_dir="$HOME/snap/firefox/common"
 download_dir2="$HOME/Descargas"
 
 echo "enter year [yyyy]"
-echo ">"
+
 read year
 data_dir="$HOME/MEGAsync/datos/gics_obs/$year"
 
@@ -13,7 +13,10 @@ if [[ ! -e $data_dir ]]; then
 fi	
 
 #find $fdir -type f -name "*QRO.csv"
-declare -a st=("LAV" "QRO" "RMY" "MZT")
+declare -a st=( "LAV" "QRO" "RMY" "MZT" "MTZ")
+
+
+
 
 for i in ${!st[@]};do
         if ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
@@ -25,6 +28,7 @@ for i in ${!st[@]};do
                        mkdir ${data_dir}/${st[$i]}     
                fi
                 echo "${st[$i]} moved"
+
 	elif ls ls ${download_dir}/*${st[$i]}.csv &>/dev/null
 	then
 		mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}
@@ -76,5 +80,6 @@ read geo_stat
 echo "ejecutando gráfica de gics"
 
 
-python3 gic_graph.py coe 20230918 20230924
+python3 gic_graph.py coe $idate $fdate
+
 

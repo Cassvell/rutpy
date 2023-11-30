@@ -91,7 +91,7 @@ for value in k:
     else:
         colorsValue.append('red')
 
-
+print(gicTW_mzt)
 #modificar dependiendo de la disp de estaciones
 inicio = gicTW_lav.index[0]
 final  = gicTW_lav.index[-1]
@@ -118,7 +118,6 @@ ax[2].grid()
 ax[2].set_xlim(inicio,final)
 ax[2].set_title('RMY st', fontsize=18)
 ax[2].set_ylabel(' GIC [A]', fontweight='bold')
-
 
 ax[3].plot(gicTW_mzt)
 ax[3].grid()
@@ -178,9 +177,11 @@ ax[3].plot(T1TW_mzt, label='T1')
 ax[3].plot(T2TW_mzt, label='T2')
 ax[3].grid()
 ax[3].set_xlim(inicio,final)
-ax[3].set_title('MZT st', fontsize=18)
+
 ax[3].set_ylabel(' Temperatura [C°]', fontweight='bold')
 ax[3].legend()
+
+ax[3].set_title('MZT st', fontsize=18)
 
 ax[4].plot(H, color='k')
 ax[4].set_ylabel(' DH [nT]', fontweight='bold')

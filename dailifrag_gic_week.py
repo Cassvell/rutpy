@@ -39,9 +39,10 @@ stat = sys.argv[2]
 
 data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
-lastfile = list_fnames[-1] #last 2 weeks: [-2:]
-#print(last2files)
+#print(data_dir)
+lastfile = list_fnames[-1] #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
 print(lastfile)
+
 dfs_c = []
 #output={}
 missing_vals = ["NaN", "NO DATA"]
