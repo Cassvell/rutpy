@@ -10,76 +10,114 @@ import matplotlib.pyplot as plt
 from gicdproc import pproc, reproc, df_gic, df_dH, df_Kloc, fix_offset
 from timeit import default_timer as timer
 import sys
+import pandas as pd
+import os.path
+import numpy as np
+
+from calc_daysdiff import calculate_days_difference
 start = timer()
 
 H_stat= sys.argv[1]
-idate = sys.argv[2]# "formato(yyyymmdd)"
-fdate = sys.argv[3]
+i_date = sys.argv[2]# "formato(yyyymmdd)"
+f_date = sys.argv[3]
 
-year_dir = str(idate[0:4])
-"""
-date_name = input("write initial date in format yyyy-mm-dd \n >  " )
+year_dir = str(i_date[0:4])
 
-node = ['LAV', 'MZT', 'RMY', 'QRO']
+#print(calculate_days_difference(i_date, f_date))
 
-def node_dataframe(node, date):
-    dir_path = '/home/isaac/MEGAsync/datos/gics_obs/2023/'
+stat = ['QRO', 'LAV', 'RMY', 'MZT']
+idx = pd.date_range(start = pd.Timestamp(i_date), \
+                          end = pd.Timestamp(f_date+ ' 23:59:00'), freq='T')
+daily_index = pd.date_range(start = pd.Timestamp(i_date), \
+                          end = pd.Timestamp(f_date+ ' 23:59:00'), freq='D')
 
-    df = pd.read_csv(dir_path+'Datos_GICS_'+date+' '+node+'.csv', header=0, sep=',',\
-                 skip_blank_lines=True, encoding='latin1')    
-    df['DateTime']  = pd.to_datetime(df.iloc[:,0], format='%Y-%m-%d %H:%M:%S')   
-    df = df.set_index(df['DateTime']) 
-    df = df.drop(columns=['DateTime'])
-    
-    gic = df.iloc[:,0]
-    
-    gic = gic.replace('NO DATA', np.NaN)
-    return(gic)
-#gic = gic.astype(str)
+ndays = calculate_days_difference(i_date, f_date)
+tot_data = ndays*1440
 
-#rank = np.arange(float(min(gic)), 5, float(max(gic)))
+daily_index = daily_index.strftime("%Y-%m-%d")
+path2 = '/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/'
+file = []
+SG2 = [] 
 
+for i in (daily_index):
+    SG2 = path2+stat[1]+'/daily/GIC_'+i+'_'+stat[1]+'.dat'
+    #print(SG2)
+    file = os.path.isfile(SG2)
+    #print(file)
+print(file)
+if file == True:
+        df_lav = df_gic(i_date, f_date,path2+stat[1]+'/daily/', stat[1])
+        gicTW_lav = df_lav['LAV'].gic
+        gicTW_lav = fix_offset(gicTW_lav)
+        T1TW_lav = df_lav['LAV'].T1
+        T2TW_lav = df_lav['LAV'].T2
+else:
+    df_lav = np.full(shape=(tot_data,3), fill_value=np.nan)
+    df_lav = pd.DataFrame(df_lav)
+    df_lav = df_lav.set_index(idx)
+    gicTW_lav = df_lav.iloc[:,0]
+###############################################################################
+for i in (daily_index):
+    SG2 = path2+stat[0]+'/daily/GIC_'+i+'_'+stat[0]+'.dat'
+    #print(SG2)
+    file = os.path.isfile(SG2)
+    #print(file)
+print(file)
+if file == True:
+        df_qro = df_gic(i_date, f_date,path2+stat[0]+'/daily/', stat[0])
+        gicTW_qro = df_qro['QRO'].gic/10
+        T1TW_qro = df_qro['QRO'].T1
+        T2TW_qro = df_qro['QRO'].T2
+else:
+    df_qro = np.full(shape=(tot_data,3), fill_value=np.nan)
+    df_qro = pd.DataFrame(df_qro)
+    df_qro = df_qro.set_index(idx)
+    gicTW_qro = df_qro.iloc[:,0]
+###############################################################################
+for i in (daily_index):
+    SG2 = path2+stat[3]+'/daily/GIC_'+i+'_'+stat[3]+'.dat'
+   # print(SG2)
+    file = os.path.isfile(SG2)
+    #print(file)
+print(file)
+if file == True:
+        df_mzt = df_gic(i_date, f_date,path2+stat[3]+'/daily/', stat[3])
+        gicTW_mzt = df_mzt['MZT'].gic
+        T1TW_mzt = df_mzt['MZT'].T1
+        T2TW_mzt = df_mzt['MZT'].T2
+else:
+    df_mzt = np.full(shape=(tot_data,3), fill_value=np.nan)
+    df_mzt = pd.DataFrame(df_mzt)
+    df_mzt = df_mzt.set_index(idx)
+    gicTW_mzt = df_mzt.iloc[:,0]
+###############################################################################    
+for i in (daily_index):
+    SG2 = path2+stat[2]+'/daily/GIC_'+i+'_'+stat[2]+'.dat'
+    #print(SG2)
+    file = os.path.isfile(SG2)
+    #print(file)
+print(file)
 
+if file == True:
+        df_rmy = df_gic(i_date, f_date,path2+stat[2]+'/daily/', stat[2])
+        gicTW_rmy = df_rmy['RMY'].gic
+        T1TW_rmy = df_rmy['RMY'].T1
+        T2TW_rmy = df_rmy['RMY'].T2
+else:
+    df_rmy = np.full(shape=(tot_data,3), fill_value=np.nan)
+    df_rmy = pd.DataFrame(df_rmy)
+    df_rmy = df_rmy.set_index(idx)
+    gicTW_rmy = df_rmy.iloc[:,0]
 
-df_qro = pproc('QRO', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/QRO/')
-df_lav = pproc('LAV', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/LAV/')
-df_rmy = pproc('RMY', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/RMY/')
-df_mzt = pproc('MZT', data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/MZT/')
-"""
-
-
-df_lav = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/LAV/daily/', 'LAV')
-df_rmy = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/RMY/daily/', 'RMY')
-df_mzt = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/MZT/daily/', 'MZT')
-df_qro = df_gic(idate, fdate,'/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/daily/', 'QRO')
-
-  
-gicTW_lav = df_lav['LAV'].gic
-gicTW_lav = fix_offset(gicTW_lav)
-
-gicTW_qro = df_qro['QRO'].gic
-gicTW_rmy = df_rmy['RMY'].gic
-gicTW_mzt = df_mzt['MZT'].gic
-
-
-T1TW_lav = df_lav['LAV'].T1
-T1TW_qro = df_qro['QRO'].T1
-T1TW_rmy = df_rmy['RMY'].T1
-T1TW_mzt = df_mzt['MZT'].T1
-
-T2TW_lav = df_lav['LAV'].T2
-T2TW_qro = df_qro['QRO'].T2
-T2TW_rmy = df_rmy['RMY'].T2
-T2TW_mzt = df_mzt['MZT'].T2
 ###############################################################################
 ###############################################################################
 
 dir_path = '/home/isaac/MEGAsync/datos/dH_'+str(H_stat)+'/'
-H = df_dH(idate, fdate, dir_path, H_stat)
+H = df_dH(i_date, f_date, dir_path, H_stat)
 ###############################################################################
 ###############################################################################
 dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
-k = df_Kloc(idate, fdate, dir_path)
+k = df_Kloc(i_date, f_date, dir_path)
 k = round(k)
 
 colorsValue = []
@@ -91,10 +129,17 @@ for value in k:
     else:
         colorsValue.append('red')
 
-print(gicTW_mzt)
+
 #modificar dependiendo de la disp de estaciones
-inicio = gicTW_lav.index[0]
-final  = gicTW_lav.index[-1]
+if not gicTW_lav.isna().all().all():
+    inicio = gicTW_lav.index[0]
+    final  = gicTW_lav.index[-1]
+elif not gicTW_qro.isna().all().all():
+    inicio = gicTW_qro.index[0]
+    final  = gicTW_qro.index[-1]
+elif not gicTW_mzt.isna().all().all():
+    inicio = gicTW_mzt.index[0]
+    final  = gicTW_mzt.index[-1]  
 ##############################################################################################
 #fig 1
 ##############################################################################################
@@ -204,6 +249,6 @@ plt.show()
 end = timer()
 
 print(end - start)
-'''
 
-'''
+
+
