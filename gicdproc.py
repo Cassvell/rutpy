@@ -187,9 +187,10 @@ def df_gic(date1, date2, dir_path, stat):
   #  for file_name in file_names:    
         df_c = pd.read_csv(dir_path+file_name, header=None, skiprows = 1, sep='\s+', \
                            parse_dates = [0], na_values = missing_vals,)
-        #df_c = df_c.iloc[:-1, :]   
+        #print(df_c)
+            #df_c = df_c.iloc[:-1, :]   
         dfs_c.append(df_c) 
-                
+       # print(dfs_c)       
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
     df = df.replace(-999.999, np.NaN)        

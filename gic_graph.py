@@ -12,6 +12,7 @@ from timeit import default_timer as timer
 import sys
 import pandas as pd
 import os.path
+import os
 import numpy as np
 
 from calc_daysdiff import calculate_days_difference
@@ -140,6 +141,14 @@ elif not gicTW_qro.isna().all().all():
 elif not gicTW_mzt.isna().all().all():
     inicio = gicTW_mzt.index[0]
     final  = gicTW_mzt.index[-1]  
+    
+# checking if the directory demo_folder  
+# exist or not. 
+if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir): 
+      
+    # if the demo_folder directory is not present  
+    # then create it. 
+    os.makedirs("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir)     
 ##############################################################################################
 #fig 1
 ##############################################################################################

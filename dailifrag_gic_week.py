@@ -31,6 +31,7 @@ from ts_acc import fixer, mz_score, despike, dejump
 from gicdproc import pproc
 import sys
 import warnings
+import datetime 
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -93,31 +94,51 @@ for col in col_names[1:]:
     u = fixer(x)
             
     df[col+"_proc"] = u.tolist()
-        
-#output.update({stat:df})
-df = df.reset_index()  
-
-################################################################################
-################################################################################
-#fragmentación del archivo original en varios archivos con un día de ventana de
-#tiempo
-################################################################################
-################################################################################
-step=1440
-fhour=1439
-#print(df)
-
-for i in range(0,len(idx)-1,step):
-    mask = (df['index'] >= idx[i]) & (df['index'] <= idx[i+1439])
-    df_new = df[mask]
-   # sym_H  = df_new['SYM-H'].apply(lambda x: '{0:0>4}'.format(x))
-    date = str(idx[i])
-    date = date[0:10]
     
-    #df_new = df_new.drop(columns=['DOY', 'ASY-D', 'SYM-D', 'ASY-H'])
-    df_new = df_new.rename(columns={'index':'Datetime'})
-               
-    name_new = 'GIC_'+date+'_'+stat+'.dat'
-    new_path = data_dir+'/daily/'
-            
-    df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
+    
+step = 1440        
+if not len(df.reset_index()) % 1440 == 0:
+    remainder_time = 1440-(len(df.index) % 1440)
+    time_change = datetime.timedelta(minutes=1)
+    new_time = df.index[-1] + time_change
+     
+    idx_remainder = pd.date_range(start = pd.Timestamp(new_time),\
+                                  periods=remainder_time, freq='T')
+
+    final_index = pd.date_range(start = pd.Timestamp(df.index[0]), \
+                                end = pd.Timestamp(idx_remainder[-1]), freq='T')
+    df = df.reindex(final_index, copy=False)
+    df = df.reset_index()
+
+    for i in range(0,len(final_index)-1,step):
+        mask = (df['index'] >= final_index[i]) & (df['index'] <= final_index[i+1439])
+        df_new = df[mask]
+       # sym_H  = df_new['SYM-H'].apply(lambda x: '{0:0>4}'.format(x))
+        date = str(idx[i])
+        date = date[0:10]
+        
+        #df_new = df_new.drop(columns=['DOY', 'ASY-D', 'SYM-D', 'ASY-H'])
+        df_new = df_new.rename(columns={'index':'Datetime'})
+                   
+        name_new = 'GIC_'+date+'_'+stat+'.dat'
+        new_path = data_dir+'/daily/'
+                
+        df_new.to_csv(new_path+name_new, sep= '\t', index=False)
+
+else:        
+    df = df.reset_index()      
+    for i in range(0,len(idx)-1,step):
+        mask = (df['index'] >= idx[i]) & (df['index'] <= idx[i+1439])
+        df_new = df[mask]
+       # sym_H  = df_new['SYM-H'].apply(lambda x: '{0:0>4}'.format(x))
+        date = str(idx[i])
+        date = date[0:10]
+        
+        #df_new = df_new.drop(columns=['DOY', 'ASY-D', 'SYM-D', 'ASY-H'])
+        df_new = df_new.rename(columns={'index':'Datetime'})
+                   
+        name_new = 'GIC_'+date+'_'+stat+'.dat'
+        new_path = data_dir+'/daily/'
+                
+        df_new.to_csv(new_path+name_new, sep= '\t', index=False)
+          
