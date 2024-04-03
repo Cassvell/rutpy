@@ -14,7 +14,7 @@ import pandas as pd
 import os.path
 import os
 import numpy as np
-
+from datetime import datetime, timedelta
 from calc_daysdiff import calculate_days_difference
 start = timer()
 
@@ -25,15 +25,27 @@ f_date = sys.argv[3]
 year_dir = str(i_date[0:4])
 
 #print(calculate_days_difference(i_date, f_date))
+fyear = int(f_date[0:4])
+fmonth = int(f_date[4:6])
+fday = int(f_date[6:8])
+
+
+finaldate= datetime(fyear, fmonth,fday)
+nextday = finaldate+timedelta(days=1)
+nextday = str(nextday)[0:10]
 
 stat = ['QRO', 'LAV', 'RMY', 'MZT']
+idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 12:01:00'), \
+                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='T')
+    
 idx = pd.date_range(start = pd.Timestamp(i_date), \
                           end = pd.Timestamp(f_date+ ' 23:59:00'), freq='T')
 daily_index = pd.date_range(start = pd.Timestamp(i_date), \
+                          
                           end = pd.Timestamp(f_date+ ' 23:59:00'), freq='D')
 
 ndays = calculate_days_difference(i_date, f_date)
-tot_data = ndays*1440
+tot_data = (ndays+1)*1440
 
 daily_index = daily_index.strftime("%Y-%m-%d")
 path2 = '/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/'
@@ -44,7 +56,7 @@ for i in (daily_index):
     SG2 = path2+stat[1]+'/daily/GIC_'+i+'_'+stat[1]+'.dat'
     #print(SG2)
     file = os.path.isfile(SG2)
-    #print(file)
+   # print(file)
 print(file)
 if file == True:
         df_lav = df_gic(i_date, f_date,path2+stat[1]+'/daily/', stat[1])
@@ -55,14 +67,17 @@ if file == True:
 else:
     df_lav = np.full(shape=(tot_data,3), fill_value=np.nan)
     df_lav = pd.DataFrame(df_lav)
-    df_lav = df_lav.set_index(idx)
+  #  print(df_lav)
+    df_lav = df_lav.set_index(idx1)
     gicTW_lav = df_lav.iloc[:,0]
+    T1TW_lav = df_lav.iloc[:,1]
+    T2TW_lav = df_lav.iloc[:,2]
 ###############################################################################
 for i in (daily_index):
     SG2 = path2+stat[0]+'/daily/GIC_'+i+'_'+stat[0]+'.dat'
     #print(SG2)
     file = os.path.isfile(SG2)
-    #print(file)
+   # print(file)
 print(file)
 if file == True:
         df_qro = df_gic(i_date, f_date,path2+stat[0]+'/daily/', stat[0])
@@ -72,8 +87,10 @@ if file == True:
 else:
     df_qro = np.full(shape=(tot_data,3), fill_value=np.nan)
     df_qro = pd.DataFrame(df_qro)
-    df_qro = df_qro.set_index(idx)
+    df_qro = df_qro.set_index(idx1)
     gicTW_qro = df_qro.iloc[:,0]
+    T1TW_qro = df_qro.iloc[:,1]
+    T2TW_qro = df_qro.iloc[:,2]
 ###############################################################################
 for i in (daily_index):
     SG2 = path2+stat[3]+'/daily/GIC_'+i+'_'+stat[3]+'.dat'
@@ -89,8 +106,10 @@ if file == True:
 else:
     df_mzt = np.full(shape=(tot_data,3), fill_value=np.nan)
     df_mzt = pd.DataFrame(df_mzt)
-    df_mzt = df_mzt.set_index(idx)
+    df_mzt = df_mzt.set_index(idx1)
     gicTW_mzt = df_mzt.iloc[:,0]
+    T1TW_mzt = df_mzt.iloc[:,1]
+    T2TW_mzt = df_mzt.iloc[:,2]
 ###############################################################################    
 for i in (daily_index):
     SG2 = path2+stat[2]+'/daily/GIC_'+i+'_'+stat[2]+'.dat'
@@ -107,9 +126,10 @@ if file == True:
 else:
     df_rmy = np.full(shape=(tot_data,3), fill_value=np.nan)
     df_rmy = pd.DataFrame(df_rmy)
-    df_rmy = df_rmy.set_index(idx)
+    df_rmy = df_rmy.set_index(idx1)
     gicTW_rmy = df_rmy.iloc[:,0]
-
+    T1TW_rmy = df_rmy.iloc[:,1]
+    T2TW_rmy = df_rmy.iloc[:,2]
 ###############################################################################
 ###############################################################################
 
@@ -149,6 +169,10 @@ if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir):
     # if the demo_folder directory is not present  
     # then create it. 
     os.makedirs("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir)     
+##############################################################################################    
+end = timer()
+
+print(end - start)    
 ##############################################################################################
 #fig 1
 ##############################################################################################
@@ -255,9 +279,7 @@ fig.tight_layout()
 fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/T_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
-end = timer()
 
-print(end - start)
 
 
 

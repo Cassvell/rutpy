@@ -31,7 +31,8 @@ from scipy import stats
 from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
-  
+from datetime import datetime, timedelta
+
 
 from get_files import get_files, list_names
 
@@ -166,9 +167,19 @@ def reproc(df, mod=1):
 ###############################################################################
 def df_gic(date1, date2, dir_path, stat):
     col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
-    date3 = int(date2)+1
-    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:00:00' ), end =\
-                         pd.Timestamp(str(date3)+' 11:59:00'), freq='T')
+    
+    fyear = int(date2[0:4])
+    fmonth = int(date2[4:6])
+    fday = int(date2[6:8])
+
+
+    finaldate= datetime(fyear, fmonth,fday)
+    nextday = finaldate+timedelta(days=1)
+    nextday = str(nextday)[0:10]
+    
+    
+    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:01:00' ), end =\
+                         pd.Timestamp(nextday+' 12:00:00'), freq='T')
     
     idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
                                           end = pd.Timestamp(str(date2)), freq='D')
