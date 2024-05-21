@@ -13,7 +13,7 @@ if [[ ! -e $data_dir ]]; then
 fi	
 
 #find $fdir -type f -name "*QRO.csv"
-declare -a st=( "LAV" "QRO" "RMY" "MZT" "MTZ")
+declare -a st=("LAV" "MZT" "QRO" "RMY")
 
 
 

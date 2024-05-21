@@ -16,6 +16,9 @@ import os
 import numpy as np
 from datetime import datetime, timedelta
 from calc_daysdiff import calculate_days_difference
+from ts_acc import mz_score
+
+
 start = timer()
 
 H_stat= sys.argv[1]
@@ -131,6 +134,39 @@ else:
     T1TW_rmy = df_rmy.iloc[:,1]
     T2TW_rmy = df_rmy.iloc[:,2]
 ###############################################################################
+#detection of changing points
+
+#mz_score = mz_score(gicTW_lav)
+#plt.plot(gicTW_lav)
+
+
+yp = np.pad(gicTW_lav, (0,1))
+delta = np.diff(yp, axis=0)
+spikes = np.abs(mz_score(delta)) >= 10 #n
+
+
+#gicTW_lav = gicTW_lav.reset_index()
+#idx = gicTW_lav[spikes].index
+
+#for j, i in enumerate(idx):
+  #  if j % 2 == 0:  # Even increment
+   #     gicTW_lav['gic'][idx[i:i+1]] = fix_offset(gicTW_lav['gic'][idx[i:i+1]])
+    #else:  # Odd increment
+     #   gicTW_lav['gic'][idx[i+1:i+2]] = fix_offset(gicTW_lav['gic'][idx[i+1:i+2]])
+  
+    #plt.plot(gicTW_lav['gic'][i:i+1])
+
+#print(np.mean(gicTW_lav['gic'][0:1067]))
+#print(np.mean(gicTW_lav['gic'][1069:1080]))
+#print(np.mean(gicTW_lav['gic'][2097:3146]))
+#print(np.mean(gicTW_lav['gic'][5298:5972]))
+
+#gicTW_lav['gic'][1080:1562] = fix_offset(gicTW_lav['gic'][1080:1562])
+
+#plt.plot(gicTW_lav['gic'][2095:3146])
+#plt.plot(gicTW_lav['gic'])
+
+
 ###############################################################################
 
 dir_path = '/home/isaac/MEGAsync/datos/dH_'+str(H_stat)+'/'
@@ -161,7 +197,7 @@ elif not gicTW_qro.isna().all().all():
 elif not gicTW_mzt.isna().all().all():
     inicio = gicTW_mzt.index[0]
     final  = gicTW_mzt.index[-1]  
-    
+print(inicio)   
 # checking if the directory demo_folder  
 # exist or not. 
 if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir): 
@@ -177,7 +213,7 @@ print(end - start)
 #fig 1
 ##############################################################################################
 fig, ax = plt.subplots(6, figsize=(12,14))
-fig.suptitle('Estudio de GICs, 2023', fontsize=24, fontweight='bold')
+fig.suptitle('Estudio de GICs, '+year_dir, fontsize=24, fontweight='bold')
 
 ax[0].plot(gicTW_lav)
 ax[0].grid()
@@ -224,8 +260,9 @@ plt.show()
 ##############################################################################################
 #fig 2
 ##############################################################################################
+
 fig, ax = plt.subplots(6, figsize=(12,14))
-fig.suptitle('Estudio de GICs, 2023', fontsize=24, fontweight='bold')
+fig.suptitle('Estudio de GICs, '+year_dir, fontsize=24, fontweight='bold')
 
 ax[0].plot(T1TW_lav, label='T1')
 ax[0].plot(T2TW_lav, label='T2')
