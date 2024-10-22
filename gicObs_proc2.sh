@@ -3,10 +3,14 @@
 download_dir="$HOME/snap/firefox/common"
 download_dir2="$HOME/Descargas"
 
-echo "enter year [yyyy]"
+# If no argument is provided, use the current year
+if [ -z "$1" ]; then
+  year=$(date +"%Y")
+else
+  year="$1"
+fi
 
-read year
-data_dir="$HOME/MEGAsync/datos/gics_obs/$year"
+data_dir="$HOME/datos/gics_obs/$year"
 
 if [[ ! -e $data_dir ]]; then
 	mkdir $data_dir

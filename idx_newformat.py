@@ -14,10 +14,11 @@ import pandas as pd
 from datetime import datetime
 import re
 import os
+import sys
 ################################################################################ 
 #introducimos la ventana de tiempo que abarca el archivo original y que está 
 #indicada en el nombre del mismo
-file_type=input("select file type option:\n dst: \n kp: \n sym: \n or \n ip: \n type:  ") 
+file_type = sys.argv[1]#=input("select file type option:\n dst: \n kp: \n sym: \n or \n ip: \n type:  ") 
 #selección del tipo de archivo de acuerdo al índice geomagnético de interés
 
 if file_type != 'ip':
@@ -29,7 +30,7 @@ else:
 code_stat = 'D' #código que indica el estado de los archivos, D, P o Q
                 #(Definitivos, Provisionales o Rápidos)
 
-path='/home/isaac/MEGAsync/datos/'+file_type+'/'
+path='/home/isaac/datos/'+file_type+'/'
 
 code_name = 0   #código que indica el tipo de índice geomagnético en el nombre 
                 #del archivo
@@ -101,15 +102,15 @@ elif file_type == 'sym':
         code_name = 'ASY'
         head    = 24
         
-    else:
-        if sample=='h':    
-            code_stat = 'h_Q'
-        else:
-            code_stat = 'm_Q'    
-        file_type = 'sym'
-        code_name = 'ASY'
-        head    = 24 
-                         print(idx1)
+    #else:
+       # if sample=='h':    
+      #      code_stat = 'h_Q'
+     #   else:
+     #       code_stat = 'm_Q'    
+    #    file_type = 'sym'
+   #     code_name = 'ASY'
+  #      head    = 24 
+#                         print(idx1)
 else:
     print('file does not exist.\n Try again with another date or another name')        
 ################################################################################
@@ -128,9 +129,9 @@ elif file_type == 'ip':
     print(path+idate+'.dat')
     df = pd.read_csv(path+idate+'.dat', header=None, sep='\s+')    
 
-else:
-#sym-H
-    df = pd.read_csv(path+code_name+'_'+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\s+')
+elif file_type == 'sym':#sym-H
+
+    df = pd.read_csv(path+'ASY_'+idate+'_'+fdate+'m_P.dat', header=head, sep='\s+')
     df = df.drop(columns=['|'])                                          
 
 ################################################################################
@@ -211,7 +212,7 @@ for i in range(0,len(idx),step):
     
     if file_type == 'dst' or file_type == 'kp':
         name_new = file_type+'_'+date+'.dat'
-        new_path = '/home/isaac/MEGAsync/datos/'+\
+        new_path = '/home/isaac/datos/'+\
         file_type+'/daily/'
         df_new = df_new.drop(columns=['DOY'])
         df_new.to_csv(new_path+name_new, sep= '\t', index=False)  
@@ -221,30 +222,32 @@ for i in range(0,len(idx),step):
         df_new = df_new.reset_index()
         df_new = df_new.drop(columns=['index'])
         name_new = file_type+'_'+date+'.dat'
-        new_path = '/home/isaac/MEGAsync/datos/'+\
+        new_path = '/home/isaac/datos/'+\
         file_type+'/daily/'
         df_new = df_new.T        
         df_new.to_csv(new_path+name_new, sep= '', index=False)
                 
     else:
         if sample== 'm':
-            df_new = df_new.drop(columns=['DOY', 'ASY-D', 'SYM-D', 'ASY-H'])
+            df_new = df_new.drop(columns=['DOY'])
             df_new.rename(columns={'level_0':'index'})
             df_new = df_new.drop(columns=['index'])            
             name_new = file_type+'_'+date+code_stat+'.dat'
-            new_path = '/home/isaac/MEGAsync/datos/'+\
+            new_path = '/home/isaac/datos/'+\
             file_type+'/daily/'
-            
-            df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
-        
+            #print(df_new)
+          #  df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
+            with open(new_path+name_new, 'w') as f:
+                for index, row in df_new.iterrows():
+                    formatted_line = f"{int(row['ASY-D']):>4} {int(row['ASY-H']):>4} {int(row['SYM-D']):>5} {int(row['SYM-H']):>5} \n"
+                    f.write(formatted_line)    
         else:
             df_new = df_new.drop(columns=['ASY-D', 'ASY-D']) 
             df_new = df_new.drop(columns=['index'])       
             name_new = file_type+'_'+date+code_stat+'h.dat'
-            new_path = '/home/isaac/MEGAsync/datos/'+\
-            file_type+'/daily/'
+            new_path = '/home/isaac/datos/'+file_type+'/daily/'
             
-            sym_H.to_csv(new_path+name_new, sep= '\t', index=False)             
+          #  sym_H.to_csv(new_path+name_new, sep= '\t', index=False)             
 
 
 

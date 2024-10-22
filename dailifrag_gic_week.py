@@ -38,7 +38,7 @@ with warnings.catch_warnings():
 year_dir = sys.argv[1]# "formato(yyyymmdd)"
 stat = sys.argv[2]
 
-data_dir='/home/isaac/MEGAsync/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
+data_dir='/home/isaac/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
 #print(list_fnames)
 #exit()
@@ -79,11 +79,12 @@ df = df.replace(np.NaN, -999.999)
         # Set index, sort and remove duplicated values keeping the first occurrence
 df.set_index('Datetime', inplace=True);
 df.sort_index(inplace = True);
-print(df.index[0])        
+    
 
         #Remove indexes with seconds other than '00'
 df.index = df.index.map(lambda x: x.replace(second=0))
 df = df[~df.index.duplicated(keep='first')]
+print(df)
 ts_start = df.index[0];
 ts_end = df.index[-1];
         

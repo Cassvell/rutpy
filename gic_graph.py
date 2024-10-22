@@ -51,7 +51,7 @@ ndays = calculate_days_difference(i_date, f_date)
 tot_data = (ndays+1)*1440
 
 daily_index = daily_index.strftime("%Y-%m-%d")
-path2 = '/home/isaac/MEGAsync/datos/gics_obs/'+year_dir+'/'
+path2 = '/home/isaac/datos/gics_obs/'+year_dir+'/'
 file = []
 SG2 = [] 
 
@@ -60,10 +60,11 @@ for i in (daily_index):
     #print(SG2)
     file = os.path.isfile(SG2)
    # print(file)
-print(file)
+
 if file == True:
         df_lav = df_gic(i_date, f_date,path2+stat[1]+'/daily/', stat[1])
         gicTW_lav = df_lav['LAV'].gic
+        print(gicTW_lav)
         gicTW_lav = fix_offset(gicTW_lav)
         T1TW_lav = df_lav['LAV'].T1
         T2TW_lav = df_lav['LAV'].T2
@@ -81,10 +82,10 @@ for i in (daily_index):
     #print(SG2)
     file = os.path.isfile(SG2)
    # print(file)
-print(file)
+
 if file == True:
         df_qro = df_gic(i_date, f_date,path2+stat[0]+'/daily/', stat[0])
-        gicTW_qro = df_qro['QRO'].gic/10
+        gicTW_qro = df_qro['QRO'].gic
         T1TW_qro = df_qro['QRO'].T1
         T2TW_qro = df_qro['QRO'].T2
 else:
@@ -100,7 +101,7 @@ for i in (daily_index):
    # print(SG2)
     file = os.path.isfile(SG2)
     #print(file)
-print(file)
+
 if file == True:
         df_mzt = df_gic(i_date, f_date,path2+stat[3]+'/daily/', stat[3])
         gicTW_mzt = df_mzt['MZT'].gic
@@ -119,7 +120,7 @@ for i in (daily_index):
     #print(SG2)
     file = os.path.isfile(SG2)
     #print(file)
-print(file)
+
 
 if file == True:
         df_rmy = df_gic(i_date, f_date,path2+stat[2]+'/daily/', stat[2])
@@ -140,6 +141,7 @@ else:
 #plt.plot(gicTW_lav)
 
 
+#
 yp = np.pad(gicTW_lav, (0,1))
 delta = np.diff(yp, axis=0)
 spikes = np.abs(mz_score(delta)) >= 10 #n
@@ -156,12 +158,12 @@ spikes = np.abs(mz_score(delta)) >= 10 #n
   
     #plt.plot(gicTW_lav['gic'][i:i+1])
 
-#print(np.mean(gicTW_lav['gic'][0:1067]))
+#print(np.mean(gicTW_lav['gic'][1280:1914]))
 #print(np.mean(gicTW_lav['gic'][1069:1080]))
 #print(np.mean(gicTW_lav['gic'][2097:3146]))
 #print(np.mean(gicTW_lav['gic'][5298:5972]))
 
-#gicTW_lav['gic'][1080:1562] = fix_offset(gicTW_lav['gic'][1080:1562])
+#gicTW_lav['gic'][7224:7228] = fix_offset(gicTW_lav['gic'][7224:7228])
 
 #plt.plot(gicTW_lav['gic'][2095:3146])
 #plt.plot(gicTW_lav['gic'])
@@ -169,12 +171,19 @@ spikes = np.abs(mz_score(delta)) >= 10 #n
 
 ###############################################################################
 
-dir_path = '/home/isaac/MEGAsync/datos/dH_'+str(H_stat)+'/'
-H = df_dH(i_date, f_date, dir_path, H_stat)
+dir_path = '/home/isaac/datos/dH_'+str(H_stat)+'/'
+
+fdate = datetime.strptime(f_date, '%Y%m%d')
+fdate2 = fdate + timedelta(days=1)
+fdate2 = str(fdate2.strftime('%Y%m%d'))
+
+    
+print(fdate2)
+H = df_dH(i_date, fdate2, dir_path, H_stat)
 ###############################################################################
 ###############################################################################
-dir_path = '/home/isaac/MEGAsync/datos/Kmex/'
-k = df_Kloc(i_date, f_date, dir_path)
+dir_path = '/home/isaac/datos/Kmex/'
+k = df_Kloc(i_date, fdate2, dir_path)
 k = round(k)
 
 colorsValue = []
@@ -197,7 +206,7 @@ elif not gicTW_qro.isna().all().all():
 elif not gicTW_mzt.isna().all().all():
     inicio = gicTW_mzt.index[0]
     final  = gicTW_mzt.index[-1]  
-print(inicio)   
+ 
 # checking if the directory demo_folder  
 # exist or not. 
 if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir): 
