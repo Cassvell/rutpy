@@ -105,7 +105,7 @@ ax[1].text(0.05, 1.3, textstr, transform=ax[1].transAxes, fontsize=14,
         verticalalignment='bottom')
 
 plt.tight_layout()  # Optional: to adjust spacing
-plt.save(path+'idx.png')
+plt.savefig(path+'idx.png')
 
 
 

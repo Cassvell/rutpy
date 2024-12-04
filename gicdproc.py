@@ -263,6 +263,74 @@ def df_dH(date1, date2, dir_path, H_stat):
     return(H)
 
 ###############################################################################
+def df_dst(date1, date2, dir_path):
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
+                         pd.Timestamp(date2+' 23:00:00'), freq='H')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                                          end = pd.Timestamp(date2), freq='D')  
+    
+    str1 = 'dst_'
+    ext = '.dat'
+    list_fnames = []
+    for i in idx_daylist:
+        tmp = str1+str(i)[0:10]+ext
+        list_fnames.append(tmp)
+    
+    dfs_c = []
+        
+    for file_name in list_fnames:    
+        df_c = pd.read_csv(dir_path+file_name, header=0, delim_whitespace=True, skip_blank_lines=True)
+        
+        dfs_c.append(df_c) 
+                
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)
+        
+    df = df.set_index(idx1)
+    return(df['Dst'])
+
+def df_dHmex(date1, date2, dir_path, H_stat):
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
+                         pd.Timestamp(date2+' 23:00:00'), freq='H')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                                          end = pd.Timestamp(date2), freq='D')
+        
+    idx_list = (idx_daylist.strftime('%Y%m%d')) 
+    str1 = str(H_stat)+"_"
+    ext = ".delta_H.early"
+    station = ''
+    if H_stat == 'mex':
+       station =  'mexico'
+    elif H_stat == 'teo':
+        station = 'teoloyucan'
+    elif H_stat == 'itu':
+        station = 'iturbide'
+
+    remote_path= '/data/output/indexes/'+station+'/'
+    list_fnames = list_names(idx_list, str1, ext)
+    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+    dfs_c = []
+        
+    for file_name in list_fnames: 
+  #  for file_name in file_names:    
+        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
+                           skip_blank_lines=True).T
+        df_c = df_c.iloc[:-1, :]   
+        dfs_c.append(df_c) 
+                
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
+    df = df.replace(999999.0, np.NaN)        
+ #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
+  #                                    end = pd.Timestamp(date2), freq='H')
+        
+    df = df.set_index(idx1)
+    
+    df = df.loc[date1:date2]
+    H  = df.iloc[:,0]
+
+    return(H)
+###############################################################################
 ###############################################################################
 def df_Kloc(date1, date2, dir_path):
   #  dir_path = '/home/isaac/MEGAsync/datos/Kmex/coe'
