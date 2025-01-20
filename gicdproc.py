@@ -165,6 +165,45 @@ def reproc(df, mod=1):
 #print(df_lav['LAV'].gic[0:])
 ###############################################################################
 ###############################################################################
+def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
+    # Create the daily index range
+    daily_index = pd.date_range(start = pd.Timestamp(i_date), 
+                                end = pd.Timestamp(f_date + ' 23:59:00'), freq='D')
+    
+    # Initialize the file_exists flag to False
+    file_exists = False
+    
+    # Loop over the daily_index to check if any file exists
+    for i in daily_index:
+        year = i.year  # Extract year directly from the Timestamp
+        date_str = i.strftime("%Y-%m-%d")  # Format date as a string
+        SG2 = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
+        
+        # Check if the file exists
+        if os.path.isfile(SG2):
+            file_exists = True
+            break  # Stop searching once we find the file
+
+    # If a file exists, process the data
+    if file_exists:
+        df = df_gic(i_date, f_date, path2, stat)
+        gic_data = df[stat].gic
+        gic_data = fix_offset(gic_data)
+        T1_data = df[stat].T1
+        T2_data = df[stat].T2
+    else:
+        # If no file exists, return NaN-filled DataFrame
+        df = np.full(shape=(tot_data, 3), fill_value=np.nan)
+        df = pd.DataFrame(df)
+        df = df.set_index(idx1)
+        gic_data = df.iloc[:, 0]
+        T1_data = df.iloc[:, 1]
+        T2_data = df.iloc[:, 2]
+    
+    return gic_data, T1_data, T2_data
+
+###############################################################################
+###############################################################################
 def df_gic(date1, date2, dir_path, stat):
     col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
     
@@ -190,13 +229,15 @@ def df_gic(date1, date2, dir_path, stat):
 
    # remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
-    #print(list_fnames)
-   # wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
+
     dfs_c = []
-    missing_vals = ["NaN", "NO DATA"]    
-    for file_name in list_fnames: 
-  #  for file_name in file_names:    
-        df_c = pd.read_csv(dir_path+file_name, header=None, skiprows = 1, sep='\s+', \
+    missing_vals = ["NaN", "NO DATA"] 
+    
+    for i in range(len(list_fnames)):      
+        year = idx_daylist[i].year  # Extract year directly from the Timestamp
+        SG2 = f"{dir_path}{year}/{stat}/daily/"
+      
+        df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', \
                            parse_dates = [0], na_values = missing_vals,)
         #print(df_c)
             #df_c = df_c.iloc[:-1, :]   
@@ -343,9 +384,9 @@ def df_Kloc(date1, date2, dir_path):
                 
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
         
-    str1 = "coe_"
+    str1 = "teo_"
     ext = ".k_index.early"
-    remote_path= '/data/output/indexes/coeneo/'
+    remote_path= '/data/output/indexes/teoloyucan/'
     
     list_fnames = list_names(idx_list, str1, ext)
     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
@@ -359,7 +400,7 @@ def df_Kloc(date1, date2, dir_path):
         dfs_c.append(df_c) 
                     
     df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-    df = df.replace(99.9, np.NaN)
+    df = df.replace(999, np.NaN)
 
 
           

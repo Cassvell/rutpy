@@ -7,7 +7,7 @@ H stations = [Coeneo, Teoloyucan, Iturbide]
 """
 
 import matplotlib.pyplot as plt
-from gicdproc import pproc, reproc, df_gic, df_dH, df_Kloc, fix_offset
+from gicdproc import pproc, reproc, df_gic, df_dH, df_Kloc, fix_offset, process_station_data
 from timeit import default_timer as timer
 import sys
 import pandas as pd
@@ -25,9 +25,6 @@ H_stat= sys.argv[1]
 i_date = sys.argv[2]# "formato(yyyymmdd)"
 f_date = sys.argv[3]
 
-year_dir = str(i_date[0:4])
-
-#print(calculate_days_difference(i_date, f_date))
 fyear = int(f_date[0:4])
 fmonth = int(f_date[4:6])
 fday = int(f_date[6:8])
@@ -40,106 +37,27 @@ nextday = str(nextday)[0:10]
 stat = ['QRO', 'LAV', 'RMY', 'MZT']
 idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 12:01:00'), \
                           end = pd.Timestamp(nextday + ' 12:00:00'), freq='T')
-    
-idx = pd.date_range(start = pd.Timestamp(i_date), \
-                          end = pd.Timestamp(f_date+ ' 23:59:00'), freq='T')
-daily_index = pd.date_range(start = pd.Timestamp(i_date), \
-                          
-                          end = pd.Timestamp(f_date+ ' 23:59:00'), freq='D')
 
 ndays = calculate_days_difference(i_date, f_date)
 tot_data = (ndays+1)*1440
 
-daily_index = daily_index.strftime("%Y-%m-%d")
-path2 = '/home/isaac/datos/gics_obs/'+year_dir+'/'
+path2 = '/home/isaac/datos/gics_obs/'
 file = []
 SG2 = [] 
 
-for i in (daily_index):
-    SG2 = path2+stat[1]+'/daily/GIC_'+i+'_'+stat[1]+'.dat'
-    #print(SG2)
-    file = os.path.isfile(SG2)
-   # print(file)
+gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
 
-if file == True:
-        df_lav = df_gic(i_date, f_date,path2+stat[1]+'/daily/', stat[1])
-        gicTW_lav = df_lav['LAV'].gic
-        print(gicTW_lav)
-        gicTW_lav = fix_offset(gicTW_lav)
-        T1TW_lav = df_lav['LAV'].T1
-        T2TW_lav = df_lav['LAV'].T2
-else:
-    df_lav = np.full(shape=(tot_data,3), fill_value=np.nan)
-    df_lav = pd.DataFrame(df_lav)
-  #  print(df_lav)
-    df_lav = df_lav.set_index(idx1)
-    gicTW_lav = df_lav.iloc[:,0]
-    T1TW_lav = df_lav.iloc[:,1]
-    T2TW_lav = df_lav.iloc[:,2]
+gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
+
+gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
+
+gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
 ###############################################################################
-for i in (daily_index):
-    SG2 = path2+stat[0]+'/daily/GIC_'+i+'_'+stat[0]+'.dat'
-    #print(SG2)
-    file = os.path.isfile(SG2)
-   # print(file)
 
-if file == True:
-        df_qro = df_gic(i_date, f_date,path2+stat[0]+'/daily/', stat[0])
-        gicTW_qro = df_qro['QRO'].gic
-        T1TW_qro = df_qro['QRO'].T1
-        T2TW_qro = df_qro['QRO'].T2
-else:
-    df_qro = np.full(shape=(tot_data,3), fill_value=np.nan)
-    df_qro = pd.DataFrame(df_qro)
-    df_qro = df_qro.set_index(idx1)
-    gicTW_qro = df_qro.iloc[:,0]
-    T1TW_qro = df_qro.iloc[:,1]
-    T2TW_qro = df_qro.iloc[:,2]
-###############################################################################
-for i in (daily_index):
-    SG2 = path2+stat[3]+'/daily/GIC_'+i+'_'+stat[3]+'.dat'
-   # print(SG2)
-    file = os.path.isfile(SG2)
-    #print(file)
-
-if file == True:
-        df_mzt = df_gic(i_date, f_date,path2+stat[3]+'/daily/', stat[3])
-        gicTW_mzt = df_mzt['MZT'].gic
-        T1TW_mzt = df_mzt['MZT'].T1
-        T2TW_mzt = df_mzt['MZT'].T2
-else:
-    df_mzt = np.full(shape=(tot_data,3), fill_value=np.nan)
-    df_mzt = pd.DataFrame(df_mzt)
-    df_mzt = df_mzt.set_index(idx1)
-    gicTW_mzt = df_mzt.iloc[:,0]
-    T1TW_mzt = df_mzt.iloc[:,1]
-    T2TW_mzt = df_mzt.iloc[:,2]
-###############################################################################    
-for i in (daily_index):
-    SG2 = path2+stat[2]+'/daily/GIC_'+i+'_'+stat[2]+'.dat'
-    #print(SG2)
-    file = os.path.isfile(SG2)
-    #print(file)
-
-
-if file == True:
-        df_rmy = df_gic(i_date, f_date,path2+stat[2]+'/daily/', stat[2])
-        gicTW_rmy = df_rmy['RMY'].gic
-        T1TW_rmy = df_rmy['RMY'].T1
-        T2TW_rmy = df_rmy['RMY'].T2
-else:
-    df_rmy = np.full(shape=(tot_data,3), fill_value=np.nan)
-    df_rmy = pd.DataFrame(df_rmy)
-    df_rmy = df_rmy.set_index(idx1)
-    gicTW_rmy = df_rmy.iloc[:,0]
-    T1TW_rmy = df_rmy.iloc[:,1]
-    T2TW_rmy = df_rmy.iloc[:,2]
-###############################################################################
 #detection of changing points
 
 #mz_score = mz_score(gicTW_lav)
 #plt.plot(gicTW_lav)
-
 
 #
 yp = np.pad(gicTW_lav, (0,1))
@@ -187,8 +105,11 @@ k = df_Kloc(i_date, fdate2, dir_path)
 k = round(k)
 
 colorsValue = []
-for value in k:
-    if value < 4:
+for i, value in enumerate(k):
+    if value > 9:
+        k[i] = np.nan  # Set value to NaN if it's greater than 9
+        colorsValue.append('gray')  # Optional: You can assign a color for NaN values
+    elif value < 4:
         colorsValue.append('green')
     elif value == 4:
         colorsValue.append('yellow')
@@ -196,19 +117,33 @@ for value in k:
         colorsValue.append('red')
 
 
-#modificar dependiendo de la disp de estaciones
-if not gicTW_lav.isna().all().all():
-    inicio = gicTW_lav.index[0]
-    final  = gicTW_lav.index[-1]
-elif not gicTW_qro.isna().all().all():
-    inicio = gicTW_qro.index[0]
-    final  = gicTW_qro.index[-1]
-elif not gicTW_mzt.isna().all().all():
-    inicio = gicTW_mzt.index[0]
-    final  = gicTW_mzt.index[-1]  
+# Initialize inicio and final in case no dataset has valid data
+inicio, final = None, None
+
+# Check if any dataset contains valid data
+for dataset in [gicTW_lav, gicTW_qro, gicTW_mzt, gicTW_rmy]:
+    # Ensure the dataset is not empty and has a valid datetime index
+    if not dataset.empty and isinstance(dataset.index, pd.DatetimeIndex):
+        # Check if dataset has non-NaN values
+        if not dataset.isna().all().all():
+            inicio = dataset.index[0]
+            final = dataset.index[-1]
+            break
+
+# Check if 'inicio' and 'final' were set
+if inicio is None or final is None:
+    raise ValueError("No valid dataset found, 'inicio' and 'final' could not be set.")
+
+
+# Check if inicio and final were defined
+
+inicio = H.index[0]
+final  = H.index[-1]
  
 # checking if the directory demo_folder  
 # exist or not. 
+
+year_dir = str(fyear) 
 if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir): 
       
     # if the demo_folder directory is not present  
@@ -217,7 +152,8 @@ if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir):
 ##############################################################################################    
 end = timer()
 
-print(end - start)    
+print(end - start)   
+
 ##############################################################################################
 #fig 1
 ##############################################################################################
@@ -250,7 +186,7 @@ ax[3].set_ylabel(' GIC [A]', fontweight='bold')
 
 ax[4].plot(H, color='k')
 ax[4].set_ylabel(' DH [nT]', fontweight='bold')
-ax[4].set_title('Indices geomagnéticos, Estación Coeneo', fontsize=18)
+ax[4].set_title('Indices geomagnéticos, Estación Teoloyucan', fontsize=18)
 ax[4].grid()
 ax[4].set_xlim(inicio,final)
 
@@ -309,7 +245,7 @@ ax[3].set_title('MZT st', fontsize=18)
 
 ax[4].plot(H, color='k')
 ax[4].set_ylabel(' DH [nT]', fontweight='bold')
-ax[4].set_title('Indices geomagnéticos, Estación Coeneo', fontsize=18)
+ax[4].set_title('Indices geomagnéticos, Estación Teoloyucan', fontsize=18)
 ax[4].grid()
 ax[4].set_xlim(inicio,final)
 
@@ -325,7 +261,3 @@ fig.tight_layout()
 fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/T_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
-
-
-
-

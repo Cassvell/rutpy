@@ -17,55 +17,78 @@ if [[ ! -e $data_dir ]]; then
 fi	
 
 #find $fdir -type f -name "*QRO.csv"
-declare -a st=("LAV" "MZT" "QRO" "RMY")
+declare -a stations=("LAV" "MZT" "QRO" "RMY")
 
 
 
 
-for i in ${!st[@]};do
-        if ls ${download_dir2}/*${st[$i]}.csv &>/dev/null
-        then
-               if [[ -e ${data_dir}/${st[$i]} ]]
-	       then 
-                        mv ${download_dir2}/*${st[$i]}.csv ${data_dir}/${st[$i]}
-               else
-                       mkdir ${data_dir}/${st[$i]}     
-               fi
-                echo "${st[$i]} moved"
+# Process files for each station
+for station in "${stations[@]}"; do
+  # Check in download_dir
+  if ls "${download_dir}"/"${station}".csv &>/dev/null; then
+    # Ensure subdirectory exists and move files
+    mkdir -p "$data_dir/$station"
+    mv "${download_dir}"/"${station}".csv "$data_dir/$station"
+    echo "${station} files moved from download_dir."
 
-	elif ls ls ${download_dir}/*${st[$i]}.csv &>/dev/null
-	then
-		mv ${download_dir}/*${st[$i]}.csv ${data_dir}/${st[$i]}
-	 	echo "${st[$i]} moved"	 
-        else
-                echo "there is no new files from ${st[$i]} station"
-        fi
+  # Check in download_dir2
+  elif ls "${download_dir2}"/"${station}".csv &>/dev/null; then
+    mkdir -p "$data_dir/$station"
+    mv "${download_dir2}"/"${station}".csv "$data_dir/$station"
+    echo "${station} files moved from download_dir2."
 
+  # No files found
+  else
+    echo "No new files for station ${station}."
+  fi
 done
 
 echo "preparing gic files..."
 
-#gic_dir="/home/isaac/MEGAsync/datos/gics_obs/$year"
 
-for i in ${!st[@]};do
-	if [[ ! -e $data_dir/${st[$i]}/daily ]]; then
-		mkdir "$data_dir/${st[$i]}/daily/"
-	fi		
-#	echo "$gic_dir/${st[$i]}"
-	#for j in "$data_dir/${st[$i]}/*.csv" ;do cat $j >> $data_dir/${st[$i]}/gic_${st[$i]}.output ;done
-	for j in $data_dir/${st[$i]}/*.csv ;do 
-	awk '{if ($1 ~ /^[2]...-..-../){gsub(/[T]/, " "); gsub(/[Z]/, ""); print} \
-	else if ($1 ~ /^"2...-..-../){gsub(/['\"']/, ""); print}}' "$j" >> "$j.dat"
-	#rm $data_dir/${st[$i]}/gic_${st[$i]}.output	
-	done
+#!/bin/bash
+
+# Ensure daily directories and process CSV files for each station
+for i in "${!stations[@]}"; do
+  station_dir="$data_dir/${stations[$i]}"
+  daily_dir="$station_dir/daily"
+  echo "$daily_dir"
+  # Create the daily directory if it doesn't exist
+  if [[ ! -d "$daily_dir" ]]; then
+    mkdir -p "$daily_dir"
+  fi
+
+  # Check if there are any CSV files before proceeding
+  csv_files=("$station_dir"/*.csv)
+  if [[ ! -e "${csv_files[0]}" ]]; then
+    echo "No CSV files found for station ${stations[$i]} in $station_dir."
+    continue
+  fi
+
+  # Process each CSV file
+  for csv_file in "$station_dir"/*.csv; do
+    output_file="${csv_file}.dat"
+    # Use awk to process the file
+    awk '{
+      if ($1 ~ /^[2]...-..-../) {
+        gsub(/[T]/, " "); gsub(/[Z]/, ""); print
+      } else if ($1 ~ /^"2...-..-../) {
+        gsub(/"/, ""); print
+      }
+    }' "$csv_file" >> "$output_file"
+
+    echo "$output_file"
+  done
 done
+
+
 
 echo "done"
 
 echo "generating daily files..."
 
-for i in ${!st[@]}; do
-	python3 dailifrag_gic_week.py $year ${st[$i]}
+for i in ${!stations[@]}; do
+	python3 dailifrag_gic_week.py $year ${stations[$i]}
 done	
 echo "done"
 

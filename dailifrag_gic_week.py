@@ -84,7 +84,7 @@ df.sort_index(inplace = True);
         #Remove indexes with seconds other than '00'
 df.index = df.index.map(lambda x: x.replace(second=0))
 df = df[~df.index.duplicated(keep='first')]
-print(df)
+
 ts_start = df.index[0];
 ts_end = df.index[-1];
         
