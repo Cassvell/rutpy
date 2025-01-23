@@ -24,6 +24,8 @@ from scipy import signal
 from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
 import cmath
 from Ffitting import fit_data
+from night_time import night_time
+
 ###############################################################################
 #generación del índice temporal Date time para las series de tiempo
 ###############################################################################   
@@ -87,8 +89,8 @@ def base_line(data, idx, idx_daily):
 ###############################################################################
 #Typical Day computation
 ###############################################################################  
-    daily_mode = mode_nighttime(data, 60)
-    night_data = night_hours(data)   
+    daily_mode = mode_nighttime(data, 60, net, st)
+    night_data = night_hours(data, net, st)   
     
 
     daily_gauss = []
@@ -149,7 +151,7 @@ def base_line(data, idx, idx_daily):
         plt.legend()
         plt.show()
     '''  
-    picks = max_IQR(data, 60, 4, method='iqr')
+    picks = max_IQR(data, 60, pickwindow[0], method='iqr')
     
     x, GPD, threshold = get_threshold(picks)
 
@@ -172,7 +174,7 @@ def base_line(data, idx, idx_daily):
     # Plot results
     style = line_styles[i % len(line_styles)]
     plt.hist(picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6)
-    plt.plot(x, GPD, lw=2, label=f'Window: 4 hr')
+    plt.plot(x, GPD, lw=2, label=f'Window: {pickwindow[0]} hr')
     plt.axvline(x=threshold, color='k', linestyle=style, label=f'Threshold: {threshold:.2f}')
     plt.legend()
     plt.show()
@@ -195,12 +197,22 @@ def get_diurnalvar(data, idx_daily, st):
                    
     iqr_picks = max_IQR(data, 60, 24, method='stddev')    
     xaxis = np.linspace(1, 24, 1440)
+
     qd_baseline = []
 
-#We import a list of local quiet days 
+#import UTC according to observatory
     n = 4
-
-    print(f'picos diarios: {len(iqr_picks)}, número de dias: {len(idx_daily)}')
+    info = night_time(net, st)
+    utc = info[11]
+    ini = 0
+    fin = 0   
+    
+    try:
+        utc = int(utc)  # Attempt to convert to an integer
+    except ValueError:
+        utc = float(utc)
+    print(f"universal Coordinated time: {utc}") 
+    
     qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', n)
     #qd_list = ['2015-03-14', '2015-03-13', '2015-03-15', '2015-03-12']
     qdl = [[0] * 1440 for _ in range(n)]
@@ -220,27 +232,50 @@ def get_diurnalvar(data, idx_daily, st):
         
         qdl[i] = qd_arr
         
-        #plt.plot(xaxis, qdl[i], label=f'QD{i+1}: {qd}')
-        #qdl[i] = qdl[i]['H(nT)']
-        qd_2h = qdl[i].iloc[300:480]
-             
+       # plt.plot(xaxis, qdl[i], label=f'QD{i+1}: {qd}')
+        if utc <= 0:
+            ini = int(abs(utc)*60)
+            fin = ini+180    
+            qd_2h = qdl[i].iloc[ini:fin]    
+            baseline_value = np.nanmedian(qd_2h)
+            baseline.append(baseline_value)
+        elif utc >= 0:
+            ini = int(1440 - abs(utc)*60)
+            if (ini+180) <= 1440:
+                fin = (ini + 180)
+                qd_2h = qdl[i].iloc[ini:fin]
+                baseline_value = np.nanmedian(qd_2h)
+                baseline.append(baseline_value)       
+            else:
+                fin2 = (ini+180)-1440
+                
+                fin1 = ini + 59
+                qd_2h = qdl[i].iloc[0:fin2]   
+                qd_2h2 = qdl[i].iloc[ini:fin1]
+                baseline_value1 = np.nanmedian(qd_2h)
+                baseline_value2 = np.nanmedian(qd_2h2)
+                baseline_value = (baseline_value1 + baseline_value2)/2
+                baseline.append(baseline_value)
+        
+        print(f"index inicial: {ini}, index final: {fin}")
+               
         baseline_value = np.nanmedian(qd_2h)
         baseline.append(baseline_value)
         qdl[i] = qdl[i] - baseline_value
         
         qdl[i] = qdl[i].reset_index()
         qdl[i] = qdl[i].drop(columns=['index'])
+        plt.plot(xaxis, qdl[i])
         #print(qdl[i])     
         #print(qd, ' | ',  max(qdl[i]))
-
-    #plt.show()
+    #sys.exit('Exiting child process') 
     # Generate the average array
 # Combine all DataFrames into a single DataFrame with shape (n, 1440)
     qdl_concat = pd.concat(qdl, axis=1, ignore_index=True)
     
     # Compute the mean across rows (axis=0) to get a 1x1440 array
     qd_average = qdl_concat.mean(axis=1)        
-    print(max(qd_average))
+
     # Optional: Plot the averaged/median data
     #plt.plot(xaxis, qd_average, label="Average QDL",  color='k',linewidth=4.0 )
     #plt.legend()
@@ -281,8 +316,8 @@ def get_diurnalvar(data, idx_daily, st):
     suma = np.sum(ii, axis=1)                                   # Nx1  
     detrd = signal.detrend(suma)   
     T = np.median(np.c_[suma, detrd], axis=1)   
-    print(max(qd_average), max(T))
-    plt.plot(td, T, label="model", color='k',linewidth=4.0 )
+
+    plt.plot(xaxis, T[0:1440], label="model", color='k',linewidth=4.0 )
     plt.legend()
     plt.show()
     
@@ -557,18 +592,17 @@ def despike(y, threshd = 7.5):
     return y_out 
 H = get_dataframe(filenames, path, idx, dates, net)
 
-print(H)
-
-sys.exit("Exiting the code with sys.exit()!")
-
-
 H = despike(H, threshd = 7.5)
 
+for i in range(len(H)):
+    if H[i] > 60000:
+        H[i] = np.nan
+        
 
-plt.plot(H)
-plt.show()
+df_H = pd.DataFrame(H)
+df_H = df_H.set_index(idx)
 
-
+H = df_H.iloc[:,0]
 H_raw = H
 baseline_curve = base_line(H, idx, idx_daily)
 
@@ -624,7 +658,7 @@ fig.savefig("/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/"+\
             st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.tight_layout() 
 plt.show()
-'''
+
 dat = {'H' : H_noff1, 'baseline_line' : baseline_curve, \
        'SQ' : diurnal_baseline   }
 
@@ -656,4 +690,3 @@ for i in range(len(idx_daily)):
             f.write(line)
     print(f"Saved: {full_path}")
 #df.to_csv()
-'''

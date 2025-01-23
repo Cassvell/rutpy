@@ -14,7 +14,7 @@ import sys
 import pandas as pd
 from aux_time_DF import index_gen, convert_date
 from magnetic_datstruct import get_dataframe
-
+from night_time import night_time
 '''
 
 st= sys.argv[1]
@@ -42,8 +42,15 @@ for i in idx_daily:
     filenames.append(fname)
 '''
 
-def night_hours(data):
-
+def night_hours(data, net, st):
+    
+    info = night_time(net, st)
+    utc = info[11]
+    try:
+        utc = int(utc)  
+    except ValueError:
+        utc = float(utc)
+    
     ndata = len(data)
     
     ndays = int(ndata/1440)
@@ -64,9 +71,28 @@ def night_hours(data):
         
         tmp = data[daily_dates]
         
-        tmp_night_data = tmp[300:480]
-        
-        night_data.append(tmp_night_data)
+        if utc <= 0:
+            ini = int(abs(utc)*60)
+            fin = ini+180    
+            tmp_night_data = tmp[ini:fin]        
+            night_data.append(tmp_night_data)
+        elif utc >= 0:
+            ini = int(1440 - abs(utc)*60)
+            if (ini+180) <= 1440:
+                fin = (ini + 180)
+                tmp_night_data = tmp[ini:fin]        
+                night_data.append(tmp_night_data)                
+                      
+            else:
+                fin2 = (ini+180)-1440
+                
+                fin1 = ini + 59
+                
+                tmp_night_data1 = tmp[0:fin2]        
+                tmp_night_data2 = tmp[ini:fin1]  
+                tmp_night_data = pd.concat([tmp_night_data1, tmp_night_data2], axis=0)
+
+                night_data.append(tmp_night_data)                
     
     concat_dat = pd.concat(night_data, axis=0, ignore_index=True)
     
@@ -74,8 +100,14 @@ def night_hours(data):
     
     return night_data    
 
-def mode_nighttime(data, mv):
+def mode_nighttime(data, mv, net, st):
     
+    info = night_time(net, st)
+    utc = info[11]
+    try:
+        utc = int(utc)  
+    except ValueError:
+        utc = float(utc)
     ndata = len(data)
     
     ndays = int(ndata/1440)
@@ -102,11 +134,32 @@ def mode_nighttime(data, mv):
         
         tmp = data[daily_dates]
         
-        tmp_night_data = tmp[300:480]
-
-        tmp_night_data = np.array(tmp_night_data)
-
-        night_data.append(np.nanmedian(tmp_night_data))            
+        if utc <= 0:
+            ini = int(abs(utc)*60)
+            fin = ini+180   
+            tmp_night_data = tmp[ini:fin]
+            tmp_night_data = np.array(tmp_night_data)        
+            night_data.append(tmp_night_data)
+               
+        elif utc >= 0:
+            ini = int(1440 - abs(utc)*60)
+            if (ini+180) <= 1440:
+                fin = (ini + 180)
+                tmp_night_data = tmp[ini:fin]     
+                tmp_night_data = np.array(tmp_night_data)   
+                night_data.append(tmp_night_data)                
+                       
+            else:
+                fin2 = (ini+180)-1440
+                
+                fin1 = ini + 59
+                
+                tmp_night_data1 = tmp[0:fin2]        
+                tmp_night_data2 = tmp[ini:fin1]  
+                tmp_night_data1 = np.array(tmp_night_data1)
+                tmp_night_data2 = np.array(tmp_night_data2)
+                tmp_night_data = np.concatenate([tmp_night_data1, tmp_night_data2], axis=0)
+                night_data.append(tmp_night_data)        
 
     for i in range(ndays):
     
@@ -128,9 +181,10 @@ def mode_nighttime(data, mv):
             tw_mode = night_data[(i-1):(i+2)]
             
             ac_mode[(i-1):(i+2)] += tw_mode
-        
+            
+        #tw_mode = np.array(tw_mode)
         sum_mode = np.nanmean(tw_mode)
-
+        
         night_stacked.append(sum_mode)
     
     return night_stacked
