@@ -105,7 +105,6 @@ def base_line(data, idx, idx_daily):
     daily_sample = len(data)/1440
 
     daily_stacked = typical_value(daily_mode, flat_daily_gauss, daily_sample)
-    
 ###############################################################################
 ###############################################################################
 #Use of threshold for identify and Isolate disturbed days from non disturbed
@@ -161,27 +160,73 @@ def base_line(data, idx, idx_daily):
     # Daily IQR picks and classification
     daily_picks = max_IQR(data, 60, 24, method='iqr')
 
-    i_iqr = get_qd_dd(daily_picks, idx_daily, 'I_iqr', ndays)['VarIndex']
-
-    # Reset daily_stacked and classify days
-    
-    is_disturbed = i_iqr >= threshold
-
     for j in range(len(daily_stacked)):
-        if is_disturbed[j] == True:
+        # Ensure daily_picks is long enough
+        #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
+        if len(daily_picks) > j and ((daily_picks[j] >= threshold) or np.isnan(daily_picks[j])):
             daily_stacked[j] = np.nan
+            #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
+
+    
+    
     
     # Plot results
     style = line_styles[i % len(line_styles)]
+    plt.title('TEO OBS')
     plt.hist(picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6)
-    plt.plot(x, GPD, lw=2, label=f'Window: {pickwindow[0]} hr')
-    plt.axvline(x=threshold, color='k', linestyle=style, label=f'Threshold: {threshold:.2f}')
+    plt.plot(x, GPD, lw=2, color='r', label=f'Window: {pickwindow[0]} hr')
+    plt.axvline(x=threshold, color='k', linestyle=style[0], label=f'Threshold: {threshold:.2f}')
+    plt.ylabel('Probabilidad')
+    plt.xlabel('Picos de variación IQR [bin: 3 h]')
     plt.legend()
     plt.show()
-
-        
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
+    idx_daily2 = pd.date_range(start = pd.Timestamp(idate), \
+                        end = pd.Timestamp(enddata), freq='D')+ pd.DateOffset(hours=6)
 
+    fig, ax = plt.subplots(4, figsize=(12,8), dpi = 300) 
+    fig.suptitle(st+' Geomagnetic Obs' , fontsize=24, \
+                fontweight='bold') 
+    inicio = data.index[0]
+    final =  data.index[-1]
+    
+    ax[0].plot(data.index, data, label='raw data')
+    ax[0].plot(idx_daily2, original_daily_stacked, 'ro', label='<datos nocturnos>')
+    #ax[0].axhline(y = baseline_line[0], color='g', label='base line monthly tendency')
+    ax[0].grid()
+    ax[0].set_xlim(inicio,final)
+    ax[0].set_ylabel('BH [nT]', fontweight='bold')
+    ax[0].legend()
+
+    ax[1].plot(data.index, data, label='raw data')
+    ax[1].plot(idx_daily2, daily_stacked, 'ro', label='<datos nocturnos filtrados>')
+    #ax[0].axhline(y = baseline_line[0], color='g', label='base line monthly tendency')
+    ax[1].grid()
+    ax[1].set_xlim(inicio,final)
+    ax[1].set_ylabel('BH [nT]', fontweight='bold')
+    ax[1].legend()
+
+
+
+    ax[2].plot(data.index, baseline_line, color='r', label='monthly baseline')
+    ax[2].plot(data.index, data, label='raw data')
+    ax[2].grid()
+    ax[2].set_xlim(inicio,final)
+    ax[2].set_ylabel('BH [nT]', fontweight='bold')
+    ax[2].legend()
+
+    ax[3].plot(data.index, data - baseline_line, label='H - H0')
+    ax[3].grid()
+    ax[3].set_xlim(inicio,final)
+    ax[3].set_ylabel('BH [nT]', fontweight='bold')
+    ax[3].legend()
+
+
+    fig.savefig("/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/"+\
+                st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
+    plt.tight_layout() 
+    plt.show()
+  
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
@@ -453,7 +498,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
             
             non_nan_ratio = np.sum(~np.isnan(current_window)) / len(current_window)
             
-            if non_nan_ratio > 0.95:
+            if non_nan_ratio > 0.9:
                 QR1_hr = np.nanquantile(current_window, 0.25)
                 QR3_hr = np.nanquantile(current_window, 0.75)
                 iqr_hr = QR3_hr - QR1_hr
@@ -491,7 +536,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
             
             non_nan_ratio = np.sum(~np.isnan(iqr_mov)) / len(iqr_mov)
             
-            if non_nan_ratio > 0.95:
+            if non_nan_ratio > 0.90:
                 iqr_picks = np.nanmax(iqr_mov)  # Pick the max value for IQR or stdev
             else:
                 iqr_picks = np.nan
@@ -503,7 +548,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
             
             non_nan_ratio = np.sum(~np.isnan(iqr_mov)) / len(iqr_mov)
             
-            if non_nan_ratio > 0.95:
+            if non_nan_ratio > 0.9:
                 iqr_picks = np.nanmax(iqr_mov)  # Pick the max value for IQR or stdev
             else:
                 iqr_picks = np.nan                   
@@ -607,6 +652,7 @@ H_raw = H
 baseline_curve = base_line(H, idx, idx_daily)
 
 H_detrend = H-baseline_curve
+sys.exit('end of child process')
 #diurnal base line
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
 
