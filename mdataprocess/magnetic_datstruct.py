@@ -8,6 +8,8 @@ Created on Wed Jun 19 14:28:00 2024
 import pandas as pd
 import os
 import numpy as np
+from despike import despike
+
 def get_dataframe(filenames, path, idx, daily_idx, net):       
     dfs_c = []
     filenames = sorted(filenames)
@@ -74,7 +76,32 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         Z = df.iloc[:,3]
         F = df.iloc[:,4]
 
-    else:
+        Ddeg = D/60
+        deg2rad = np.pi / 180
+        D = deg2rad*Ddeg
+        X = H*np.cos(D)
+        Y = H*np.sin(D)
+        I = np.tan(Z/H)
+
+        H = despike(H, threshd = 7.5)
+        X = despike(X, threshd = 7.5)
+        Y = despike(Y, threshd = 7.5)
+        Z = despike(Z, threshd = 7.5)
+
+        for i in range(len(H)):
+            if H[i] > 60000:
+                H[i] = np.nan
+            if X[i] > 60000:
+                X[i] = np.nan    
+
+        data = {'H' : pd.Series(H), 'X' : pd.Series(X), 'Y' : pd.Series(Y), 'Z' : pd.Series(Z)}
+        df_2 = pd.DataFrame(data)
+        df_2 = df_2.set_index(idx)
+        df_2['D'] = D
+        df_2['I'] = I
+
+
+    else: #si se trata de intermagnet
         for i in range(len(filenames)):
         
             # Construct the full path
@@ -134,5 +161,27 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         df = df.drop(columns=['DATE', 'TIME', 'DOY', 'DateTime', '|'])
 
         H = np.sqrt(df.iloc[:,0]**2   + df.iloc[:,1]**2)
-    
-    return H
+        X = df.iloc[:,0]
+        Y = df.iloc[:,1]
+        Z = df.iloc[:,2]
+        D = np.tan(Y / X)
+        I = np.tan(Z / H)
+        
+        H = despike(H, threshd = 7.5)
+        X = despike(X, threshd = 7.5)
+        Y = despike(Y, threshd = 7.5)
+        Z = despike(Z, threshd = 7.5)
+
+        for i in range(len(H)):
+            if H[i] > 60000:
+                H[i] = np.nan
+            if X[i] > 60000:
+                X[i] = np.nan    
+
+        data = {'H' : pd.Series(H), 'X' : pd.Series(X), 'Y' : pd.Series(Y), 'Z' : pd.Series(Z)}
+        df_2 = pd.DataFrame(data)
+        
+        df_2['D'] = D
+        df_2['I'] = I
+        
+    return df_2
