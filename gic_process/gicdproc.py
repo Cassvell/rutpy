@@ -167,39 +167,52 @@ def reproc(df, mod=1):
 ###############################################################################
 def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
     # Create the daily index range
-    daily_index = pd.date_range(start = pd.Timestamp(i_date), 
-                                end = pd.Timestamp(f_date + ' 23:59:00'), freq='D')
-    
-    # Initialize the file_exists flag to False
-    file_exists = False
-    
-    # Loop over the daily_index to check if any file exists
-    for i in daily_index:
-        year = i.year  # Extract year directly from the Timestamp
-        date_str = i.strftime("%Y-%m-%d")  # Format date as a string
-        SG2 = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
-        
-        # Check if the file exists
-        if os.path.isfile(SG2):
-            file_exists = True
-            break  # Stop searching once we find the file
+    daily_index = pd.date_range(
+        start=pd.Timestamp(i_date),
+        end=pd.Timestamp(f_date + " 23:59:00"),
+        freq="D"
+    )
 
-    # If a file exists, process the data
-    if file_exists:
+    # Initialize the file_exists flag
+    file_exists = False
+
+    # Loop over daily_index to check if any file exists
+    for i in range(len(daily_index)):
+        year = daily_index[i].year  # Extract year from Timestamp
+        date_str = daily_index[i].strftime("%Y-%m-%d")  # Format date as string
+        
+        SG2 = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
+        #print(os.path.isfile(SG2))
+        # Check if the file exists
+
+    if os.path.isfile(SG2):
         df = df_gic(i_date, f_date, path2, stat)
-        gic_data = df[stat].gic
-        gic_data = fix_offset(gic_data)
-        T1_data = df[stat].T1
-        T2_data = df[stat].T2
+
+        # Ensure df is a dictionary and contains the key stat
+        if isinstance(df, dict) and stat in df:
+            gic_data = df[stat].loc[:, "gic"]
+            gic_data = fix_offset(gic_data)
+            T1_data = df[stat].loc[:, "T1"]
+            T2_data = df[stat].loc[:, "T2"]
+        else:
+            raise ValueError(f"Data for station {stat} not found in df_gic output.")
+
     else:
+        # Ensure idx1 is defined before using it
+        if 'idx1' not in locals():
+            raise ValueError("idx1 is not defined before using it as an index!")
+
         # If no file exists, return NaN-filled DataFrame
-        df = np.full(shape=(tot_data, 3), fill_value=np.nan)
-        df = pd.DataFrame(df)
-        df = df.set_index(idx1)
-        gic_data = df.iloc[:, 0]
-        T1_data = df.iloc[:, 1]
-        T2_data = df.iloc[:, 2]
-    
+        df = pd.DataFrame(
+            np.full((tot_data, 3), np.nan),
+            columns=["gic", "T1", "T2"],
+            index=idx1  # Ensure idx1 is valid
+        )
+
+        gic_data = df["gic"]
+        T1_data = df["T1"]
+        T2_data = df["T2"]
+        
     return gic_data, T1_data, T2_data
 
 ###############################################################################

@@ -167,6 +167,7 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         D = np.tan(Y / X)
         I = np.tan(Z / H)
         
+        
         H = despike(H, threshd = 7.5)
         X = despike(X, threshd = 7.5)
         Y = despike(Y, threshd = 7.5)
@@ -180,7 +181,7 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
 
         data = {'H' : pd.Series(H), 'X' : pd.Series(X), 'Y' : pd.Series(Y), 'Z' : pd.Series(Z)}
         df_2 = pd.DataFrame(data)
-        
+        df_2 = df_2.set_index(idx)
         df_2['D'] = D
         df_2['I'] = I
         

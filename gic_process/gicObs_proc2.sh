@@ -1,6 +1,6 @@
 #!/bin/bash
 
-download_dir="$HOME/snap/firefox/common"
+#download_dir="$HOME/snap/firefox/common"
 download_dir2="$HOME/Descargas"
 
 # If no argument is provided, use the current year
@@ -9,7 +9,7 @@ if [ -z "$1" ]; then
 else
   year="$1"
 fi
-
+echo "${year}"
 data_dir="$HOME/datos/gics_obs/$year"
 
 if [[ ! -e $data_dir ]]; then
@@ -24,23 +24,20 @@ declare -a stations=("LAV" "MZT" "QRO" "RMY")
 
 # Process files for each station
 for station in "${stations[@]}"; do
-  # Check in download_dir
-  if ls "${download_dir}"/"${station}".csv &>/dev/null; then
-    # Ensure subdirectory exists and move files
-    mkdir -p "$data_dir/$station"
-    mv "${download_dir}"/"${station}".csv "$data_dir/$station"
-    echo "${station} files moved from download_dir."
+#	ls "${download_dir2}/"*${station}.csv 
+ # Check in download_dir
+	if ls "${download_dir2}/"*${station}.csv; then # > /dev/null; then
+		#ls "${download_dir2}/"*${station}.csv
+    # Ensure subdirectory exists
+   # 		mkdir -p "$data_dir/$station"
 
-  # Check in download_dir2
-  elif ls "${download_dir2}"/"${station}".csv &>/dev/null; then
-    mkdir -p "$data_dir/$station"
-    mv "${download_dir2}"/"${station}".csv "$data_dir/$station"
-    echo "${station} files moved from download_dir2."
+    # Move files safely
+    		mv "${download_dir2}/"*${station}.csv "$data_dir/$station/"
+    		echo "${station} files moved from download_dir2."
 
-  # No files found
-  else
-    echo "No new files for station ${station}."
-  fi
+  	else
+    		echo "No new files for station ${station}."
+  	fi
 done
 
 echo "preparing gic files..."
