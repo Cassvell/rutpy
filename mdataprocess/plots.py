@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-def plot_GPD(data, bindat, x, GPD, st, threshold, inicio, final):
+import numpy as np
+def plot_GPD(data, bindat, x, GPD, st, knee, threshold, inicio, final):
     line_styles = ['-', '--', '-.', ':']
     '''  
     for i, window in enumerate(pickwindow):
@@ -36,11 +37,19 @@ def plot_GPD(data, bindat, x, GPD, st, threshold, inicio, final):
         plt.legend()
         plt.show()
     '''  
-# Plot results                
+# Plot results         
+    picks = bindat[~np.isnan(bindat)]
+    picks = np.unique(bindat)
+    
+    sorted_picks = np.sort(picks)
+    reversed_picks = sorted_picks[::-1]  
+    print(reversed_picks)     
     ndays = int(len(data)/1440)
     plt.title(f'{st}')
-    plt.hist(bindat, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6)
-    plt.plot(x, GPD, lw=2, color='r', label=f'Window: 3 hr')
+    plt.hist(reversed_picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6, label=' sorted peak values')
+    #plt.hist(bindat, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.4, label='peak values')
+    plt.plot(x, GPD, lw=2, color='r', label=f'fitted GPD')
+    plt.axvline(x=knee, color='k', linestyle='--', label=f'Knee point: {knee:.2f}')    
     plt.axvline(x=threshold, color='k', linestyle='-', label=f'Threshold: {threshold:.2f}')
     plt.ylabel('Probabilidad')
     plt.xlabel('Picos de variación IQR [bin: 3 h]')

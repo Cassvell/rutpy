@@ -3,7 +3,7 @@ from lmoments3 import distr
 import lmoments3 as lm
 import kneed as kn
 from scipy.stats import genpareto, kstest #anderson
-
+import matplotlib.pyplot as plt
 def get_threshold(picks):
 
     ndays = int(len(picks)/4)
@@ -11,10 +11,15 @@ def get_threshold(picks):
     picks = np.array(picks)  
 
     picks = picks[~np.isnan(picks)]
+    picks = np.unique(picks)
     
-    hist, bins = np.histogram(picks, bins=ndays*2, density=True)  
- 
-    GPD_paramet = distr.gpa.lmom_fit(picks)
+    sorted_picks = np.sort(picks)
+    
+    hist, bins = np.histogram(sorted_picks, bins=ndays*2, density=True)  
+    
+    plt.hist(sorted_picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6, label=' sorted peak values')
+    plt.show()
+    GPD_paramet = distr.gpa.lmom_fit(sorted_picks)
 
     shape = GPD_paramet['c']
     
@@ -22,7 +27,7 @@ def get_threshold(picks):
     
     scale = GPD_paramet['scale']
     
-    x = np.linspace(min(picks), max(picks), len(picks))    
+    x = np.linspace(min(sorted_picks), max(sorted_picks), len(sorted_picks))    
     
     GPD =  genpareto.pdf(x, shape, loc=threshold, scale=scale)
     
@@ -57,9 +62,26 @@ def get_threshold(picks):
 
     print(f'knee point: {knee_point}')
 
+    picks_POT = []
+    for i in range(len(sorted_picks)):
+        if sorted_picks[i] >= knee_point:
+            picks_POT.append(sorted_picks[i])  # Append instead of overwrite
+    
+    picks_POT = np.array(picks_POT) 
+
+    GPD_paramet2 = distr.gpa.lmom_fit(picks_POT)
+
+    shape2 = GPD_paramet2['c']
+    
+    threshold2 = GPD_paramet2['loc']
+    
+    scale2 = GPD_paramet2['scale']
+
+    print(f'threshold: {threshold2}')
 #The Knee point is then considered as threshold.
 
-    return x, GPD, knee_point
+
+    return x, GPD, knee_point, threshold2
 ###############################################################################
 ###############################################################################
 #generates an array of variation picks    

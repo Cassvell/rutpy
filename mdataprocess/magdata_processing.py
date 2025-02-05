@@ -113,7 +113,7 @@ def base_line(data, idx, idx_daily):
 
     picks = max_IQR(data, 60, pickwindow[0], method='iqr')
     
-    x, GPD, threshold = get_threshold(picks)
+    x, GPD, knee, threshold = get_threshold(picks)
 
     # Validate GPD fit using the second derivative
     second_derivative = np.gradient(np.gradient(GPD))
@@ -134,7 +134,7 @@ def base_line(data, idx, idx_daily):
     inicio = data.index[0]
     final =  data.index[-1]
     
-    #plot_gpd = plot_GPD(data, picks, x, GPD, st, threshold, inicio, final)
+    #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
     #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
 ###############################################################################
 ###############################################################################
@@ -303,31 +303,31 @@ D = magdata['D']
 I = magdata['I']
 
 baseline_curve = base_line(H, idx, idx_daily)
-base_lineX = base_line(X, idx, idx_daily)
-base_lineY = base_line(Y, idx, idx_daily)
-base_lineZ = base_line(Z, idx, idx_daily)
+#base_lineX = base_line(X, idx, idx_daily)
+#base_lineY = base_line(Y, idx, idx_daily)
+#base_lineZ = base_line(Z, idx, idx_daily)
 
 H_detrend = H-baseline_curve
-X_detrend = X-base_lineX
-Y_detrend = Y-base_lineY
-Z_detrend = Z-base_lineZ
+#X_detrend = X-base_lineX
+#Y_detrend = Y-base_lineY
+#Z_detrend = Z-base_lineZ
 #diurnal base line
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
-diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
-diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
-diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
+#diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
+#diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
+#diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
 
 H_raw = H
 
 H = H_detrend-diurnal_baseline
-X = X_detrend - diurnal_baselineX
-Y = Y_detrend - diurnal_baselineY
-Z = Z_detrend - diurnal_baselineZ
+#X = X_detrend - diurnal_baselineX
+#Y = Y_detrend - diurnal_baselineY
+#Z = Z_detrend - diurnal_baselineZ
 
 H_noff1 = H-offset
-X_noff1 = X-offsetX
-Y_noff1 = Y-offsetY
-Z_noff1 = Z-offsetZ
+#X_noff1 = X-offsetX
+#Y_noff1 = Y-offsetY
+#Z_noff1 = Z-offsetZ
 
 
 dst = []
@@ -340,11 +340,14 @@ for i in range(hr):
 
 # Data dictionaries
 dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
-dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
+#dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
 
 # Create DataFrames
 df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
-df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
+#df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
+
+sys.exit('end of the child process')
+
 
 # Define path
 path = f"/home/isaac/datos/{net}/{st}/minV2/"  
