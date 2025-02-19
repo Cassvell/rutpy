@@ -13,28 +13,9 @@ def get_threshold(picks):
     picks = picks[~np.isnan(picks)]
     picks = np.unique(picks)
     
-    sorted_picks = np.sort(picks)
-    
-    hist, bins = np.histogram(sorted_picks, bins=ndays*2, density=True)  
-    
-    plt.hist(sorted_picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6, label=' sorted peak values')
-    plt.show()
-    GPD_paramet = distr.gpa.lmom_fit(sorted_picks)
+    hist, bins = np.histogram(picks, bins=ndays*2, density=True)    
 
-    shape = GPD_paramet['c']
-    
-    threshold = GPD_paramet['loc']
-    
-    scale = GPD_paramet['scale']
-    
-    x = np.linspace(min(sorted_picks), max(sorted_picks), len(sorted_picks))    
-    
-    GPD =  genpareto.pdf(x, shape, loc=threshold, scale=scale)
-    
-    GPD = np.array(GPD)
-    
-    if any(v == 0.0 for v in GPD):
-        GPD =  genpareto.pdf(x, shape, loc=min(bins), scale=scale)
+    plt.show()
    
     params = genpareto.fit(picks)
     D, p_value = kstest(picks, 'genpareto', args=params)
@@ -43,41 +24,117 @@ def get_threshold(picks):
 # Interpretation of the p-value & TEST KS for evaluating IQR picks
     alpha = 0.05
 
+    picks_POT = []
+    picks_median = []
     if p_value > alpha:
         print("Fail to reject the null hypothesis: data follows the GPD")
-    else:
-        print("Reject the null hypothesis: data does not follow the GPD")   
+        GPD_paramet = distr.gpa.lmom_fit(picks)
+
+        shape = GPD_paramet['c']
         
-    kneedle = kn.KneeLocator(
-        x,
-        GPD,
-        curve='convex',
-        direction='decreasing',
-        S=5,
-        online=True,
-        interp_method='interp1d',
-    )
-
-    knee_point = kneedle.knee #elbow_point = kneedle.elbow
-
-    print(f'knee point: {knee_point}')
-
-    picks_POT = []
-    for i in range(len(sorted_picks)):
-        if sorted_picks[i] >= knee_point:
-            picks_POT.append(sorted_picks[i])  # Append instead of overwrite
+        threshold = GPD_paramet['loc']
+        
+        scale = GPD_paramet['scale']
+        
+        x = np.linspace(min(picks), max(picks), len(picks))            
     
-    picks_POT = np.array(picks_POT) 
+        GPD =  genpareto.pdf(x, shape, loc=threshold, scale=scale)
+        
+        GPD = np.array(GPD)
+        
+        if any(v == 0.0 for v in GPD):
+            GPD =  genpareto.pdf(x, shape, loc=min(bins), scale=scale)
 
-    GPD_paramet2 = distr.gpa.lmom_fit(picks_POT)
+        kneedle = kn.KneeLocator(
+            x,
+            GPD,
+            curve='convex',
+            direction='decreasing',
+            S=5,
+            online=True,
+            interp_method='interp1d',
+        )
 
-    shape2 = GPD_paramet2['c']
-    
-    threshold2 = GPD_paramet2['loc']
-    
-    scale2 = GPD_paramet2['scale']
+        knee_point = kneedle.knee #elbow_point = kneedle.elbow
 
-    print(f'threshold: {threshold2}')
+        print(f'knee point: {knee_point}')
+
+        for i in range(len(picks)):
+            if picks[i] >= knee_point:
+                picks_POT.append(picks[i])  # Append instead of overwrite
+        
+        picks_POT = np.array(picks_POT) 
+
+        GPD_paramet2 = distr.gpa.lmom_fit(picks_POT)
+
+        shape2 = GPD_paramet2['c']
+        
+        threshold2 = GPD_paramet2['loc']
+        
+        scale2 = GPD_paramet2['scale']
+
+        print(f'threshold: {threshold2}')
+        
+    else:
+        
+        print("Reject the null hypothesis: data does not follow the GPD")   
+        median = np.median(picks)  
+        for i in range(len(picks)):
+            if picks[i] >= median:
+                picks_median.append(picks[i])  # Append instead of overwrite
+        
+        picks_median = np.array(picks_median) 
+
+        GPD_paramet = distr.gpa.lmom_fit(picks_median)
+
+        shape = GPD_paramet['c']
+        
+        threshold = GPD_paramet['loc']
+        
+        scale = GPD_paramet['scale']
+        
+        x = np.linspace(min(picks_median), max(picks_median), len(picks_median))    
+        
+        GPD =  genpareto.pdf(x, shape, loc=threshold, scale=scale)
+        
+        GPD = np.array(GPD)
+        
+        if any(v == 0.0 for v in GPD):
+            GPD =  genpareto.pdf(x, shape, loc=min(bins), scale=scale)   
+        
+        kneedle = kn.KneeLocator(
+            x,
+            GPD,
+            curve='convex',
+            direction='decreasing',
+            S=5,
+            online=True,
+            interp_method='interp1d',
+        )
+
+        knee_point = kneedle.knee #elbow_point = kneedle.elbow
+
+        print(f'knee point: {knee_point}')        
+        
+        for i in range(len(picks_median)):
+            if picks_median[i] >= knee_point:
+                picks_POT.append(picks_median[i])  # Append instead of overwrite
+        
+        picks_POT = np.array(picks_POT) 
+        
+        GPD_paramet2 = distr.gpa.lmom_fit(picks_POT)
+
+        shape2 = GPD_paramet2['c']
+        
+        threshold2 = GPD_paramet2['loc']
+        
+        scale2 = GPD_paramet2['scale']
+        print(f'threshold: {threshold2}')
+        
+        
+
+
+
 #The Knee point is then considered as threshold.
 
 

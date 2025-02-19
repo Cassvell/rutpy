@@ -5,9 +5,10 @@ import pandas as pd
 # Define the regular expression for an irregular space delimiter
 delimiter_pattern = re.compile(r'\s+')
 directory = '/home/isaac/datos/ip/Ey/'
-cols = {"year" : [], "doy" : [], "hour" : [], "minute" : [], "Bz" : [], "Vx" : [], "n_p" : [], "T_p" : [], "Pdyn" : [], "E": []}
+cols = {"year" : [], "doy" : [], "hour" : [], "minute" : [], "Bt" : [], "Bx" : [], "By" : [], "Bz" : [], "Vx" : [], "Vy" : [], "Vz" : []\
+    , "n_p" : [], "T_p" : [], "Pdyn" : [], "E": [], "beta" : []}
 
-with open(directory + 'omni_5min_2015.dat', 'r') as f:
+with open(directory + 'omni_1min_20152.dat', 'r') as f:
     # Read and process each line manually
     for line in f:
         # Split the line using the regular expression delimiter
@@ -32,9 +33,9 @@ for key in cols:
 
 # Print the converted data
 
-idx = pd.date_range(start = pd.Timestamp('2015-01-01'), end = pd.Timestamp('2015-12-31'), freq='D')
+idx = pd.date_range(start = pd.Timestamp('2015-03-01'), end = pd.Timestamp('2015-3-31'), freq='D')
 dates = idx.strftime('%Y%m%d')
-step=288
+step=1440
 
 data = pd.DataFrame.from_dict(cols)
 ''''''
@@ -44,9 +45,9 @@ for i in range(int(len(data) / step)):
 
   #  print(len(daily_data))
     new_path = '/home/isaac/datos/ip/Ey/daily/'
-    fname = "ip_"+dates[i]+'.dat'
+    fname = "ip_"+dates[i]+'1min.dat'
     # Open the file and write formatted data
     with open(new_path + fname, 'w') as f:
         for index, row in daily_data.iterrows():
-            formatted_line = f"{int(row['year']):>4} {int(row['doy']):>4} {int(row['hour']):>3} {int(row['minute']):>3} {row['Bz']:8.2f} {row['Vx']:8.1f} {row['n_p']:7.2f} {row['T_p']:9.0f} {row['Pdyn']:6.2f} {row['E']:7.2f}\n"
+            formatted_line = f"{int(row['year']):>4} {int(row['doy']):>4} {int(row['hour']):>3} {int(row['minute']):>3}{row['Bt']:8.2f} {row['Bx']:8.2f} {row['By']:8.2f} {row['Bz']:8.2f} {row['Vx']:8.1f} {row['Vy']:8.1f} {row['Vz']:8.1f} {row['n_p']:7.2f} {row['T_p']:9.0f} {row['Pdyn']:6.2f} {row['E']:7.2f} {row['beta']:8.1f}\n"
             f.write(formatted_line)

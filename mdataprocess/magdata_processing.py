@@ -134,8 +134,8 @@ def base_line(data, idx, idx_daily):
     inicio = data.index[0]
     final =  data.index[-1]
     
-    #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
-    #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
+    plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
+    plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
@@ -210,8 +210,6 @@ def get_diurnalvar(data, idx_daily, st):
                 baseline_value2 = np.nanmedian(qd_2h2)
                 baseline_value = (baseline_value1 + baseline_value2)/2
                 baseline.append(baseline_value)
-        
-        print(f"index inicial: {ini}, index final: {fin}")
                
         baseline_value = np.nanmedian(qd_2h)
         baseline.append(baseline_value)
@@ -312,6 +310,7 @@ H_detrend = H-baseline_curve
 #Y_detrend = Y-base_lineY
 #Z_detrend = Z-base_lineZ
 #diurnal base line
+sys.exit('end of the child process')
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
 #diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
 #diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
@@ -346,7 +345,7 @@ dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
 df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
 #df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
 
-sys.exit('end of the child process')
+
 
 
 # Define path

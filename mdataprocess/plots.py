@@ -43,10 +43,9 @@ def plot_GPD(data, bindat, x, GPD, st, knee, threshold, inicio, final):
     
     sorted_picks = np.sort(picks)
     reversed_picks = sorted_picks[::-1]  
-    print(reversed_picks)     
     ndays = int(len(data)/1440)
     plt.title(f'{st}')
-    plt.hist(reversed_picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6, label=' sorted peak values')
+    plt.hist(reversed_picks, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.6, label='sorted peak values')
     #plt.hist(bindat, density=True, bins=ndays * 2, histtype='stepfilled', alpha=0.4, label='peak values')
     plt.plot(x, GPD, lw=2, color='r', label=f'fitted GPD')
     plt.axvline(x=knee, color='k', linestyle='--', label=f'Knee point: {knee:.2f}')    
@@ -73,7 +72,7 @@ def plot_detrend(idate, enddata, data, original_daily_stacked,daily_stacked, st,
     
     ax[0].plot(data.index, data, label='raw data')
     ax[0].plot(idx_daily2, original_daily_stacked, 'ro', label='<datos nocturnos>')
-    #ax[0].axhline(y = baseline_line[0], color='g', label='base line monthly tendency')
+   # ax[0].axhline(y = baseline_line[0], color='g', label='base line monthly tendency')
     ax[0].grid()
     ax[0].set_xlim(inicio,final)
     ax[0].set_ylabel('BH [nT]', fontweight='bold')
