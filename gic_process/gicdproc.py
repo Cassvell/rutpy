@@ -174,18 +174,20 @@ def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
     )
 
     # Initialize the file_exists flag
-    file_exists = False
-
     # Loop over daily_index to check if any file exists
+    SG2 = []
     for i in range(len(daily_index)):
-        year = daily_index[i].year  # Extract year from Timestamp
-        date_str = daily_index[i].strftime("%Y-%m-%d")  # Format date as string
+        year = daily_index[i].year  
+        date_str = daily_index[i].strftime("%Y-%m-%d")
         
-        SG2 = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
-        #print(os.path.isfile(SG2))
-        # Check if the file exists
+        SG2_tmp = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
+        SG2.append(SG2_tmp)
+    
+        #if os.path.isfile(SG2_tmp):
+         #   print('exist')
+ 
 
-    if os.path.isfile(SG2):
+    if os.path.isfile(SG2[0]):
         df = df_gic(i_date, f_date, path2, stat)
 
         # Ensure df is a dictionary and contains the key stat
@@ -245,17 +247,63 @@ def df_gic(date1, date2, dir_path, stat):
 
     dfs_c = []
     missing_vals = ["NaN", "NO DATA"] 
-    
+
     for i in range(len(list_fnames)):      
         year = idx_daylist[i].year  # Extract year directly from the Timestamp
         SG2 = f"{dir_path}{year}/{stat}/daily/"
-      
-        df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', \
-                           parse_dates = [0], na_values = missing_vals,)
-        #print(df_c)
+        #print(SG2+list_fnames[i])
+        df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', parse_dates = [0], na_values = missing_vals)
+        
             #df_c = df_c.iloc[:-1, :]   
         dfs_c.append(df_c) 
-       # print(dfs_c)       
+        #print(dfs_c)       
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)
+      
+    df = df.replace(-999.999, np.NaN)        
+ #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
+  #                                    end = pd.Timestamp(date2), freq='H')  
+    df = df.set_index(idx1)
+
+    #df = df.drop(columns=[0, 1, 2, 3, 4])
+    df = df.rename(columns={5:'gic', 6:'T1', 7:'T2'})
+    #gic = df.iloc[:,5]
+    #T1  = df.iloc[:,6]
+    #T2  = df.iloc[:,7]
+    output = {}
+    output.update({stat:df})
+    #return(df)
+    return(output)
+
+def df_gic_daily(date, dir_path, stat):
+    col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
+    
+    fyear = int(date[0:4])
+    fmonth = int(date[4:6])
+    fday = int(date[6:8])
+
+
+    finaldate= datetime(fyear, fmonth,fday)
+    nextday = finaldate+timedelta(days=1)
+    nextday = str(nextday)[0:10]
+    
+    
+    idx1 = pd.date_range(start = pd.Timestamp(str(date)+' 12:01:00' ), end =\
+                         pd.Timestamp(nextday+' 12:00:00'), freq='T')
+        
+    idx_list = (date.strftime('%Y-%m-%d')) 
+    str1 = "GIC_"
+    ext = "_"+stat+".dat"
+
+   # remote_path= '/data/output/indexes/'+station+'/'
+
+    missing_vals = ["NaN", "NO DATA"] 
+    
+    year = idx_list.year  # Extract year directly from the Timestamp
+    SG2 = f"{dir_path}{year}/{stat}/daily/"
+      
+    df = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', \
+                           parse_dates = [0], na_values = missing_vals)
+         
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
     df = df.replace(-999.999, np.NaN)        

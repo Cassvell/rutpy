@@ -43,7 +43,7 @@ tot_data = (ndays+1)*1440
 
 path2 = '/home/isaac/datos/gics_obs/'
 file = []
-SG2 = [] 
+
 gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
 
 gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)

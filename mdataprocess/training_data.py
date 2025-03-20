@@ -43,8 +43,8 @@ fw_dates = []
 #print(idx_daily)
 
 
-path = '/home/isaac/MEGAsync/datos/jicamarca/'+st+'/'
-path_qdl = '/home/isaac/test_isaac/' 
+path = '/home/isaac/datos/regmex/'+st+'/'
+path_qdl = '/home/isaac/geomstorm/rutpy/mdataprocess/qdl_training' 
 
 df = pd.read_excel(path_qdl+'qdl.ods', engine='odf', sheet_name=0)
 column = df.columns[1:-1]
