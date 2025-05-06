@@ -144,11 +144,11 @@ final  = H.index[-1]
 # exist or not. 
 
 year_dir = str(fyear) 
-if not os.path.exists("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir): 
+if not os.path.exists("/home/isaac/rutpy/gicsOutput/"+year_dir): 
       
     # if the demo_folder directory is not present  
     # then create it. 
-    os.makedirs("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir)     
+    os.makedirs("/home/isaac/rutpy/gicsOutput/"+year_dir)     
 ##############################################################################################    
 end = timer()
 
@@ -199,7 +199,7 @@ ax[5].grid()
 
 fig.tight_layout()
 
-fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/gic_obs_"+\
+fig.savefig("/home/isaac/rutpy/gicsOutput/"+year_dir+"/gic_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()
 ##############################################################################################
@@ -258,6 +258,6 @@ ax[5].grid()
 
 fig.tight_layout()
 
-fig.savefig("/home/isaac/geomstorm/rutpy/gicsOutput/"+year_dir+"/T_obs_"+\
+fig.savefig("/home/isaac/rutpy/gicsOutput/"+year_dir+"/T_obs_"+\
             str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
 plt.show()

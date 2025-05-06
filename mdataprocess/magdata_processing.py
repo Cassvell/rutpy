@@ -31,9 +31,9 @@ fdate = sys.argv[4]
 
 enddata = fdate+ ' 23:59:00'
 idx = pd.date_range(start = pd.Timestamp(idate), \
-                    end = pd.Timestamp(enddata), freq='T')
+                    end = pd.Timestamp(enddata), freq='min')
 idx_hr = pd.date_range(start = pd.Timestamp(idate), \
-                    end = pd.Timestamp(enddata), freq='H')    
+                    end = pd.Timestamp(enddata), freq='h')    
 idx_daily = pd.date_range(start = pd.Timestamp(idate), \
                         end = pd.Timestamp(enddata), freq='D')
 filenames = []
@@ -301,32 +301,32 @@ D = magdata['D']
 I = magdata['I']
 
 baseline_curve = base_line(H, idx, idx_daily)
-#base_lineX = base_line(X, idx, idx_daily)
-#base_lineY = base_line(Y, idx, idx_daily)
-#base_lineZ = base_line(Z, idx, idx_daily)
+base_lineX = base_line(X, idx, idx_daily)
+base_lineY = base_line(Y, idx, idx_daily)
+base_lineZ = base_line(Z, idx, idx_daily)
 
 H_detrend = H-baseline_curve
-#X_detrend = X-base_lineX
-#Y_detrend = Y-base_lineY
-#Z_detrend = Z-base_lineZ
+X_detrend = X-base_lineX
+Y_detrend = Y-base_lineY
+Z_detrend = Z-base_lineZ
 #diurnal base line
-sys.exit('end of the child process')
+#sys.exit('end of the child process')
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
-#diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
-#diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
-#diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
+diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
+diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
+diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
 
 H_raw = H
 
 H = H_detrend-diurnal_baseline
-#X = X_detrend - diurnal_baselineX
-#Y = Y_detrend - diurnal_baselineY
-#Z = Z_detrend - diurnal_baselineZ
+X = X_detrend - diurnal_baselineX
+Y = Y_detrend - diurnal_baselineY
+Z = Z_detrend - diurnal_baselineZ
 
 H_noff1 = H-offset
-#X_noff1 = X-offsetX
-#Y_noff1 = Y-offsetY
-#Z_noff1 = Z-offsetZ
+X_noff1 = X-offsetX
+Y_noff1 = Y-offsetY
+Z_noff1 = Z-offsetZ
 
 
 dst = []
@@ -339,11 +339,11 @@ for i in range(hr):
 
 # Data dictionaries
 dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
-#dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
+dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
 
 # Create DataFrames
 df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
-#df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
+df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
 
 
 

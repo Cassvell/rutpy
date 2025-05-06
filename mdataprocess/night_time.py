@@ -14,7 +14,7 @@
 #col 11: Hora UTC
 
 import csv
-path = '/home/isaac/geomstorm/rutidl' 
+path = '/home/isaac/rutidl' 
 
 #prueba de funcion
 #net = 'intermagnet'

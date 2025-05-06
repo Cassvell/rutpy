@@ -53,7 +53,7 @@ def plot_GPD(data, bindat, x, GPD, st, knee, threshold, inicio, final):
     plt.ylabel('Probabilidad')
     plt.xlabel('Picos de variación IQR [bin: 3 h]')
     plt.legend()
-    plt.savefig("/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/dist/"+\
+    plt.savefig("/home/isaac/MEGA/posgrado/doctorado/semestre4/"+\
                 st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+"_GPD.png")
     plt.tight_layout() 
     plt.show()
@@ -102,7 +102,7 @@ def plot_detrend(idate, enddata, data, original_daily_stacked,daily_stacked, st,
     ax[3].legend()
 
 
-    fig.savefig("/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/"+\
+    fig.savefig("/home/isaac/MEGA/posgrado/doctorado/semestre4/"+\
                 st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
     plt.tight_layout() 
     plt.show()
@@ -118,7 +118,7 @@ def plot_qdl(xaxis, template, n, qdl, st, idx_daily):
     plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
     plt.legend()
     
-    plt.savefig(f'/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/qdl/{st}_{inicio}_{final}_.png')
+    plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre4/qdl/{st}_{inicio}_{final}_.png')
     plt.tight_layout() 
     plt.show()
     return
@@ -157,7 +157,7 @@ def plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_base
     ax[3].set_xlim(inicio,final)
     ax[3].set_ylabel(' BH [nT]', fontweight='bold')
     ax[3].legend()
-    fig.savefig("/home/isaac/MEGAsync/posgrado/doctorado/semestre4/procesado/"+\
+    fig.savefig("/home/isaac/MEGA/posgrado/doctorado/semestre4/"+\
                 st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
     plt.tight_layout() 
     plt.show()
