@@ -35,12 +35,14 @@ import datetime
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=RuntimeWarning)
+    
 year_dir = sys.argv[1]# "formato(yyyymmdd)"
 stat = sys.argv[2]
+#year = year_dir[:4]
 
-data_dir='/home/isaac/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
+data_dir=f'/home/isaac/datos/gics_obs/{year_dir}/{stat}'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
-#print(list_fnames)
+#print(data_dir)
 #exit()
 lastfile = list_fnames[-1] 
 #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
@@ -65,8 +67,7 @@ df = pd.read_csv(lastfile,
                        na_values = missing_vals,
                        parse_dates = [0])  
 
-
-
+print(df)
 df.dropna(axis=1, how='all', inplace=True)
         # Drop all axis full of NaN values
 
@@ -84,7 +85,6 @@ df.sort_index(inplace = True);
         #Remove indexes with seconds other than '00'
 df.index = df.index.map(lambda x: x.replace(second=0))
 df = df[~df.index.duplicated(keep='first')]
-
 ts_start = df.index[0];
 ts_end = df.index[-1];
         

@@ -14,19 +14,39 @@
 #col 11: Hora UTC
 
 import csv
+<<<<<<< Updated upstream
 path = '/home/isaac/rutidl' 
+=======
+import os
+>>>>>>> Stashed changes
 
-#prueba de funcion
-#net = 'intermagnet'
-#obs = 'sjg'
+path = '/home/isaac/rutidl'
+#if not os.path.exists(path) or not os.path.isdir(path):
 
+#    path = '/home/isaac/rutidl'
+#    if not os.path.exists(path) or not os.path.isdir(path):
+#        raise FileNotFoundError(f"Directory not found: {path}")
+
+#print(f"{path} directory exists.")
+
+# Function to get observation info
 def night_time(net, obs):
     obs_info = []
-    with open(f"{path}/{net}_stations.csv") as f:
+    file_path = f"{path}/{net}_stations.csv"
+    
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    # Read the CSV file
+    with open(file_path, 'r') as f:
         data = csv.reader(f)
         for row in data:
-            
-            if obs == row[2]:
+            if obs == row[2]:  # Assuming the observation code is in the 3rd column
                 obs_info = row
-
+                break  # Exit loop once the observation is found
+    
+    if not obs_info:
+        raise ValueError(f"Observation '{obs}' not found in {file_path}")
+    
     return obs_info
