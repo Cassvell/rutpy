@@ -40,11 +40,11 @@ stat = sys.argv[2]
 
 data_dir='/home/isaac/datos/gics_obs/'+str(year_dir)+'/'+stat+'/'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
-#print(list_fnames)
-#exit()
-lastfile = list_fnames[-1] 
+#lastfile = sys.argv[3]
+
+
+#lastfile = list_fnames[-1] 
 #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
-print(lastfile)
 
 dfs_c = []
 #output={}
@@ -65,7 +65,7 @@ df = pd.read_csv(lastfile,
                        na_values = missing_vals,
                        parse_dates = [0])  
 
-
+print(lastfile)
 
 df.dropna(axis=1, how='all', inplace=True)
         # Drop all axis full of NaN values
@@ -107,10 +107,10 @@ if not len(df.reset_index()) % 1440 == 0:
     new_time = df.index[-1] + time_change
      
     idx_remainder = pd.date_range(start = pd.Timestamp(new_time),\
-                                  periods=remainder_time, freq='T')
+                                  periods=remainder_time, freq='min')
 
     final_index = pd.date_range(start = pd.Timestamp(df.index[0]), \
-                                end = pd.Timestamp(idx_remainder[-1]), freq='T')
+                                end = pd.Timestamp(idx_remainder[-1]), freq='min')
     df = df.reindex(final_index, copy=False)
     df = df.reset_index()
 

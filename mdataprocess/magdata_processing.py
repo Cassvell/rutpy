@@ -24,6 +24,7 @@ from scipy import fftpack, signal
 #generación del índice temporal Date time para las series de tiempo
 ###############################################################################   
 ###############################################################################
+'''
 net = sys.argv[1]
 st= sys.argv[2]
 idate = sys.argv[3]# "formato(yyyymmdd)"
@@ -42,15 +43,18 @@ filenames_out2 = []
 dates = []
 path = ''
 if net == 'regmex':
-    path = f"/home/isaac/datos/{net}/{st}/{st}_raw/" # magnetic data path
+    #path = f"/home/isaac/datos/{net}/{st}/{st}20240/" # magnetic data path
+    path = f"/home/isaac/datos/{net}/{st}20240/" # magnetic data path
     for i in idx_daily:
         date_name = str(i)[0:10]
         dates.append(date_name)
         date_name_newf = convert_date(date_name,'%Y-%m-%d', '%Y%m%d')
         new_name = str(date_name_newf)[0:8]
-        fname = st+'_'+new_name+'.clean.dat'
-        fname2 = st+'_'+new_name+'.dat'
-        fname3 = st+'_'+new_name+'_XYZ.dat'
+        
+        fname = f"{st}{new_name}rK.min"
+        #fname = f"{st}_{new_name}.clean"
+        fname2 = st+'_'+new_name+'M.dat'
+        fname3 = st+'_'+new_name+'M_XYZ.dat'
         filenames.append(fname)
         filenames_out.append(fname2)
         filenames_out2.append(fname3)
@@ -70,7 +74,7 @@ else:
         filenames.append(fname)
         filenames_out.append(fname2)
         filenames_out2.append(fname3)
-     
+'''     
 ###############################################################################}
 ###############################################################################
 #Base line Determination
@@ -134,8 +138,8 @@ def base_line(data, idx, idx_daily):
     inicio = data.index[0]
     final =  data.index[-1]
     
-    plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
-    plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
+    #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
+    #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
@@ -156,7 +160,9 @@ def get_diurnalvar(data, idx_daily, st):
 
 #import UTC according to observatory
     ndays = 5
-    info = night_time(net, st)
+    info = night_time('regmex', st)
+    
+    print(info)
     utc = info[11]
     ini = 0
     fin = 0   
@@ -166,6 +172,8 @@ def get_diurnalvar(data, idx_daily, st):
     except ValueError:
         utc = float(utc)
     print(f"universal Coordinated time: {utc}") 
+    
+    #print(f"datos de prueba: {len(iqr_picks)}, {len(idx_daily)}")
     
     qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', ndays)
     #qd_list = ['2015-03-14', '2015-03-13', '2015-03-15', '2015-03-12']
@@ -263,7 +271,7 @@ def get_diurnalvar(data, idx_daily, st):
     
     template = T[0:1440]
     
-    #plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
+    plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset
@@ -291,6 +299,7 @@ def get_qd_dd(data, idx_daily, type_list, n):
 ###############################################################################
 #We call the base line derivation procedures
 ###############################################################################  
+'''
 magdata = get_dataframe(filenames, path, idx, dates, net)
 
 H = magdata['H']
@@ -328,14 +337,14 @@ X_noff1 = X-offsetX
 Y_noff1 = Y-offsetY
 Z_noff1 = Z-offsetZ
 
-
+#sys.exit('end of the child process')
 dst = []
 hr = int(len(H)/60)
 for i in range(hr):
     tmp_h = np.nanmedian(H_noff1[i*60:(i+1)*60])
     dst.append(tmp_h)
     
-#plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr)
+plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr)
 
 # Data dictionaries
 dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
@@ -388,3 +397,4 @@ for i in range(len(idx_daily)):
 
     print(f"Saved: {full_path2}")   
 #df.to_csv()
+'''

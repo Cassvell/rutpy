@@ -25,15 +25,16 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
             if os.path.isfile(full_path):
                 try:
                     # Read the file into a dataframe
-                    df_c = pd.read_csv(full_path, header=None, sep='\s+')
+                    df_c = pd.read_csv(full_path, header=17, sep=r'\s+')
                     dfs_c.append(df_c)
+                    
                 except Exception as e:
                     # Handle any read errors
                     print(f"Error reading {full_path}: {e}")
             else:
                 print(f"File not found: {full_path}")
                 dailyfile = pd.date_range(start = pd.Timestamp(str(daily_idx[i])), \
-                                periods=1440, freq='T')
+                                periods=1440, freq='Min')
                 df_c = np.empty((1440, 10), dtype=object)
                 
                 df_c[:, 0] = dailyfile.day.astype(str).str.zfill(2)       # Day (DD)
@@ -68,9 +69,12 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
     #df = df.dropna(subset=[df.columns[0], df.columns[1]], axis=1)    
 
         df = df.set_index(df['DateTime'])   
-        df = df.reindex(idx)   
-        df = df.drop(columns=[0, 1, 'DateTime'])
+        df = df.loc[~df.index.duplicated(keep='first')]
         
+        
+        df = df.reindex(idx)   
+        df = df.drop(columns=['DATE', 'TIME', 'DateTime', '|'])
+
         H = df.iloc[:,2]    
         D = df.iloc[:,1]
         Z = df.iloc[:,3]
@@ -126,7 +130,7 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
             else:
                 print(f"File not found: {full_path}")
                 dailyfile = pd.date_range(start = pd.Timestamp(str(daily_idx[i])), \
-                                periods=1440, freq='T')
+                                periods=1440, freq='Min')
                 df_c = np.empty((1440, 10), dtype=object)
                 
         #        df_c[:, 0] = dailyfile.day.astype(str).str.zfill(2)       # Day (DD)

@@ -36,7 +36,7 @@ nextday = str(nextday)[0:10]
 
 stat = ['QRO', 'LAV', 'RMY', 'MZT']
 idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 12:01:00'), \
-                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='T')
+                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='min')
 
 ndays = calculate_days_difference(i_date, f_date)
 tot_data = (ndays+1)*1440
@@ -95,13 +95,12 @@ fdate = datetime.strptime(f_date, '%Y%m%d')
 fdate2 = fdate + timedelta(days=1)
 fdate2 = str(fdate2.strftime('%Y%m%d'))
 
-    
-print(fdate2)
 H = df_dH(i_date, fdate2, dir_path, H_stat)
+
 ###############################################################################
 ###############################################################################
 dir_path = '/home/isaac/datos/Kmex/'
-k = df_Kloc(i_date, fdate2, dir_path)
+k = df_Kloc(i_date, fdate2, dir_path, H_stat)
 k = round(k)
 
 colorsValue = []
@@ -186,7 +185,7 @@ ax[3].set_ylabel(' GIC [A]', fontweight='bold')
 
 ax[4].plot(H, color='k')
 ax[4].set_ylabel(' DH [nT]', fontweight='bold')
-ax[4].set_title('Indices geomagnéticos, Estación Teoloyucan', fontsize=18)
+ax[4].set_title('Indices geomagnéticos, Estación Coeneo', fontsize=18)
 ax[4].grid()
 ax[4].set_xlim(inicio,final)
 
