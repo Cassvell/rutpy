@@ -26,6 +26,9 @@ sys.path.append(module_dir)
 
 
 from magdata_processing import get_diurnalvar, get_qd_dd
+from night_time import night_time
+
+
 
 stat = ['LAV', 'QRO', 'RMY', 'MZT']
 def threshold(stddev_30, stat):
@@ -135,15 +138,8 @@ tot_data = (ndays+1)*1440
 path = '/home/isaac/datos/gics_obs/'
 file = []
 
-#gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path, stat[1], idx1, tot_data)
 
-#gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path, stat[0], idx1, tot_data)
-
-#gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path, stat[3], idx1, tot_data)
-
-#gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path, stat[2], idx1, tot_data)
-
-
+#sys.exit('Exiting script after loading data. Uncomment the next lines to continue processing.')
 for i in range(len(stat)):
     gic, T1, T2 = process_station_data(i_date, f_date, path, stat[i], idx1, tot_data)
 	
@@ -151,8 +147,9 @@ for i in range(len(stat)):
     threshold_value, indices = threshold(stddev_20, stat[i])
     exceed_indices = stddev_20[stddev_20 > threshold_value].index
     
+    print(f'Exceeding indices for {stat[i]}: {len(exceed_indices)}')
     idx_daily = pd.date_range(start = gic.index[719], end = gic.index[-722], freq= 'D' )
-    qd, offset = get_diurnalvar(gic[719:-721], idx_daily, stat[i].lower())
+    qd, offset = get_diurnalvar(gic[719:-721], idx_daily, 'regmex', stat[i].lower())
     
     inicio = gic.index[719]
     final = gic.index[-721]
@@ -160,8 +157,7 @@ for i in range(len(stat)):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
     ax1.plot(gic[719:-721].index, gic[719:-721], label=f'preprocessed {stat[i].upper()}', alpha=0.8)
     ax1.plot(gic[719:-721].index, qd, label='Diurnal Variation', color='red')
-    ax1.scatter(exceed_indices, gic[exceed_indices], 
-           color='black', label='Threshold Exceedance')
+    #ax1.scatter(exceed_indices, gic[exceed_indices], color='black', label='Threshold Exceedance')
     ax1.set_xlim(inicio, final)
     ax1.set_ylabel('GIC (A)')
     ax1.legend()

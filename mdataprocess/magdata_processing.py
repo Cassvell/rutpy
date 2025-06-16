@@ -177,7 +177,7 @@ def get_diurnalvar(data, idx_daily, net, st):
     qdl_concat = pd.concat(qdl, axis=1, ignore_index=True)
     
     # Compute the mean across rows (axis=0) to get a 1x1440 array
-    qd_average = qdl_concat.mean(axis=1)        
+    qd_average = qdl_concat.median(axis=1)        
 
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
                           5.787e-5, 6.9444e-5])    
