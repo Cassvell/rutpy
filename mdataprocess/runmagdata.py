@@ -66,21 +66,21 @@ Z = magdata['Z']
 D = magdata['D']
 I = magdata['I']
 
-baseline_curve = base_line(H, idx, idx_daily)
-base_lineX = base_line(X, idx, idx_daily)
-base_lineY = base_line(Y, idx, idx_daily)
-base_lineZ = base_line(Z, idx, idx_daily)
+baseline_curve = base_line(H, net, st)
+base_lineX = base_line(X, net, st)
+base_lineY = base_line(Y, net, st)
+base_lineZ = base_line(Z, net, st)
 
 H_detrend = H-baseline_curve
 X_detrend = X-base_lineX
 Y_detrend = Y-base_lineY
 Z_detrend = Z-base_lineZ
 #diurnal base line
-#sys.exit('end of the child process')
-diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
-diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
-diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
-diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
+
+diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
+diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st)
+diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st)
+diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st)
 
 H_raw = H
 

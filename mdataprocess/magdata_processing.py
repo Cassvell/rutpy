@@ -34,7 +34,7 @@ from scipy import fftpack, signal
 ###############################################################################
 #Monthly base line
 ###############################################################################   
-def base_line(data, idx, idx_daily):    
+def base_line(data, net, st):    
     ndata = len(data)
 ###############################################################################
 #Typical Day computation
@@ -98,18 +98,16 @@ def base_line(data, idx, idx_daily):
 ###############################################################################
 #diurnal variation computation
 ###############################################################################
-def get_diurnalvar(data, idx_daily, st):
+def get_diurnalvar(data, idx_daily, net, st):
     ndata = len(data)
     totdays = int(ndata/1440)
                    
     iqr_picks = max_IQR(data, 60, 24, method='stddev')    
     xaxis = np.linspace(1, 24, 1440)
 
-    qd_baseline = []
-
 #import UTC according to observatory
     ndays = 5
-    info = night_time('regmex', st)
+    info = night_time(net, st)
     
     print(info)
     utc = info[11]
@@ -121,11 +119,10 @@ def get_diurnalvar(data, idx_daily, st):
     except ValueError:
         utc = float(utc)
     print(f"universal Coordinated time: {utc}") 
-    
-    #print(f"datos de prueba: {len(iqr_picks)}, {len(idx_daily)}")
+
     
     qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', ndays)
-    #qd_list = ['2015-03-14', '2015-03-13', '2015-03-15', '2015-03-12']
+
     qdl = [[0] * 1440 for _ in range(ndays)]
     
     baseline = []
