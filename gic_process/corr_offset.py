@@ -32,38 +32,51 @@ def corr_offset(data, threshold):
                 #print(f'Threshold crossing at index {i} (time {i//60}h {i%60}min) '
                 #      f'Median changed from {prev_median:.2f} to {current_median:.2f}')
 
+    
+    if len(crossing_indices) % 2 == 0:
+        for h in range(len(crossing_indices) // 2):  # Integer division to get pair count
+            start_idx = h * 2
+            end_idx = h * 2 + 1
+            
+            if end_idx >= len(crossing_indices):
+                break  # In case of odd number of indices
         
-    print(len(crossing_indices), 'crossings detected')
     
-    
-    #if len(crossing_indices) % 2 == 0:
-    
-    
-    #plt.plot(data[crossing_indices[2]:crossing_indices[3]+60], label='GIC Data')
-    #plt.plot(data[crossing_indices[2]:crossing_indices[3]+60], label='GIC Data')
-    #plt.plot(data[crossing_indices[4]:crossing_indices[5]+60], label='GIC Data')
-    
-    
-    print(crossing_indices)
-    
-    for h in range(len(crossing_indices) // 2):  # Integer division to get pair count
-        start_idx = h * 2
-        end_idx = h * 2 + 1
-        
-        if end_idx >= len(crossing_indices):
-            break  # In case of odd number of indices
-    
-        #print(crossing_indices[start_idx], crossing_indices[end_idx])
-        #print(start_idx, end_idx)    
-        sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
-        median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
-        #print(median_w)
-        for i in range(len(sampled_data)):
-            if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
-                data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
+            sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
+            median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
+            #print(median_w)
+            for i in range(len(sampled_data)):
+                if sampled_data[i] > threshold or sampled_data[i] < threshold :
+                    data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
+                    data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
                 
-    
+    else:
+        for h in range((len(crossing_indices) // 2)+1):  # Integer division to get pair count
+            if h * 2 != (len(crossing_indices) // 2)+1:           
+                start_idx = h * 2
+                end_idx = h * 2 + 1
+                
+                sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
+                median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
+                #print(median_w)
+                for i in range(len(sampled_data)):
+                    if sampled_data[i] > threshold or sampled_data[i] < threshold :
+                        data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
+                        data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
+            else:
+                start_idx = h * 2
+                end_idx = data.size 
+        
+                sampled_data = data[crossing_indices[start_idx]:end_idx]
+                median_w = np.nanmedian(data[crossing_indices[start_idx]:end_idx])
+                #print(median_w)
+                for i in range(len(sampled_data)):
+                    if sampled_data[i] > threshold or sampled_data[i] < threshold :
+                        data[crossing_indices[start_idx]:end_idx][i] = \
+                        data[crossing_indices[start_idx]:end_idx][i] - median_w
+        
+        
+        
     
     plt.plot(data, label='GIC Data offset corrected', color='black', alpha=0.7)
     plt.legend()
@@ -105,8 +118,9 @@ gic, T1, T2 = process_station_data(i_date, f_date, path, stat[0], idx1, tot_data
 median_H = gic.resample('H').median().fillna(method='ffill')
 threshold, indices = threshold(median_H, stat[0])
 #print(f'Threshold for {stat[0]}: {threshold.value}')
-
+print(f'mediana general: {np.nanmedian(gic)}')
 offset = corr_offset(gic.values, threshold)
 
-#plt.plot(gic, label='GIC Data', color='blue', alpha=0.7)
-#plt.show()
+plt.plot(gic, label='GIC Data', color='blue', alpha=0.7)
+plt.tight_layout()
+plt.show()
