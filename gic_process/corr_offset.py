@@ -11,16 +11,15 @@ from gic_threshold import threshold
 
 
 def corr_offset(data, threshold):
-    window_size = 60  # Size of the moving window in minutes
+    window_size = 120  # Size of the moving window in minutes
     ndata = len(data)
     crossing_indices = []
     median_values = []
     plt.plot(data, label='GIC Data', color='blue', alpha=0.7)
     for i in range(0, ndata - window_size + 1):
         window = data[i:i + window_size]
-        window_median = np.nanmedian(window)
+        window_median = np.nanmedian(np.abs(window))
         median_values.append(window_median)
-        
         # Detect threshold crossings
         if i > 0:
             prev_median = median_values[-2]
@@ -32,7 +31,8 @@ def corr_offset(data, threshold):
                 crossing_indices.append(i)
                 #print(f'Threshold crossing at index {i} (time {i//60}h {i%60}min) '
                 #      f'Median changed from {prev_median:.2f} to {current_median:.2f}')
-    
+
+        
     print(len(crossing_indices), 'crossings detected')
     
     
@@ -53,15 +53,16 @@ def corr_offset(data, threshold):
         if end_idx >= len(crossing_indices):
             break  # In case of odd number of indices
     
-        print(crossing_indices[start_idx], crossing_indices[end_idx])
-        print(start_idx, end_idx)    
-
+        #print(crossing_indices[start_idx], crossing_indices[end_idx])
+        #print(start_idx, end_idx)    
+        sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
         median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
-        for i in range(len(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])):
-            if data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] > threshold:
+        #print(median_w)
+        for i in range(len(sampled_data)):
+            if sampled_data[i] > threshold or sampled_data[i] < threshold :
                 data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
                 data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
-    
+                
     
     
     plt.plot(data, label='GIC Data offset corrected', color='black', alpha=0.7)
@@ -102,10 +103,10 @@ stat = ['LAV', 'QRO', 'RMY', 'MZT']
 gic, T1, T2 = process_station_data(i_date, f_date, path, stat[0], idx1, tot_data)
 
 median_H = gic.resample('H').median().fillna(method='ffill')
-
 threshold, indices = threshold(median_H, stat[0])
 #print(f'Threshold for {stat[0]}: {threshold.value}')
 
-
 offset = corr_offset(gic.values, threshold)
 
+#plt.plot(gic, label='GIC Data', color='blue', alpha=0.7)
+#plt.show()
