@@ -13,24 +13,24 @@ from ts_acc import mz_score
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 import matplotlib.dates as mdates
-
+#from corr_offset import corr_offset
 import sys
 import os
 
 # Get the absolute path to the directory containing your module
-module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
-sys.path.append(module_dir)
+#module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
+#sys.path.append(module_dir)
 
 # Now you can import the module
 #import magdata_processing 
 
 
-from magdata_processing import get_diurnalvar, get_qd_dd
-from night_time import night_time
+#from magdata_processing import get_diurnalvar, get_qd_dd
+#from night_time import night_time
 
 
 
-stat = ['LAV', 'QRO', 'RMY', 'MZT']
+
 def threshold(stddev_30, stat):
     nbins = int(len(stddev_30) / 3)
     frequencies, bin_edges = np.histogram(stddev_30, bins=nbins*2, density=True)
@@ -112,7 +112,7 @@ def threshold(stddev_30, stat):
 
     return avg_threshold, indices
 
-
+'''
 i_date = sys.argv[1] 
 
 f_date = sys.argv[2]
@@ -137,7 +137,7 @@ tot_data = (ndays+1)*1440
 
 path = '/home/isaac/datos/gics_obs/'
 file = []
-
+stat = ['LAV', 'QRO', 'RMY', 'MZT']
 
 #sys.exit('Exiting script after loading data. Uncomment the next lines to continue processing.')
 for i in range(len(stat)):
@@ -186,6 +186,8 @@ print('##################################################################')
 #exceed_indices_lav = stddev_30[stddev_30 > threshold_value].index
 
 #normal_periods = ~gicTW_lav.index.isin(exceed_indices_lav)
+'''
+
 '''
 #fig, ax = plt.subplots(4, figsize=(12,14))
 #fig.suptitle('Estudio de GICs', fontsize=24, fontweight='bold')
