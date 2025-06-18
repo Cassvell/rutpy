@@ -11,7 +11,7 @@ from gic_threshold import threshold
 
 
 def corr_offset(data, threshold):
-    window_size = 120  # Size of the moving window in minutes
+    window_size = 60  # Size of the moving window in minutes
     ndata = len(data)
     crossing_indices = []
     median_values = []
