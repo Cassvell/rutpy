@@ -15,13 +15,14 @@ def corr_offset(data, threshold):
     ndata = len(data)
     crossing_indices = []
     median_values = []
-    plt.plot(data, label='GIC Data', color='blue', alpha=0.7)
+    plt.plot(data, label='GIC Data', color='blue', alpha=0.7)    
+    
     for i in range(0, ndata - window_size + 1):
         window = data[i:i + window_size]
         window_median = np.nanmedian(np.abs(window))
         median_values.append(window_median)
         # Detect threshold crossings
-        if i > 0:
+        if i > 0:            
             prev_median = median_values[-2]
             current_median = window_median
             
