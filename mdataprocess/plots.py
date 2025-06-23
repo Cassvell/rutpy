@@ -109,17 +109,19 @@ def plot_detrend(idate, enddata, data, original_daily_stacked,daily_stacked, st,
     return 
 
 def plot_qdl(xaxis, template, n, qdl, st, idx_daily):
-    inicio = idx_daily[0]
-    final = idx_daily[-1]
+    inicio = idx_daily[0].strftime('%Y-%m-%d')
+    final = idx_daily[-1].strftime('%Y-%m-%d')
     print(n)
     for i in range(n):
         plt.plot(xaxis, qdl[i])
     
     plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
     plt.legend()
-    
-    plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre4/qdl/{st}_{inicio}_{final}_.png')
+    plt.title(f'{st.upper()} diurnal variation')   
     plt.tight_layout() 
+ 
+    plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre4/qdl/{st}_{inicio}_{final}_.png')
+
     plt.show()
     return
 

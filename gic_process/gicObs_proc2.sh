@@ -16,11 +16,7 @@ if [[ ! -e $data_dir ]]; then
 	mkdir $data_dir
 fi	
 
-#find $fdir -type f -name "*QRO.csv"
-declare -a stations=("LAV" "MZT" "QRO" "RMY")
-
-
-
+declare -a stations=( "QRO" "LAV" "RMY" "MZT")
 
 # Process files for each station
 for station in "${stations[@]}"; do
@@ -51,35 +47,29 @@ for i in "${!stations[@]}"; do
   daily_dir="$station_dir/daily"
   echo "$daily_dir"
   # Create the daily directory if it doesn't exist
-  if [[ ! -d "$daily_dir" ]]; then
-    mkdir -p "$daily_dir"
-  fi
+	if [[ ! -d "$daily_dir" ]]; then
+	    mkdir -p "$daily_dir"
+  	fi
 
   # Check if there are any CSV files before proceeding
-  csv_files=("$station_dir"/*.csv)
-  if [[ ! -e "${csv_files[0]}" ]]; then
-    echo "No CSV files found for station ${stations[$i]} in $station_dir."
-    continue
-  fi
+	  csv_files=("$station_dir"/*.csv)
+	  if [[ ! -e "${csv_files[0]}" ]]; then
+	    echo "No CSV files found for station ${stations[$i]} in $station_dir."
+    		continue
+ 	fi
 
-  # Process each CSV file
-  for csv_file in "$station_dir"/*.csv; do
-    output_file="${csv_file}.dat"
-    # Use awk to process the file
-    awk '{
-      if ($1 ~ /^[2]...-..-../) {
-        gsub(/[T]/, " "); gsub(/[Z]/, ""); print
-      } else if ($1 ~ /^"2...-..-../) {
-        gsub(/"/, ""); print
-      }
-    }' "$csv_file" >> "$output_file"
 
-    echo "$output_file"
-  done
+# Process last CSV file	 
+	    latest_csv=$(ls -t "$station_dir"/*.csv | head -n 1)
+		if [[ -n "$latest_csv" ]]; then
+		    output_file="${latest_csv}.dat"
+		    echo "Processing latest file: ${latest_csv}"
+		    python3 preprocess_gicfiles.py "${year}" "${stations[$i]}" "${latest_csv}" "${output_file}"
+		else
+		    echo "No CSV files found in $station_dir"
+		fi
+
 done
-
-
-
 echo "done"
 
 echo "generating daily files..."
@@ -104,6 +94,6 @@ read geo_stat
 echo "ejecutando gráfica de gics"
 
 
-python3 gic_graph.py coe $idate $fdate
+python3 gic_graph.py $geo_stat $idate $fdate
 
 

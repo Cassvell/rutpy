@@ -17,7 +17,7 @@ reproc:  Reproceso todos los datasets de GIC
 """
 
 import os
-
+import sys
 import glob
 #import gzip
 import pandas as pd
@@ -34,7 +34,7 @@ from ts_acc import fixer, mz_score, despike, dejump
 from datetime import datetime, timedelta
 
 
-from get_files import get_files, list_names
+from get_files import get_files, list_names, get_file
 
 def pproc(stid, data_dir):
     
@@ -233,7 +233,7 @@ def df_gic(date1, date2, dir_path, stat):
     
     
     idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:01:00' ), end =\
-                         pd.Timestamp(nextday+' 12:00:00'), freq='T')
+                         pd.Timestamp(nextday+' 12:00:00'), freq='min')
     
     idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
                                           end = pd.Timestamp(str(date2)), freq='D')
@@ -251,12 +251,43 @@ def df_gic(date1, date2, dir_path, stat):
     for i in range(len(list_fnames)):      
         year = idx_daylist[i].year  # Extract year directly from the Timestamp
         SG2 = f"{dir_path}{year}/{stat}/daily/"
-        #print(SG2+list_fnames[i])
-        df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', parse_dates = [0], na_values = missing_vals)
+        
+        
+        try:
+            # Read first 5 rows
+            df_c = pd.read_csv(SG2+list_fnames[i], header=0, sep='\t',parse_dates = [0], na_values = missing_vals)
+            
+            # Count empty values
+            empty_counts = df_c.isna().sum()  # Count NaN values
+            empty_strings = (df_c == '').sum()  # Count empty strings
+            total_empty = empty_counts + empty_strings
+            
+            # Check if any empty values exist (sum across all columns)
+            if total_empty.sum() > 0:
+                print(f"Found {total_empty.sum()} empty values to replace")
+                
+                # Replace both NaN and empty strings
+                df_c.replace({'': -999.999}, inplace=True)
+                df_c.fillna(-999.999, inplace=True)
+                
+                # Save back to same file (consider using a different filename for safety)
+                #output_filename = filename
+                #df.to_csv(path + output_filename, sep='\t', index=False, na_rep='-999.999')
+                #print(f"File saved with empty values replaced: {path + output_filename}")
+            else:
+                print("No empty values found in first 5 rows")
+                
+        except FileNotFoundError:
+            print(f"Error: File not found - {SG2+list_fnames[i]}")
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+        
+        
+        #df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', parse_dates = [0], na_values = missing_vals)
         
             #df_c = df_c.iloc[:-1, :]   
-        dfs_c.append(df_c) 
-        #print(dfs_c)       
+        dfs_c.append(df_c)     
+          
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
     df = df.replace(-999.999, np.NaN)        
@@ -301,8 +332,7 @@ def df_gic_daily(date, dir_path, stat):
     year = idx_list.year  # Extract year directly from the Timestamp
     SG2 = f"{dir_path}{year}/{stat}/daily/"
       
-    df = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', \
-                           parse_dates = [0], na_values = missing_vals)
+    df = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\\s+', parse_dates = [0], na_values = missing_vals)
          
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
@@ -324,7 +354,7 @@ def df_gic_daily(date, dir_path, stat):
 ###############################################################################
 def df_dH(date1, date2, dir_path, H_stat):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
-                         pd.Timestamp(date2+' 23:00:00'), freq='H')
+                         pd.Timestamp(date2+' 23:00:00'), freq='h')
     
     idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
                                           end = pd.Timestamp(date2), freq='D')
@@ -342,26 +372,37 @@ def df_dH(date1, date2, dir_path, H_stat):
 
     remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
-    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     dfs_c = []
-        
-    for file_name in list_fnames: 
-  #  for file_name in file_names:    
-        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
-                           skip_blank_lines=True).T
-        df_c = df_c.iloc[:-1, :]   
-        dfs_c.append(df_c) 
+    for filename in list_fnames:
+        if os.path.exists(dir_path+filename): #si el archivo diario ya está en la carpeta local, leelo
+            df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+            df_c = df_c.iloc[:-1, :]   
+
+        else:
+            wget = get_file(remote_path, dir_path, filename) #si no está, búscalo en la carpeta remota, copialo a la local y leelo
+            if wget == True:
+                df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+                df_c = df_c.iloc[:-1, :]   
+            else: #si tampoco está en la local, genera un dataframe de archivos nulos
                 
-    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-    df = df.replace(999999.0, np.NaN)        
- #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
-  #                                    end = pd.Timestamp(date2), freq='H')
+                        df_c = pd.DataFrame(
+                                            np.full((24, 2), np.nan)
+                                        )             
         
+        dfs_c.append(df_c) #combina los dataframes, incluyendo los vacíos
+        
+ 
+        
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)  
+
+    df = df.replace(999999.0, np.NaN)        
+    idx2 = pd.date_range(start = pd.Timestamp(date1), \
+                                    end = pd.Timestamp(date2), freq='h')
     df = df.set_index(idx1)
     
     df = df.loc[date1:date2]
     H  = df.iloc[:,0]
-
+    
     return(H)
 
 ###############################################################################
@@ -393,7 +434,7 @@ def df_dst(date1, date2, dir_path):
 
 def df_dHmex(date1, date2, dir_path, H_stat):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
-                         pd.Timestamp(date2+' 23:00:00'), freq='H')
+                         pd.Timestamp(date2+' 23:00:00'), freq='h')
     
     idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
                                           end = pd.Timestamp(date2), freq='D')
@@ -411,13 +452,14 @@ def df_dHmex(date1, date2, dir_path, H_stat):
 
     remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
+
+    
     wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
     dfs_c = []
         
     for file_name in list_fnames: 
   #  for file_name in file_names:    
-        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
-                           skip_blank_lines=True).T
+        df_c = pd.read_csv(dir_path+file_name, header=None, sep=r'\s+', skip_blank_lines=True).T
         df_c = df_c.iloc[:-1, :]   
         dfs_c.append(df_c) 
                 
@@ -434,46 +476,62 @@ def df_dHmex(date1, date2, dir_path, H_stat):
     return(H)
 ###############################################################################
 ###############################################################################
-def df_Kloc(date1, date2, dir_path):
+def df_Kloc(date1, date2, dir_path, stat):
   #  dir_path = '/home/isaac/MEGAsync/datos/Kmex/coe'
 
     idx1 = pd.date_range(start = pd.Timestamp(date1), end = \
-                             pd.Timestamp(date2+' 21:00:00'), freq='3H')
+                             pd.Timestamp(date2+' 21:00:00'), freq='3h')
 
     idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
                   end = pd.Timestamp(date2), freq='D')
                 
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
         
-    str1 = "teo_"
+    str1 = f"{stat}_"
     ext = ".k_index.early"
-    remote_path= '/data/output/indexes/teoloyucan/'
+    station = ''
+    if stat == 'mex':
+       station =  'mexico'
+    elif stat == 'teo':
+        station = 'teoloyucan'
+    elif stat == 'itu':
+        station = 'iturbide'
+    remote_path= f'/data/output/indexes/{station}/'
     
     list_fnames = list_names(idx_list, str1, ext)
-    wget = get_files(date1, date2, remote_path, dir_path, list_fnames)
-
     dfs_c = []
-            
-    for file_name in list_fnames:    
-        df_c = pd.read_csv(dir_path+file_name, header=None, sep='\s+', \
-                           skip_blank_lines=True).T
-        df_c = df_c.iloc[:-1, :]   
-        dfs_c.append(df_c) 
-                    
-    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-    df = df.replace(999, np.NaN)
+    for filename in list_fnames:
+        if os.path.exists(dir_path+filename): #si el archivo diario ya está en la carpeta local, leelo
+            df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+            df_c = df_c.iloc[:-1, :]   
 
+        else:
+            wget = get_file(remote_path, dir_path, filename) #si no está, búscalo en la carpeta remota, copialo a la local y leelo
+            if wget == True:
+                df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+                df_c = df_c.iloc[:-1, :]   
+            else: #si tampoco está en la local, genera un dataframe de archivos nulos
+                
+                        df_c = pd.DataFrame(
+                                            np.full((8, 6), 999)
+                                        )             
+        
+        dfs_c.append(df_c) #combina los dataframes, incluyendo los vacíos
+#        print(dfs_c)
 
           
             
    # idx2 = pd.date_range(start = pd.Timestamp(date1), \
     #                                      end = pd.Timestamp(date2), freq='3H')
-            
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)    
     df = df.set_index(idx1)
         
     df = df.loc[date1:date2]
     
     k  = df.iloc[:,0]
+    print(k)
+
+    
     k = k/10
     return(k)
 

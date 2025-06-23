@@ -9,9 +9,8 @@ import sys
 #from scipy.interpolate import interp1d
 #from scipy.ndimage import gaussian_filter1d
 #from scipy.interpolate import NearestNDInterpolator
-from magnetic_datstruct import get_dataframe
+
 from scipy.signal import medfilt
-from aux_time_DF import index_gen, convert_date
 from lowpass_filter import aphase, dcomb
 from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
 from threshold import get_threshold, max_IQR, med_IQR
@@ -24,53 +23,7 @@ from scipy import fftpack, signal
 #generación del índice temporal Date time para las series de tiempo
 ###############################################################################   
 ###############################################################################
-net = sys.argv[1]
-st= sys.argv[2]
-idate = sys.argv[3]# "formato(yyyymmdd)"
-fdate = sys.argv[4]
 
-enddata = fdate+ ' 23:59:00'
-idx = pd.date_range(start = pd.Timestamp(idate), \
-                    end = pd.Timestamp(enddata), freq='min')
-idx_hr = pd.date_range(start = pd.Timestamp(idate), \
-                    end = pd.Timestamp(enddata), freq='h')    
-idx_daily = pd.date_range(start = pd.Timestamp(idate), \
-                        end = pd.Timestamp(enddata), freq='D')
-filenames = []
-filenames_out = []
-filenames_out2 = []
-dates = []
-path = ''
-if net == 'regmex':
-    path = f"/home/isaac/datos/{net}/{st}/{st}_raw/" # magnetic data path
-    for i in idx_daily:
-        date_name = str(i)[0:10]
-        dates.append(date_name)
-        date_name_newf = convert_date(date_name,'%Y-%m-%d', '%Y%m%d')
-        new_name = str(date_name_newf)[0:8]
-        fname = st+'_'+new_name+'.clean.dat'
-        fname2 = st+'_'+new_name+'.dat'
-        fname3 = st+'_'+new_name+'_XYZ.dat'
-        filenames.append(fname)
-        filenames_out.append(fname2)
-        filenames_out2.append(fname3)
-else:
-    year = '2015'
-    st_dir = st.upper()
-    path = f"/home/isaac/datos/{net}/{year}/{st_dir}/" # magnetic data path
-    for i in idx_daily:
-        date_name = str(i)[0:10]
-        dates.append(date_name)
-        date_name_newf = convert_date(date_name,'%Y-%m-%d', '%Y%m%d')
-        new_name = str(date_name_newf)[0:8]
-        fname = st+date_name_newf+'dmin.min'
-        #print(fname)
-        fname2 = st+'_'+new_name+'.dat'
-        fname3 = st+'_'+new_name+'_XYZ.dat'
-        filenames.append(fname)
-        filenames_out.append(fname2)
-        filenames_out2.append(fname3)
-     
 ###############################################################################}
 ###############################################################################
 #Base line Determination
@@ -81,7 +34,7 @@ else:
 ###############################################################################
 #Monthly base line
 ###############################################################################   
-def base_line(data, idx, idx_daily):    
+def base_line(data, net, st):    
     ndata = len(data)
 ###############################################################################
 #Typical Day computation
@@ -134,8 +87,8 @@ def base_line(data, idx, idx_daily):
     inicio = data.index[0]
     final =  data.index[-1]
     
-    plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
-    plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
+    #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
+    #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
@@ -145,18 +98,18 @@ def base_line(data, idx, idx_daily):
 ###############################################################################
 #diurnal variation computation
 ###############################################################################
-def get_diurnalvar(data, idx_daily, st):
+def get_diurnalvar(data, idx_daily, net, st):
     ndata = len(data)
     totdays = int(ndata/1440)
                    
     iqr_picks = max_IQR(data, 60, 24, method='stddev')    
     xaxis = np.linspace(1, 24, 1440)
 
-    qd_baseline = []
-
 #import UTC according to observatory
     ndays = 5
     info = night_time(net, st)
+    
+    print(info)
     utc = info[11]
     ini = 0
     fin = 0   
@@ -166,9 +119,10 @@ def get_diurnalvar(data, idx_daily, st):
     except ValueError:
         utc = float(utc)
     print(f"universal Coordinated time: {utc}") 
+
     
     qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', ndays)
-    #qd_list = ['2015-03-14', '2015-03-13', '2015-03-15', '2015-03-12']
+
     qdl = [[0] * 1440 for _ in range(ndays)]
     
     baseline = []
@@ -223,7 +177,7 @@ def get_diurnalvar(data, idx_daily, st):
     qdl_concat = pd.concat(qdl, axis=1, ignore_index=True)
     
     # Compute the mean across rows (axis=0) to get a 1x1440 array
-    qd_average = qdl_concat.mean(axis=1)        
+    qd_average = qdl_concat.median(axis=1)        
 
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
                           5.787e-5, 6.9444e-5])    
@@ -263,7 +217,7 @@ def get_diurnalvar(data, idx_daily, st):
     
     template = T[0:1440]
     
-    #plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
+    plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset
@@ -291,100 +245,3 @@ def get_qd_dd(data, idx_daily, type_list, n):
 ###############################################################################
 #We call the base line derivation procedures
 ###############################################################################  
-magdata = get_dataframe(filenames, path, idx, dates, net)
-
-H = magdata['H']
-X = magdata['X']
-Y = magdata['Y']
-Z = magdata['Z']
-D = magdata['D']
-I = magdata['I']
-
-baseline_curve = base_line(H, idx, idx_daily)
-base_lineX = base_line(X, idx, idx_daily)
-base_lineY = base_line(Y, idx, idx_daily)
-base_lineZ = base_line(Z, idx, idx_daily)
-
-H_detrend = H-baseline_curve
-X_detrend = X-base_lineX
-Y_detrend = Y-base_lineY
-Z_detrend = Z-base_lineZ
-#diurnal base line
-#sys.exit('end of the child process')
-diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, st)
-diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, st)
-diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, st)
-diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, st)
-
-H_raw = H
-
-H = H_detrend-diurnal_baseline
-X = X_detrend - diurnal_baselineX
-Y = Y_detrend - diurnal_baselineY
-Z = Z_detrend - diurnal_baselineZ
-
-H_noff1 = H-offset
-X_noff1 = X-offsetX
-Y_noff1 = Y-offsetY
-Z_noff1 = Z-offsetZ
-
-
-dst = []
-hr = int(len(H)/60)
-for i in range(hr):
-    tmp_h = np.nanmedian(H_noff1[i*60:(i+1)*60])
-    dst.append(tmp_h)
-    
-#plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr)
-
-# Data dictionaries
-dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
-dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
-
-# Create DataFrames
-df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
-df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
-
-
-
-
-# Define path
-path = f"/home/isaac/datos/{net}/{st}/minV2/"  
-os.makedirs(path, exist_ok=True)  # Creates directory if it does not exist
-
-# Iterate over daily indexes
-for i in range(len(idx_daily)):
-    start_idx = i * 1440
-    end_idx = (i + 1) * 1440
-
-    # Check if indices are within bounds
-    if end_idx > len(df):
-        print(f"Skipping {i}, index out of range")
-        continue
-
-    # Slice daily data
-    daily_data = df[start_idx:end_idx].reset_index(drop=True)
-    daily_data2 = df2[start_idx:end_idx].reset_index(drop=True)
-
-    # Define filenames
-    full_path = os.path.join(path, filenames_out[i])
-    full_path2 = os.path.join(path, filenames_out2[i])
-
-    filenames.append(full_path)
-
-    # Write first file
-    with open(full_path, 'w') as f:
-        for _, row in daily_data.iterrows():
-            line = f"{row['H']:7.2f}{row['baseline_line']:10.2f}{row['SQ']:6.2f}\n"
-            f.write(line)
-
-    print(f"Saved: {full_path}")
-
-    # Write second file
-    with open(full_path2, 'w') as f2:
-        for _, row in daily_data2.iterrows():
-            line = f"{row['X']:7.2f}{row['Y']:8.2f}{row['Z']:8.2f}{row['D']:6.2f}{row['I']:6.2f}\n"
-            f2.write(line)  # FIXED: Now correctly writes to f2
-
-    print(f"Saved: {full_path2}")   
-#df.to_csv()

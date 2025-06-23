@@ -41,7 +41,7 @@ def list_names(daterange, string1, string2):
 def get_file(remote_path, localfilepath, filename):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    available = True
     try:
         ssh.connect(hostname='132.247.181.60', username='carlos', password='c4rl0s1s44c')
         sftp = ssh.open_sftp()
@@ -53,10 +53,13 @@ def get_file(remote_path, localfilepath, filename):
             print(f"File '{filename}' downloaded successfully.")
         else:
             print(f"File '{filename}' not found on server.")
+            available = False
+
     except Exception as e:
         print("An error occurred:", str(e))
     finally:
         ssh.close()
+    return available
 
 
 def list_names(daterange, string1, string2):
