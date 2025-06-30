@@ -42,16 +42,16 @@ stat = sys.argv[2]
 
 data_dir=f'/home/isaac/datos/gics_obs/{year_dir}/{stat}'
 list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
-<<<<<<< HEAD
+#<<<<<<< HEAD
 #print(data_dir)
 #exit()
 lastfile = list_fnames[-1] 
-=======
+#=======
 #lastfile = sys.argv[3]
 
 
 #lastfile = list_fnames[-1] 
->>>>>>> origin/main
+#>>>>>>> origin/main
 #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
 
 dfs_c = []
@@ -73,12 +73,12 @@ df = pd.read_csv(lastfile,
                        na_values = missing_vals,
                        parse_dates = [0])  
 
-<<<<<<< HEAD
-print(df)
-=======
-print(lastfile)
+#<<<<<<< HEAD
+#print(df)
+#=======
+#print(lastfile)
 
->>>>>>> origin/main
+#>>>>>>> origin/main
 df.dropna(axis=1, how='all', inplace=True)
         # Drop all axis full of NaN values
 

@@ -14,11 +14,11 @@
 #col 11: Hora UTC
 
 import csv
-<<<<<<< Updated upstream
+#<<<<<<< Updated upstream
 path = '/home/isaac/rutidl' 
-=======
+#=======
 import os
->>>>>>> Stashed changes
+#>>>>>>> Stashed changes
 
 path = '/home/isaac/rutidl'
 #if not os.path.exists(path) or not os.path.isdir(path):

@@ -214,7 +214,7 @@ def corr_offset(data, threshold):
     plt.ylabel('GIC LAV st [A]')
     plt.show()
     return crossing_indices, median_values
-
+'''
 
 
 
@@ -255,3 +255,4 @@ offset = corr_offset(gic.values, threshold)
 plt.plot(gic, label='GIC Data', color='blue', alpha=0.7)
 plt.tight_layout()
 plt.show()
+'''

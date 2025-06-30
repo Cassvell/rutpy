@@ -18,15 +18,15 @@ import sys
 import os
 
 # Get the absolute path to the directory containing your module
-#module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
-#sys.path.append(module_dir)
+module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
+sys.path.append(module_dir)
 
 # Now you can import the module
-#import magdata_processing 
+import magdata_processing 
 
 
-#from magdata_processing import get_diurnalvar, get_qd_dd
-#from night_time import night_time
+from magdata_processing import get_diurnalvar, get_qd_dd
+from night_time import night_time
 
 
 
@@ -112,7 +112,7 @@ def threshold(stddev_30, stat):
 
     return avg_threshold, indices
 
-'''
+
 i_date = sys.argv[1] 
 
 f_date = sys.argv[2]
@@ -186,9 +186,7 @@ print('##################################################################')
 #exceed_indices_lav = stddev_30[stddev_30 > threshold_value].index
 
 #normal_periods = ~gicTW_lav.index.isin(exceed_indices_lav)
-'''
 
-'''
 #fig, ax = plt.subplots(4, figsize=(12,14))
 #fig.suptitle('Estudio de GICs', fontsize=24, fontweight='bold')
 
@@ -219,6 +217,5 @@ print('##################################################################')
 #fig.tight_layout()
 #plt.savefig(f'/home/isaac/rutpy/gicsOutput/mothersday/gic_stat_{i_date}_{f_date}.png', dpi=300)
 #plt.show()
-'''    
 
 
