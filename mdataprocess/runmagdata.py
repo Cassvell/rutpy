@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import sys
 import os
 from magdata_processing import get_diurnalvar, base_line
@@ -25,15 +26,15 @@ dates = []
 path = ''
 if net == 'regmex':
     #path = f"/home/isaac/datos/{net}/{st}/{st}20240/" # magnetic data path
-    path = f"/home/isaac/datos/{net}/{st}20240/" # magnetic data path
+    path = f"/home/isaac/datos/{net}/{st}/{st}_raw/" # magnetic data path
     for i in idx_daily:
         date_name = str(i)[0:10]
         dates.append(date_name)
         date_name_newf = convert_date(date_name,'%Y-%m-%d', '%Y%m%d')
         new_name = str(date_name_newf)[0:8]
         
-        fname = f"{st}{new_name}rK.min"
-        #fname = f"{st}_{new_name}.clean"
+        #fname = f"{st}{new_name}rK.min"
+        fname = f"{st}_{new_name}.clean.dat"
         fname2 = st+'_'+new_name+'M.dat'
         fname3 = st+'_'+new_name+'M_XYZ.dat'
         filenames.append(fname)

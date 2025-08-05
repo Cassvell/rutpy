@@ -25,7 +25,7 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
             if os.path.isfile(full_path):
                 try:
                     # Read the file into a dataframe
-                    df_c = pd.read_csv(full_path, header=17, sep=r'\s+')
+                    df_c = pd.read_csv(full_path, header=None, sep=r'\s+')
                     dfs_c.append(df_c)
                     
                 except Exception as e:
@@ -58,8 +58,8 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         # dfs_c.append(df_c) 
             
         df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-        df = df.replace(999999.00, np.NaN) 
-        df = df.replace(9999.00, np.NaN)      
+        df = df.replace(999999.00, np.nan) 
+        df = df.replace(9999.00, np.nan)      
     
         #df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0], format='%Y%m%d')
     # Combine Date and Time columns as strings
@@ -73,12 +73,16 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         
         
         df = df.reindex(idx)   
-        df = df.drop(columns=['DATE', 'TIME', 'DateTime', '|'])
+            
+        df2 = df.iloc[:,3:7]#df.drop(colums=[0,1,2, 'DateTime'])
 
-        H = df.iloc[:,2]    
-        D = df.iloc[:,1]
-        Z = df.iloc[:,3]
-        F = df.iloc[:,4]
+        
+        #df = df.drop(columns=['DATE', 'TIME', 'DateTime', '|'])
+
+        H = df2.iloc[:,1]    
+        D = df2.iloc[:,0]
+        Z = df2.iloc[:,2]
+        F = df2.iloc[:,3]
 
         Ddeg = D/60
         deg2rad = np.pi / 180
@@ -152,8 +156,8 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
     #COMBINE THE DAILY DATAFRAMES        
             
         df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-        df = df.replace(999999.00, np.NaN) 
-        df = df.replace(9999.00, np.NaN)      
+        df = df.replace(999999.00, np.nan) 
+        df = df.replace(9999.00, np.nan)      
             
         df['DateTime'] =  df.iloc[:, 0]+ ' ' + df.iloc[:, 1]
         df['DateTime'] = pd.to_datetime(df['DateTime'])
@@ -162,8 +166,11 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
         df = df.set_index(df['DateTime'])   
         
         df = df.reindex(idx)   
+        
         df = df.drop(columns=['DATE', 'TIME', 'DOY', 'DateTime', '|'])
 
+
+        
         H = np.sqrt(df.iloc[:,0]**2   + df.iloc[:,1]**2)
         X = df.iloc[:,0]
         Y = df.iloc[:,1]

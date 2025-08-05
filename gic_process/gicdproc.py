@@ -290,7 +290,7 @@ def df_gic(date1, date2, dir_path, stat):
           
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
-    df = df.replace(-999.999, np.NaN)        
+    df = df.replace(-999.999, np.nan)        
  #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
   #                                    end = pd.Timestamp(date2), freq='H')  
     df = df.set_index(idx1)
@@ -336,7 +336,7 @@ def df_gic_daily(date, dir_path, stat):
          
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
       
-    df = df.replace(-999.999, np.NaN)        
+    df = df.replace(-999.999, np.nan)        
  #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
   #                                    end = pd.Timestamp(date2), freq='H')  
     df = df.set_index(idx1)
@@ -395,7 +395,7 @@ def df_dH(date1, date2, dir_path, H_stat):
         
     df = pd.concat(dfs_c, axis=0, ignore_index=True)  
 
-    df = df.replace(999999.0, np.NaN)        
+    df = df.replace(999999.0, np.nan)        
     idx2 = pd.date_range(start = pd.Timestamp(date1), \
                                     end = pd.Timestamp(date2), freq='h')
     df = df.set_index(idx1)
@@ -464,7 +464,7 @@ def df_dHmex(date1, date2, dir_path, H_stat):
         dfs_c.append(df_c) 
                 
     df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-    df = df.replace(999999.0, np.NaN)        
+    df = df.replace(999999.0, np.nan)        
  #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
   #                                    end = pd.Timestamp(date2), freq='H')
         

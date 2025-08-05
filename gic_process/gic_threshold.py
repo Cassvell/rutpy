@@ -17,21 +17,7 @@ import matplotlib.dates as mdates
 import sys
 import os
 
-# Get the absolute path to the directory containing your module
-module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
-sys.path.append(module_dir)
-
-# Now you can import the module
-import magdata_processing 
-
-
-from magdata_processing import get_diurnalvar, get_qd_dd
-from night_time import night_time
-
-
-
-
-def threshold(stddev_30, stat):
+def threshold(stddev_30):
     nbins = int(len(stddev_30) / 3)
     frequencies, bin_edges = np.histogram(stddev_30, bins=nbins*2, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -113,47 +99,7 @@ def threshold(stddev_30, stat):
     return avg_threshold, indices
 
 
-i_date = sys.argv[1] 
-
-f_date = sys.argv[2]
-
-
-fyear = int(f_date[0:4])
-fmonth = int(f_date[4:6])
-fday = int(f_date[6:8])
-
-
-finaldate= datetime(fyear, fmonth,fday)
-nextday = finaldate+timedelta(days=1)
-nextday = str(nextday)[0:10]
-
-idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 12:01:00'), \
-                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='min')
-
-
-ndays = calculate_days_difference(i_date, f_date)
-tot_data = (ndays+1)*1440
-
-
-path = '/home/isaac/datos/gics_obs/'
-file = []
-stat = ['LAV', 'QRO', 'RMY', 'MZT']
-
-#sys.exit('Exiting script after loading data. Uncomment the next lines to continue processing.')
-for i in range(len(stat)):
-    gic, T1, T2 = process_station_data(i_date, f_date, path, stat[i], idx1, tot_data)
-	
-    stddev_20 = gic.resample('20Min').std().fillna(method='ffill')
-    threshold_value, indices = threshold(stddev_20, stat[i])
-    exceed_indices = stddev_20[stddev_20 > threshold_value].index
-    
-    print(f'Exceeding indices for {stat[i]}: {len(exceed_indices)}')
-    idx_daily = pd.date_range(start = gic.index[719], end = gic.index[-722], freq= 'D' )
-    qd, offset = get_diurnalvar(gic[719:-721], idx_daily, 'regmex', stat[i].lower())
-    
-    inicio = gic.index[719]
-    final = gic.index[-721]
-
+'''
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
     ax1.plot(gic[719:-721].index, gic[719:-721], label=f'preprocessed {stat[i].upper()}', alpha=0.8)
     ax1.plot(gic[719:-721].index, qd, label='Diurnal Variation', color='red')
@@ -170,52 +116,7 @@ for i in range(len(stat)):
     ax2.legend()
 
     plt.tight_layout()
-    plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre4/gics_procesados/{stat[i]}_{inicio.strftime('%Y-%m-%d')}_{final.strftime('%Y-%m-%d')}.png', dpi = 300)
+    #plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre4/gics_procesados/{stat[i]}_{inicio.strftime('%Y-%m-%d')}_{final.strftime('%Y-%m-%d')}.png', dpi = 300)
     plt.show()
 
-
-#inicio = gicTW_lav.index[0]
-#final  = gicTW_lav.index[-1]
-
-print('##################################################################')
-print('##################################################################')
-
-#stddev_30 = gicTW_lav.resample('20Min').std().fillna(method='ffill')
-
-#threshold_value, indices = threshold(stddev_30, stat[1])  # Assuming threshold() is defined
-#exceed_indices_lav = stddev_30[stddev_30 > threshold_value].index
-
-#normal_periods = ~gicTW_lav.index.isin(exceed_indices_lav)
-
-#fig, ax = plt.subplots(4, figsize=(12,14))
-#fig.suptitle('Estudio de GICs', fontsize=24, fontweight='bold')
-
-#ax[0].plot(gicTW_lav)
-#ax[0].grid()
-#ax[0].set_xlim(inicio,final)
-#ax[0].set_title('LAV st', fontsize=18)
-#ax[0].set_ylabel(' GIC [A]', fontweight='bold')
-
-#ax[1].plot(gicTW_qro)
-#ax[1].grid()
-#ax[1].set_xlim(inicio,final)
-#ax[1].set_title('QRO st', fontsize=18)
-#ax[1].set_ylabel(' GIC [A]', fontweight='bold')
-
-#ax[2].plot(gicTW_rmy)
-#ax[2].grid()
-#ax[2].set_xlim(inicio,final)
-#ax[2].set_title('RMY st', fontsize=18)
-#ax[2].set_ylabel(' GIC [A]', fontweight='bold')
-
-#ax[3].plot(gicTW_mzt)
-#ax[3].grid()
-#ax[3].set_xlim(inicio,final)
-#ax[3].set_title('MZT st', fontsize=18)
-#ax[3].set_ylabel(' GIC [A]', fontweight='bold')
-
-#fig.tight_layout()
-#plt.savefig(f'/home/isaac/rutpy/gicsOutput/mothersday/gic_stat_{i_date}_{f_date}.png', dpi=300)
-#plt.show()
-
-
+'''

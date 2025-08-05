@@ -217,7 +217,7 @@ def get_diurnalvar(data, idx_daily, net, st):
     
     template = T[0:1440]
     
-    plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
+    #plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset

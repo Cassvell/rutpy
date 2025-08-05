@@ -86,7 +86,7 @@ for i in col_names:
     if i not in df.columns:
         df[i] = -999.999
 
-df = df.replace(np.NaN, -999.999)
+df = df.replace(np.nan, -999.999)
 
         # Set index, sort and remove duplicated values keeping the first occurrence
 df.set_index('Datetime', inplace=True);

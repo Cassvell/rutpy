@@ -57,6 +57,21 @@ lblEngineSize.grid(column = 1, row = 5)
 txtEngineSize = tkinter.Entry(root, width = 10)
 txtEngineSize.grid(column = 2, row = 5)
 
+#Funciones para preprocesar y postprocesar
+
+def estandarizar(x):
+  x_mean = np.array([2.01662658e+03, 2.44982880e+04, 1.61098738e-01, 7.71714922e+01,
+       5.86742390e+01, 1.36391982e+00])
+  x_std = np.array([1.90009739e+00, 1.79573016e+04, 3.67622000e-01, 6.72932142e+01,
+       1.09916475e+01, 2.81298431e-01])
+  x_pre = (x - x_mean)/x_std
+  return x_pre
+
+def estandarInverso(y_estandarizado):
+  y_mean = 1.43277506e+04
+  y_std = 4.64418736e+03
+  y = (y_estandarizado * y_std) + y_mean
+  return y
 
 # Función para realizar predicción cuando se presione el boton
 def clicked():
@@ -69,7 +84,12 @@ def clicked():
     engineSize = float(txtEngineSize.get())
     
     features = np.array([year, mileage, fuelType, tax, mpg, engineSize])
-    prediction = modelo.predict(features.reshape(1, -1))
+    featureStd = estandarizar(features)
+    
+    predictionStd = modelo.predict(featureStd.reshape(1, -1))
+    
+    prediction = estandarInverso(predictionStd)
+    #modelo.predict(features.reshape(1, -1))
 
     lblPrediccion.configure(text = str(round(prediction[0], 2)))
  

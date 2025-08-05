@@ -1,11 +1,11 @@
-import os
-import sys
+#import os
+#import sys
 import numpy as np
-from datetime import datetime, timedelta
-import pandas as pd
+#from datetime import datetime, timedelta
+#import pandas as pd
 from gicdproc import  process_station_data
 from calc_daysdiff import calculate_days_difference
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from gic_threshold import threshold
 
 
@@ -15,7 +15,7 @@ def corr_offset(data, threshold):
     ndata = len(data)
     crossing_indices = []
     median_values = []
-    plt.plot(data, label='GIC Data', color='blue', alpha=0.7)    
+    #plt.plot(data, label='GIC Data', color='blue', alpha=0.7)    
     
     for i in range(0, ndata - window_size + 1):
         window = data[i:i + window_size]
@@ -53,7 +53,7 @@ def corr_offset(data, threshold):
     print('######################################')
     print('######################################')
 
-    
+    data_corr_offset = data.copy()
     #caso 1, la ventana presenta indices de numero par. El inicio y final de la ventana presenta offset cercano a cero
     if len(crossing_indices) > 3:
         if c ==[0,0]:
@@ -65,13 +65,13 @@ def corr_offset(data, threshold):
                     break  # In case of odd number of indices
             
         
-                sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
-                median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
+                sampled_data = data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
+                median_w = np.nanmedian(data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
                 #print(median_w)
                 for i in range(len(sampled_data)):
                     if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                        data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
-                        data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
+                        data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
+                        data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
                     
         
         #caso si, el numero de indices es impar y el final de la ventana muestra offset alterado
@@ -82,25 +82,25 @@ def corr_offset(data, threshold):
                     start_idx = h * 2
                     end_idx = h * 2 + 1
                                    
-                    sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
-                    median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
+                    sampled_data = data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
+                    median_w = np.nanmedian(data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
                     #print(median_w)
                     for i in range(len(sampled_data)):
                         if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                            data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
-                            data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
+                            data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
+                            data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
                 
                 else:
                     start_idx = h * 2
-                    end_idx = data.size 
+                    end_idx = data_corr_offset.size 
                     print('aun no funciona!')
-                    sampled_data = data[crossing_indices[start_idx]:end_idx]
-                    median_w = np.nanmedian(data[crossing_indices[start_idx]:end_idx])
+                    sampled_data = data_corr_offset[crossing_indices[start_idx]:end_idx]
+                    median_w = np.nanmedian(data_corr_offset[crossing_indices[start_idx]:end_idx])
                  
                     for i in range(len(sampled_data)):
                         if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                            data[crossing_indices[start_idx]:end_idx][i] = \
-                            data[crossing_indices[start_idx]:end_idx][i] - median_w
+                            data_corr_offset[crossing_indices[start_idx]:end_idx][i] = \
+                            data_corr_offset[crossing_indices[start_idx]:end_idx][i] - median_w
             
         elif c == [1,0]:
             for h in range((len(crossing_indices) // 2)+1):  # Integer division to get pair count
@@ -109,13 +109,13 @@ def corr_offset(data, threshold):
                     start_idx = 0
                     end_idx = h * 2 + 1
             
-                    sampled_data = data[0:crossing_indices[0]]
-                    median_w = np.nanmedian(data[0:crossing_indices[0]])
+                    sampled_data = data_corr_offset[0:crossing_indices[0]]
+                    median_w = np.nanmedian(data_corr_offset[0:crossing_indices[0]])
 
                     for i in range(len(sampled_data)):
                         if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                            data[0:crossing_indices[0]][i] = \
-                            data[0:crossing_indices[0]][i] - median_w     
+                            data_corr_offset[0:crossing_indices[0]][i] = \
+                            data_corr_offset[0:crossing_indices[0]][i] - median_w     
 
 
                 else:       
@@ -123,13 +123,13 @@ def corr_offset(data, threshold):
                     end_idx = h * 2
                     
                     #print(start_idx, end_idx)
-                    sampled_data = data[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
-                    median_w = np.nanmedian(data[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
+                    sampled_data = data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60]
+                    median_w = np.nanmedian(data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60])
                     #print(median_w)
                     for i in range(len(sampled_data)):
                         if sampled_data[i] > threshold or sampled_data[i] < threshold :
-                            data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
-                            data[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
+                            data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] = \
+                            data_corr_offset[crossing_indices[start_idx]:crossing_indices[end_idx]+60][i] - median_w
         
         
         #caso cuando el inicio y el final de la ventana presentan un offset alterado
@@ -209,11 +209,11 @@ def corr_offset(data, threshold):
                             data[crossing_indices[start_idx]:-1][i] - median_w                          
                 
             
-    plt.plot(data, label='GIC Data offset corrected', color='black', alpha=0.7)
-    plt.legend()
-    plt.ylabel('GIC LAV st [A]')
-    plt.show()
-    return crossing_indices, median_values
+    #plt.plot(data, label='GIC Data offset corrected', color='black', alpha=0.7)
+    #plt.legend()
+    #plt.ylabel('GIC LAV st [A]')
+   # plt.show()
+    return(data_corr_offset)
 '''
 
 
