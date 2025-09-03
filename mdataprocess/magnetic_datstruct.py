@@ -126,7 +126,7 @@ def get_dataframe(filenames, path, idx, daily_idx, net):
                                 break
         
                     # Read the file into a dataframe
-                    df_c = pd.read_csv(full_path, header=date_line_number, delim_whitespace=True)
+                    df_c = pd.read_csv(full_path, header=date_line_number, sep='\\s+')
                     dfs_c.append(df_c)
                 except Exception as e:
                     # Handle any read errors

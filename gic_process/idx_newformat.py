@@ -19,13 +19,15 @@ import sys
 #introducimos la ventana de tiempo que abarca el archivo original y que está 
 #indicada en el nombre del mismo
 file_type = sys.argv[1]#=input("select file type option:\n dst: \n kp: \n sym: \n or \n ip: \n type:  ") 
+idate = sys.argv[2]
+fdate = sys.argv[3]
 #selección del tipo de archivo de acuerdo al índice geomagnético de interés
 
-if file_type != 'ip':
-    idate = input("format code:\n (yyyy-mm-dd): ")
-    fdate = input("format code:\n (yyyy-mm-dd): ")
-else:
-     idate = input("format code:\n (yyyy-mm-dd): ")
+#if file_type != 'ip':
+#    idate = input("format code:\n (yyyy-mm-dd): ")
+#    fdate = input("format code:\n (yyyy-mm-dd): ")
+#else:
+#     idate = input("format code:\n (yyyy-mm-dd): ")
 
 code_stat = 'D' #código que indica el estado de los archivos, D, P o Q
                 #(Definitivos, Provisionales o Rápidos)
@@ -84,7 +86,7 @@ elif file_type == 'ip':
 elif file_type == 'sym':
     sample=input('chose sample rate: \n h or m: ')
     
-    if os.path.isfile(path+'ASY_'+idate+'_'+fdate+'h_D'+'.dat'):
+    if os.path.isfile(f'{path}ASY_{idate}_{fdate}h_D.dat'):
         if sample=='h':    
             code_stat = 'h_D'
         else:
@@ -93,7 +95,7 @@ elif file_type == 'sym':
         file_type = 'sym'
         code_name = 'ASY'
                 
-    if os.path.isfile(path+'ASY_'+idate+'_'+fdate+'h_P'+'.dat'):
+    if os.path.isfile(f'{path}ASY_{idate}_{fdate}h_P.dat'):
         if sample=='h':    
             code_stat = 'h_P'
         else:
@@ -118,22 +120,24 @@ else:
 ################################################################################   
 #generación del DataFrame
 if  file_type == 'kp':
-    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\s+')
+    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\\s+')
     df = df.drop(columns=['|'])
 
 elif file_type == 'dst':
-    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\s+')
+    df = pd.read_csv(path+code_name+idate+'_'+fdate+code_stat+'.dat', header=head, sep='\\s+')
     df = df.drop(columns=['|'])
         
 elif file_type == 'ip':
     print(path+idate+'.dat')
-    df = pd.read_csv(path+idate+'.dat', header=None, sep='\s+')    
+    df = pd.read_csv(path+idate+'.dat', header=None, sep='\\s+')    
 
 elif file_type == 'sym':#sym-H
 
-    df = pd.read_csv(path+'ASY_'+idate+'_'+fdate+'m_P.dat', header=head, sep='\s+')
+    df = pd.read_csv(f'{path}ASY_{idate}_{fdate}{sample}_P.dat', header=head, sep='\\s+')
+
     df = df.drop(columns=['|'])                                          
 
+#sys.exit('end of test')
 ################################################################################
 ################################################################################
 #fragmentación del archivo original en varios archivos con un día de ventana de
@@ -165,13 +169,13 @@ elif file_type == 'sym':
     if sample =='h':
         enddata = fdate+ ' 23:00:00'
         idx = pd.date_range(start = pd.Timestamp(idate), \
-                            end = pd.Timestamp(enddata), freq='H')
+                            end = pd.Timestamp(enddata), freq='h')
         step=24
         fhour=23                                 
     else:
         enddata = fdate+ ' 23:59:00'
         idx = pd.date_range(start = pd.Timestamp(idate), \
-                        end = pd.Timestamp(enddata), freq='T')
+                        end = pd.Timestamp(enddata), freq='min')
         step=1440
         fhour=1439
 
@@ -232,7 +236,7 @@ for i in range(0,len(idx),step):
             df_new = df_new.drop(columns=['DOY'])
             df_new.rename(columns={'level_0':'index'})
             df_new = df_new.drop(columns=['index'])            
-            name_new = file_type+'_'+date+code_stat+'.dat'
+            name_new = f'{file_type}_{date}{code_stat}.dat'
             new_path = '/home/isaac/datos/'+\
             file_type+'/daily/'
             #print(df_new)
@@ -242,12 +246,18 @@ for i in range(0,len(idx),step):
                     formatted_line = f"{int(row['ASY-D']):>4} {int(row['ASY-H']):>4} {int(row['SYM-D']):>5} {int(row['SYM-H']):>5} \n"
                     f.write(formatted_line)    
         else:
-            df_new = df_new.drop(columns=['ASY-D', 'ASY-D']) 
+            df_new = df_new.drop(columns=['DOY'])
+            #df_new = df_new.drop(columns=['ASY-D', 'ASY-D']) 
             df_new = df_new.drop(columns=['index'])       
-            name_new = file_type+'_'+date+code_stat+'h.dat'
-            new_path = '/home/isaac/datos/'+file_type+'/daily/'
-            
-          #  sym_H.to_csv(new_path+name_new, sep= '\t', index=False)             
+            name_new = f'{file_type}_{date}{code_stat}.dat'
+            new_path = '/home/isaac/datos/'+\
+            file_type+'/daily/'
+            print(df_new)
+            df_new.to_csv(new_path+name_new, sep= '\t', index=False)        
+            with open(new_path+name_new, 'w') as f:
+                for index, row in df_new.iterrows():
+                    formatted_line = f"{int(row['ASY-D']):>4} {int(row['ASY-H']):>4} {int(row['SYM-D']):>5} {int(row['SYM-H']):>5} \n"
+                    f.write(formatted_line)          
 
 
 

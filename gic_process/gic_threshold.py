@@ -17,17 +17,30 @@ import matplotlib.dates as mdates
 import sys
 import os
 
+
+def check_data_type(data):
+    if isinstance(data, (pd.DataFrame, pd.Series)):
+        return 0
+    elif isinstance(data, np.ndarray):
+        return 1
+    else:
+        return "Neither Pandas nor NumPy"
+
 def threshold(stddev_30):
     nbins = int(len(stddev_30) / 3)
-    frequencies, bin_edges = np.histogram(stddev_30, bins=nbins*2, density=True)
+    
+    stddev_res = np.array(stddev_30).flatten()
+    
+    frequencies, bin_edges = np.histogram(stddev_res, bins=nbins*2, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
 
 
     def gaussian(x, a, mu, sigma):
         return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
     popt, pcov = curve_fit(gaussian, bin_centers, frequencies, 
-                            p0=[1, np.mean(stddev_30), np.std(stddev_30)])
+                            p0=[1, np.mean(stddev_res), np.std(stddev_res)])
 
     x_fit = np.linspace(min(bin_edges), max(bin_edges), 500)    
     print('##################################################################')
@@ -52,7 +65,9 @@ def threshold(stddev_30):
     #fig.autofmt_xdate(rotation=45)  # Rotate date labels
 
     # --- Bottom Plot: CDF ---
-    sorted_data = np.sort(stddev_30.values)
+
+    sorted_data = np.sort(stddev_res)
+
     cdf = np.arange(1, len(sorted_data)+1 / len(sorted_data))
 
     #ax2.plot(sorted_data, cdf, 'b-', linewidth=2, label='Empirical CDF')
@@ -92,10 +107,14 @@ def threshold(stddev_30):
     #plt.show()
     indices = []
     
-    for i in range(len(stddev_30)):
-        if stddev_30[i] >= avg_threshold:
-            indices.append(stddev_30.index[i])
 
+    #sys.exit('end of threshold function')
+    for i in range(len(stddev_30)):
+        #print(stddev_30.index[i])
+        if stddev_res[i] >= avg_threshold:
+            #print(f"Index {i} exceeds threshold: {stddev_res[i]} >= {avg_threshold}")
+            indices.append(stddev_30.index[i])
+    #print(f"Indices exceeding threshold: {indices}")
     return avg_threshold, indices
 
 

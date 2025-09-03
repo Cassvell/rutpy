@@ -40,6 +40,8 @@ def base_line(data, net, st):
 #Typical Day computation
 ###############################################################################  
     daily_mode = mode_nighttime(data, 60, net, st)
+    
+    
     night_data = night_hours(data, net, st)   
     
 
@@ -98,6 +100,30 @@ def base_line(data, net, st):
 ###############################################################################
 #diurnal variation computation
 ###############################################################################
+def mlt(lon, hem):
+    
+    
+    if hem == 'W':
+        lon = 360 - lon
+    elif hem == 'E':
+        lon = lon
+        
+    
+    mlt = 0 + (lon / 15.0)
+    if mlt < 0:
+        mlt += 24
+    elif mlt >= 24:
+        mlt -= 24
+    lt_c = 0
+    
+    if int(mlt) <= 12:
+        lt_c = int(mlt)
+    elif int(mlt) > 12:
+        lt_c = int(mlt) - 24
+
+    return lt_c
+
+
 def get_diurnalvar(data, idx_daily, net, st):
     ndata = len(data)
     totdays = int(ndata/1440)
@@ -109,8 +135,12 @@ def get_diurnalvar(data, idx_daily, net, st):
     ndays = 5
     info = night_time(net, st)
     
-    print(info)
-    utc = info[11]
+    lt = mlt(float(info[5]), info[6])
+    
+    utc = lt
+    
+    print(f"local time: {lt}")
+
     ini = 0
     fin = 0   
     
@@ -130,8 +160,8 @@ def get_diurnalvar(data, idx_daily, net, st):
 #diurnal variation computation
 ###############################################################################
    # QDS = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5']    
-    print('qdl list, \t H[nT] \n')     
-    print(qd_list)
+    #print('qdl list, \t H[nT] \n')     
+    #print(qd_list)
     #plt.title('Local Quiet Days, June 2024: St: '+st, fontweight='bold', fontsize=18)
     for i in range(ndays):
         qd = (str(qd_list[i])[0:10])

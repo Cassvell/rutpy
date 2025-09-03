@@ -15,12 +15,11 @@
 
 import csv
 #<<<<<<< Updated upstream
-path = '/home/isaac/rutidl' 
+
 #=======
 import os
 #>>>>>>> Stashed changes
 
-path = '/home/isaac/rutidl'
 #if not os.path.exists(path) or not os.path.isdir(path):
 
 #    path = '/home/isaac/rutidl'
@@ -30,9 +29,16 @@ path = '/home/isaac/rutidl'
 #print(f"{path} directory exists.")
 
 # Function to get observation info
+
+
+
+
 def night_time(net, obs):
     obs_info = []
+    path = '/home/isaac/datos' 
     file_path = f"{path}/{net}_stations.csv"
+    
+    #info_tl = mlt()
     
     # Check if the file exists
     if not os.path.exists(file_path):
@@ -44,6 +50,7 @@ def night_time(net, obs):
         for row in data:
             if obs == row[2]:  # Assuming the observation code is in the 3rd column
                 obs_info = row
+                #print(f"Observation info found: {obs_info}")
                 break  # Exit loop once the observation is found
     
     if not obs_info:

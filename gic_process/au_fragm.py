@@ -11,7 +11,7 @@ idate = sys.argv[1]# "formato(yyyy-mm-dd)"
 fdate = sys.argv[2]
 
 file_path='/home/isaac/datos/ae/'
-df = pd.read_csv(file_path+'AEAUALAO_'+idate+'_'+fdate+'m_P'+'.dat', header=24, sep='\s+')  # Ensure correct delimiter
+df = pd.read_csv(file_path+'AEAUALAO_'+idate+'_'+fdate+'m_P'+'.dat', header=24, sep=r'\s+')  # Ensure correct delimiter
 
 # Drop unwanted columns (check if they exist)
 

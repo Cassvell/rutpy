@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from gic_threshold import threshold
 from gic_diurnalbase import gic_diurnalbase
 from corr_offset import corr_offset
+import os
+
 idate = sys.argv[1]
 fdate = sys.argv[2]
 
@@ -30,41 +32,65 @@ tot_data = (ndays+1)*1440
 
 file = []
 
-gic_lav, T1TW_lav, T2TW_lav = process_station_data(idate, fdate, path, stat[0], idx1, tot_data)
+dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
+for i in stat:
+    gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
 
-#gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
+    if not gic_st.isnull().all():
+        gic_res, qd = gic_diurnalbase(gic_st, i)    
+        #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
+        
+        if i == 'LAV':
+            gic_resample = gic_res.resample('30Min').median().fillna(method='ffill')
+            threshold = threshold(gic_resample)   
+            gic_corr = corr_offset(gic_res, threshold[0], 60) 
 
-#gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
+            gic_corr = corr_offset(gic_corr, threshold[0], 60) 
+            gic_res = gic_corr
+        
+        
+        dict_gic[i] = gic_res
+    else:
+        dict_gic[i] = gic_st
+        
+        
+        #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
 
-#gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
-
-gic_lav_res, qd  = gic_diurnalbase(gic_lav, stat[0])
-
-gic_lav_h = gic_lav_res.resample('20Min').median().fillna(method='ffill')
-
-#sys.exit('end of child process')
-threshold = threshold(gic_lav_h)   
-#print(f'threshold: {threshold[0]}')
-gic_lav_corroffset = corr_offset(gic_lav_res, threshold[0])
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12))  # 3 rows, 1 column
 
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))  # 3 rows, 1 column
-
-# First subplot
-ax1.plot(gic_lav.index, gic_lav, color='blue', label='Despiked GIC LAV')
-ax1.plot(gic_lav[719:-721].index, qd, color='red', label='diurnal variation')
+ax1.plot(dict_gic['LAV'], label='LAV', color='blue', alpha=0.7)
 ax1.legend()
-ax1.set_title('Despiked GIC LAV')
 
-# Second subplot
-ax2.plot(gic_lav_res, color='green', label='GIC LAV - Diurnal Variation')
+ax2.plot(dict_gic['QRO'], label='QRO', color='orange', alpha=0.7)
 ax2.legend()
-ax2.set_title('Diurnal Variation Removed')
 
-# Third subplot
-ax3.plot(gic_lav_corroffset, color='black', label='LAV Offset Jumps Corrected')
+ax3.plot(dict_gic['RMY'], label='RMY', color='green', alpha=0.7)
 ax3.legend()
-ax3.set_title('Offset Jumps Corrected')
+
+ax4.plot(dict_gic['MZT'], label='MZT', color='green', alpha=0.7)
+ax4.legend()
+
 
 plt.tight_layout()  # Prevents label overlapping
 plt.show()
+
+output_path = f'/home/isaac/datos/gics_obs/processed/{fyear}/'
+
+for i in stat:
+    if not os.path.exists(output_path + i):
+        os.makedirs(output_path + i)
+
+    ndays = int(len((dict_gic[i]))/1440)
+    for j in range(ndays):
+        start_idx = j * 1440
+        end_idx = (j + 1) * 1440
+        daily_data = dict_gic[i].iloc[start_idx:end_idx]
+        daily_data.fillna(9999.9999, inplace=True)
+        date_str = daily_data.index[0].strftime('%Y%m%d')
+        daily_data.to_csv(output_path + f'{i}/gic_{i}_{date_str}.csv', header=False)
+    #for j in 
+    #dict_gic[i].to_csv(output_path + f'{i}/gic_{i}_{idate}_{fdate}.csv', header=True)
+
+
+        

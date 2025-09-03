@@ -45,12 +45,14 @@ list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
 #<<<<<<< HEAD
 #print(data_dir)
 #exit()
-lastfile = list_fnames[-1] 
+#lastfile = f'/home/isaac/datos/gics_obs/{year_dir}/{stat}/Datos_GICS_2025-07-28 LAV.csv.dat'#list_fnames[-1] 
+
 #=======
 #lastfile = sys.argv[3]
 
 
-#lastfile = list_fnames[-1] 
+lastfile = list_fnames[-1] 
+#print(f'last file: {lastfile}')
 #>>>>>>> origin/main
 #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
 
@@ -89,15 +91,15 @@ for i in col_names:
 df = df.replace(np.nan, -999.999)
 
         # Set index, sort and remove duplicated values keeping the first occurrence
-df.set_index('Datetime', inplace=True);
-df.sort_index(inplace = True);
+df.set_index('Datetime', inplace=True)
+df.sort_index(inplace = True)
     
 
         #Remove indexes with seconds other than '00'
 df.index = df.index.map(lambda x: x.replace(second=0))
 df = df[~df.index.duplicated(keep='first')]
-ts_start = df.index[0];
-ts_end = df.index[-1];
+ts_start = df.index[0]
+ts_end = df.index[-1]
         
         # Reindexing & fill missing values with nan
 idx = pd.date_range(start=ts_start, end=ts_end, freq='min');
