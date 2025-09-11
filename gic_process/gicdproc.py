@@ -182,7 +182,7 @@ def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
         
         SG2_tmp = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
         SG2.append(SG2_tmp)
-    
+       # print(SG2)
         #if os.path.isfile(SG2_tmp):
          #   print('exist')
  
@@ -406,6 +406,56 @@ def df_dH(date1, date2, dir_path, H_stat):
     return(H)
 
 ###############################################################################
+def df_sym(date1, date2, dir_path):
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
+                         pd.Timestamp(date2+' 23:59:00'), freq='min')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                                          end = pd.Timestamp(date2), freq='D')  
+
+    str1 = 'sym_'
+    ext = 'm_D.dat'
+
+    list_fnames = []
+    for i in idx_daylist:
+        date_str = str(i)[0:10]  # Get yyyy-mm-dd format
+        
+        # First try with m_D.dat
+        tmp = str1 + date_str + ext
+        if os.path.isfile(f'{dir_path}{tmp}'):
+            list_fnames.append(tmp)
+            continue  # Move to next date if found
+        
+        # If not found, try m_P.dat
+        ext = 'm_P.dat'
+        tmp = str1 + date_str + ext
+        if os.path.isfile(f'{dir_path}{tmp}'):
+            list_fnames.append(tmp)
+            continue  # Move to next date if found
+        
+        # If not found, try m_Q.dat
+        ext = 'm_Q.dat'
+        tmp = str1 + date_str + ext
+        if os.path.isfile(f'{dir_path}{tmp}'):
+            list_fnames.append(tmp)
+        else:
+            print(f'{tmp} file does not exist')
+
+    dfs_c = []
+    
+    for file_name in list_fnames:    
+        df_c = pd.read_csv(f'{dir_path}{file_name}', header=None, sep='\\s+', skip_blank_lines=True)
+        
+        dfs_c.append(df_c) 
+                
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)
+    
+    
+    index = {'DateTime' : idx1, 'ASYD' : df.iloc[:,0], 'ASYH' : df.iloc[:,1], 'SYMH' : df.iloc[:,2], 'SYMD' : df.iloc[:,3]}
+    
+    return(index)
+
+###############################################################################
 def df_dst(date1, date2, dir_path):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
                          pd.Timestamp(date2+' 23:00:00'), freq='H')
@@ -431,6 +481,7 @@ def df_dst(date1, date2, dir_path):
         
     df = df.set_index(idx1)
     return(df['Dst'])
+
 
 def df_dHmex(date1, date2, dir_path, H_stat):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\

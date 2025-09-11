@@ -36,6 +36,8 @@ dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
 for i in stat:
     gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
 
+    
+    
     if not gic_st.isnull().all():
         gic_res, qd = gic_diurnalbase(gic_st, i)    
         #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)

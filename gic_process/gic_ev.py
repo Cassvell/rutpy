@@ -45,7 +45,7 @@ from pick_range import on_move, on_click
 idate = sys.argv[1]
 fdate = sys.argv[2]
 
-stat = ['QRO', 'LAV', 'RMY', 'MZT']
+stat = ['LAV', 'QRO', 'RMY', 'MZT']
 year = int(idate[0:4])
 
 idx_d = pd.date_range(start = pd.Timestamp(idate + ' 00:00:00'), end= pd.Timestamp(fdate + ' 23:59:59'), freq='D')
@@ -62,9 +62,14 @@ for s in stat:
     df_tmp = []
     for day in file_days:
         file = os.path.join(data_dir, s, f'gic_{s}_{day}.csv')
-        #file2 = os.path.join(data_dir, s, f'gic_{s}_{day}_reproc.csv')
         if os.path.isfile(file):
-            df = pd.read_csv(file, index_col=0, header=None, parse_dates=True)
+            df = pd.read_csv(file, index_col=0, header=None, parse_dates=True, sep=',')
+            
+            # CORRECTED: Check if any value in the DataFrame equals 9999.9999
+            if (df == 9999.9999).any().any():  # Check if any value in any column is 9999.9999
+               # print(f"Found 9999.9999 values in {file} - replacing with NaN")
+                df = df.replace(9999.9999, np.nan)
+            
             df_tmp.append(df)
         else:
             print(f'File not found: {file} - creating empty DataFrame')
@@ -81,6 +86,7 @@ for s in stat:
     stat_dir[s] = pd.concat(df_tmp, axis=0)
 
 
+
 clicked_dates = []
 
 def on_click(event):
@@ -95,21 +101,31 @@ def on_click(event):
             plt.close()
 
 
+#upload dH index for GS reference
+stat_H = 'teo'
+dir_path = f'/home/isaac/datos/dH_{stat_H}/'
+H = df_dH(idate, fdate, dir_path, stat_H)
+
+
 # Create figure and plots
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12))
+fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(10, 12))
 
 # Plot data for each station
 stations = {
-    'LAV': ('blue', ax1),
-    'QRO': ('orange', ax2),
-    'RMY': ('green', ax3),
-    'MZT': ('purple', ax4)
+    'TEO': ('black', ax1),
+    'LAV': ('blue', ax2),
+    'QRO': ('orange', ax3),
+    'RMY': ('green', ax4),
+    'MZT': ('purple', ax5)
 }
 
 for name, (color, ax) in stations.items():
-    ax.plot(stat_dir[name].index, stat_dir[name], label=name, color=color, alpha=0.7)
-    ax.set_xlim(stat_dir[name].index[0], stat_dir[name].index[-1])
-    ax.legend()
+    if name == 'TEO':
+        ax.plot(H.index, H, label='TEO', color=color, alpha=0.7)
+    else:
+        ax.plot(stat_dir[name].index, stat_dir[name], label=name, color=color, alpha=0.7)
+        ax.set_xlim(stat_dir[name].index[0], stat_dir[name].index[-1])
+        ax.legend()
     #ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
 
 # Connect click event
@@ -131,10 +147,8 @@ if len(clicked_dates) >= 2:
     fmt_end = rounded_end.strftime('%Y-%m-%d %H:%M:%S')
     
     print("\nSelected time range:")
-    print(f"Original - Start: {start_date.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Original - End: {end_date.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Rounded - Start: {fmt_start}")
-    print(f"Rounded - End: {fmt_end}")
+    print(f"Zoom data - Start: {fmt_start}")
+    print(f"Zoom data - End: {fmt_end}\n")
     
     # Extract data within zoom range
     zoom_data = {}
@@ -144,15 +158,21 @@ if len(clicked_dates) >= 2:
             mask = (stat_dir[station].index >= fmt_start) & \
                     (stat_dir[station].index <= fmt_end)
             zoom_data[station] = stat_dir[station][mask]
-            print(f"Data for {station}")
-               
-        else:
-            print(f"All values are NaN for {station}")
+            
+            resampled_data = zoom_data[station].resample('10 min').median()
+            
+            # Remove any remaining NaN values for threshold calculation
+            clean_data = resampled_data.dropna()
+            
+            if len(clean_data) > 0:
+                print(f"Data for {station}")
+                threshold_value, indices = threshold((clean_data))
+                print(f'Threshold for {station} ST: {threshold_value:.4f}')
+                print(f'Max abs value: {np.max(abs(clean_data))}\n')
+            else:
+                print(f"No valid data for threshold calculation in {station}")
 else:
-    print("\n\n CHINGA TU MADRE, NO SELECCIONASTE NADA!!!\n\n")
-
-threshold_lav, indices = threshold(zoom_data['LAV'].resample('10 min').median())
-print(threshold_lav)
+    print("\n\n CHINGAS A TU PUTA MADRE, NO SELECCIONASTE NADA!!!\n\n")
 
 sys.exit('End of script')
 

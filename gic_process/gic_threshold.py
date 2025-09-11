@@ -29,9 +29,9 @@ def check_data_type(data):
 def threshold(stddev_30):
     nbins = int(len(stddev_30) / 3)
     
-    stddev_res = np.array(stddev_30).flatten()
+    stddev_res = (np.array(stddev_30).flatten())
     
-    frequencies, bin_edges = np.histogram(stddev_res, bins=nbins*2, density=True)
+    frequencies, bin_edges = np.histogram((stddev_res), bins=nbins*2, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
 
@@ -43,8 +43,8 @@ def threshold(stddev_30):
                             p0=[1, np.mean(stddev_res), np.std(stddev_res)])
 
     x_fit = np.linspace(min(bin_edges), max(bin_edges), 500)    
-    print('##################################################################')
-    print('##################################################################')
+#    print('##################################################################')
+#    print('##################################################################')
 
 
 

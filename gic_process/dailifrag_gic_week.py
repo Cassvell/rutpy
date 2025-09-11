@@ -52,7 +52,7 @@ list_fnames = sorted(glob.glob(data_dir + "/*.dat"))
 
 
 lastfile = list_fnames[-1] 
-#print(f'last file: {lastfile}')
+print(f'last file: {lastfile}')
 #>>>>>>> origin/main
 #last 2 weeks: [-2:] #  '/home/isaac/MEGAsync/datos/gics_obs/2023/QRO/datos_2023-10-09 QRO.csv.dat'
 
