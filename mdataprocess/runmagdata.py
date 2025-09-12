@@ -53,7 +53,7 @@ else:
         new_name = str(date_name_newf)[0:8]
         fname = st+date_name_newf+'dmin.min'
         #print(fname)
-        fname2 = st+'_'+new_name+'.dat'
+        fname2 = st+'_'+new_name+'m.dat'
         fname3 = st+'_'+new_name+'_XYZ.dat'
         filenames.append(fname)
         filenames_out.append(fname2)
@@ -61,6 +61,7 @@ else:
 
 
 magdata = get_dataframe(filenames, path, idx, dates, net)
+#magdata = get_dataframe(filenames, path, idx, dates, net)
 
 H = magdata['H']
 X = magdata['X']
@@ -68,6 +69,8 @@ Y = magdata['Y']
 Z = magdata['Z']
 D = magdata['D']
 I = magdata['I']
+
+
 
 baseline_curve = base_line(H, net, st)
 #base_lineX = base_line(X, net, st)
@@ -80,6 +83,7 @@ H_detrend = H-baseline_curve
 #Z_detrend = Z-base_lineZ
 #diurnal base line
 
+
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
 #diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st)
 #diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st)
@@ -87,12 +91,12 @@ diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
 
 H_raw = H
 
-H = H_detrend-diurnal_baseline
+#H = H_detrend-diurnal_baseline
 #X = X_detrend - diurnal_baselineX
 #Y = Y_detrend - diurnal_baselineY
 #Z = Z_detrend - diurnal_baselineZ
 
-H_noff1 = H-offset
+H_noff1 = H_detrend-offset
 #X_noff1 = X-offsetX
 #Y_noff1 = Y-offsetY
 #Z_noff1 = Z-offsetZ
@@ -118,7 +122,7 @@ df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
 
 
 # Define path
-path = f"/home/isaac/datos/{net}/{st}/minV2/"  
+path = f"/home/isaac/datos/{net}/{st}/experiment/"  
 os.makedirs(path, exist_ok=True)  # Creates directory if it does not exist
 
 # Iterate over daily indexes
