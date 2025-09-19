@@ -59,8 +59,7 @@ gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat
 #mz_score = mz_score(gicTW_lav)
 #plt.plot(gicTW_lav)
 
-print(gicTW_lav)
-sys.exit('end of test')
+#sys.exit('end of test')
 
 yp = np.pad(gicTW_lav, (0,1))
 delta = np.diff(yp, axis=0)
