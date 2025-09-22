@@ -9,24 +9,30 @@ path = f'/home/isaac/MEGA/posgrado/doctorado/semestre5/'
 df = pd.read_csv(f'{path}gics_tabla.csv', sep=',', header = 1)
 df = df.replace('n/r', np.nan)  
 df = df.replace('n/a', np.nan)    
+dh_threshold = -100
 
 
+df_75 = df.where(df.iloc[:,2] < dh_threshold ,np.nan)
 
-df = df.where(df.iloc[:,2] >-75 ,np.nan)
+df_debil = df.where(df.iloc[:,2] > dh_threshold ,np.nan)
+ 
+df_cleaned_all_nan = df_debil.dropna(how='all')
+print(f'number of cases: {len(df_cleaned_all_nan)}')  
 
-#print(df.iloc[:,2:6])  
+ncases = len(df_cleaned_all_nan)
+df_cleaned_all_nan2 = df_75.dropna(how='all')
 
-
+ncases2 = len(df_cleaned_all_nan2)
 #sys.exit('end of test')
 
 
 
 
 
-lav = pd.to_numeric(df.iloc[:,3], errors='coerce')
-qro = pd.to_numeric(df.iloc[:,4], errors='coerce')
-rmy = pd.to_numeric(df.iloc[:,5], errors='coerce')
-mzt = pd.to_numeric(df.iloc[:,6], errors='coerce')
+lav = pd.to_numeric(df_debil.iloc[:,3], errors='coerce')
+qro = pd.to_numeric(df_debil.iloc[:,4], errors='coerce')
+rmy = pd.to_numeric(df_debil.iloc[:,5], errors='coerce')
+mzt = pd.to_numeric(df_debil.iloc[:,6], errors='coerce')
 
 
 
@@ -38,13 +44,15 @@ def distribution_threshold_plot(lav, name):
     lav = np.unique(lav)    
     median_value = np.median(lav)
     print(f"Median value: {median_value:.4f}")
-    frequencies, bin_edges = np.histogram(lav, bins=60, density=True)
+    frequencies, bin_edges = np.histogram(lav, bins=int(ncases*2), density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     def lorentzian(x, amplitude, x0, gamma):
         """Lorentzian (Cauchy) distribution function"""
         return amplitude * (gamma**2 / ((x - x0)**2 + gamma**2))
 
+    def gaussian(x, a, mu, sigma):
+        return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
     # Generate histogram data for fitting
     counts, bin_edges = np.histogram(lav, bins=45, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -86,12 +94,12 @@ def distribution_threshold_plot(lav, name):
     # Add vertical line for median
     plt.axvline(x=median_value, color='green', linestyle='--', linewidth=2, 
                 label=f'Median: {median_value:.2f}')
-    plt.xlabel('Value')
-    plt.ylabel('Density')
-    plt.title(f'Cauchy Distribution Fit for {name.upper()} st')
+    plt.xlabel('Threshold range GIC (A)')
+    plt.ylabel(f'Density (Total number of GS: {ncases})')
+    plt.title(f'Distribution for range GIC oscilations in {name.upper()} st for weak and moderate GS (dH > {dh_threshold} nT)')
     plt.legend()
     plt.grid(True, alpha=0.3)
-    plt.savefig(f'{path}/{name}_dist.png')
+    plt.savefig(f'{path}/{name}_dist_{dh_threshold}.png')
     plt.show()
 
     
@@ -99,3 +107,15 @@ lav_dist = distribution_threshold_plot(lav, 'lav')
 mzt_dist = distribution_threshold_plot(mzt, 'mzt')
 qro_dist = distribution_threshold_plot(qro, 'qro')
 rmy_dist = distribution_threshold_plot(rmy, 'rmy')
+
+
+lav_strong = pd.to_numeric(df_75.iloc[:,3], errors='coerce')
+qro_strong = pd.to_numeric(df_75.iloc[:,4], errors='coerce')
+rmy_strong = pd.to_numeric(df_75.iloc[:,5], errors='coerce')
+mzt_strong = pd.to_numeric(df_75.iloc[:,6], errors='coerce')
+
+print(f'ncases of GS with dH < {dh_threshold}: {ncases2}')
+print(f'gic LAV median threshold for moderate and strong GS dH < {dh_threshold} nT: {np.nanmedian(lav_strong)}')
+print(f'gic QRO median threshold for moderate and strong GS dH < {dh_threshold} nT: {np.nanmedian(qro_strong)}')
+print(f'gic rmy median threshold for moderate and strong GS dH < {dh_threshold} nT: {np.nanmedian(rmy_strong)}')
+print(f'gic LAV median threshold for moderate and strong GS dH < {dh_threshold} nT: {np.nanmedian(lav_strong)}')

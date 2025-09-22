@@ -580,7 +580,7 @@ def df_Kloc(date1, date2, dir_path, stat):
     df = df.loc[date1:date2]
     
     k  = df.iloc[:,0]
-    print(k)
+    #print(k)
 
     
     k = k/10

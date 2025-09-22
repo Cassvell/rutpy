@@ -159,14 +159,17 @@ if len(clicked_dates) >= 2:
                     (stat_dir[station].index <= fmt_end)
             zoom_data[station] = stat_dir[station][mask]
             
-            resampled_data = zoom_data[station].resample('10 min').median()
+            resampled_data = zoom_data[station].resample('15 min').max()
             
             # Remove any remaining NaN values for threshold calculation
             clean_data = resampled_data.dropna()
             
             if len(clean_data) > 0:
                 print(f"Data for {station}")
-                threshold_value, indices = threshold((clean_data))
+
+                threshold_value, indices = threshold(clean_data, idate, fdate, station)
+                    
+                     
                 print(f'Threshold for {station} ST: {threshold_value:.4f}')
                 print(f'Max abs value: {np.max(abs(clean_data))}\n')
             else:

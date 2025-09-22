@@ -134,8 +134,13 @@ for dataset in [gicTW_lav, gicTW_qro, gicTW_mzt, gicTW_rmy]:
 if inicio is None or final is None:
     raise ValueError("No valid dataset found, 'inicio' and 'final' could not be set.")
 
-
+k = k.replace(999, np.nan)
 # Check if inicio and final were defined
+print(k)
+print(f'max Kmex index for {H_stat}: {np.max(k)}')
+
+sys.exit('end of child process')
+
 
 inicio = H.index[0]
 final  = H.index[-1]
