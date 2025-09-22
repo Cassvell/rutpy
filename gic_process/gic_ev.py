@@ -159,7 +159,16 @@ if len(clicked_dates) >= 2:
                     (stat_dir[station].index <= fmt_end)
             zoom_data[station] = stat_dir[station][mask]
             
-            resampled_data = zoom_data[station].resample('15 min').max()
+            med = np.nanmedian(zoom_data[station])
+            std = np.nanstd(zoom_data[station])
+            print(f'median of zoom data: {med} \n stdev of zoom data: {std}')
+            if med >= 0+std/2 or med <= 0 - std/2:
+                zoom_data[station] = zoom_data[station] - med
+            else:
+                print('offset of zoom data in 0')
+            
+            gic_absval = abs(zoom_data[station])
+            resampled_data = gic_absval.resample('15 min').max()
             
             # Remove any remaining NaN values for threshold calculation
             clean_data = resampled_data.dropna()
@@ -167,6 +176,7 @@ if len(clicked_dates) >= 2:
             if len(clean_data) > 0:
                 print(f"Data for {station}")
 
+                
                 threshold_value, indices = threshold(clean_data, idate, fdate, station)
                     
                      
