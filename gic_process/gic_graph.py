@@ -139,7 +139,7 @@ k = k.replace(999, np.nan)
 print(k)
 print(f'max Kmex index for {H_stat}: {np.max(k)}')
 
-sys.exit('end of child process')
+#sys.exit('end of child process')
 
 
 inicio = H.index[0]

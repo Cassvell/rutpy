@@ -177,13 +177,13 @@ if len(clicked_dates) >= 2:
                 print(f"Data for {station}")
 
                 
-                threshold_value, indices = threshold(clean_data, idate, fdate, station)
+                threshold_value = threshold(clean_data, idate, fdate, station)
                     
                      
-                print(f'Threshold for {station} ST: {threshold_value:.4f}')
+                #print(f'Threshold for {station} ST: {threshold_value:.4f}')
                 print(f'Max abs value: {np.max(abs(clean_data))}\n')
-            else:
-                print(f"No valid data for threshold calculation in {station}")
+            #else:
+                #print(f"No valid data for threshold calculation in {station}")
 else:
     print("\n\n CHINGAS A TU PUTA MADRE, NO SELECCIONASTE NADA!!!\n\n")
 
