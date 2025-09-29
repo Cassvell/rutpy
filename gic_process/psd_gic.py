@@ -69,7 +69,7 @@ for s in stat:
     
     stat_dir[s] = pd.concat(df_tmp, axis=0)
     
-'''    
+  
     
 fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(10, 12))
 
@@ -96,7 +96,7 @@ for name, (color, ax) in stations.items():
 # Connect click event
 plt.tight_layout()
 plt.show()
-'''
+
 dt = 60.0  # sampling interval in seconds
 fs = 1.0 / dt  # sampling frequency in Hz
 fny = fs / 2.0  # Nyquist frequency
@@ -107,15 +107,16 @@ asy = np.array(index['ASYH'])
 lav = np.array(stat_dir['LAV']).flatten()
 rmy = np.array(stat_dir['RMY']).flatten()
 mzt = np.array(stat_dir['MZT']).flatten()
-
+qro = np.array(stat_dir['QRO']).flatten()
 
 lav_interp = interpolate_nan(lav)
 rmy_interp = interpolate_nan(rmy)
 mzt_interp = interpolate_nan(mzt)
-
+qro_interp = interpolate_nan(qro)
 
 # Or use scipy's built-in function (recommended)
 freqs, psd_asy_scipy = signal.welch(asy, fs=fs, window='hamming', nperseg=n, scaling='density')
+freqs, psd_qro_scipy = signal.welch(qro_interp, fs=fs, window='hamming', nperseg=n, scaling='density')
 freqs, psd_lav_scipy = signal.welch(lav_interp, fs=fs, window='hamming', nperseg=n, scaling='density')
 freqs, psd_mzt_scipy = signal.welch(mzt_interp, fs=fs, window='hamming', nperseg=n, scaling='density')
 freqs, psd_rmy_scipy = signal.welch(rmy_interp, fs=fs, window='hamming', nperseg=n, scaling='density')
@@ -125,49 +126,74 @@ periods = 1 / freqs / 3600  # Convert from seconds to hours
 # Filter out infinite periods (from frequency = 0)
 valid_mask = np.isfinite(periods) & (periods > 0)
 
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+# Manual absolute positioning in figure coordinates (0-1)
+fig = plt.figure(figsize=(12, 10))
 
-# Plot 1: ASYM PSD
-axes[0, 0].plot(periods[valid_mask], psd_asy_scipy[valid_mask])
-axes[0, 0].set_xlabel('Period [hours]')
-axes[0, 0].set_ylabel('PSD ASYM [nT^2/Hz]')
-axes[0, 0].set_xscale('log')
-axes[0, 0].set_yscale('log')
-axes[0, 0].set_title('ASYM PSD')
-axes[0, 0].invert_xaxis()  # Optional: reverse x-axis so longer periods are on the right
+# Define positions: [left, bottom, width, height] in figure coordinates (0-1)
+ax1_pos = [0.10, 0.70, 0.80, 0.25]  # ASYM: wide and tall
+ax2_pos = [0.10, 0.40, 0.35, 0.25]  # LAV
+ax3_pos = [0.55, 0.40, 0.35, 0.25]  # QRO  
+ax4_pos = [0.10, 0.10, 0.35, 0.25]  # RMY
+ax5_pos = [0.55, 0.10, 0.35, 0.25]  # MZT
 
-# Plot 2: LAV PSD
-axes[0, 1].plot(periods[valid_mask], psd_lav_scipy[valid_mask])
-axes[0, 1].set_xlabel('Period [hours]')
-axes[0, 1].set_ylabel('PSD LAV GIC [A^2/Hz]')
-axes[0, 1].set_xscale('log')
-axes[0, 1].set_yscale('log')
-axes[0, 1].set_title('LAV GIC PSD')
-axes[0, 1].invert_xaxis()
+# Create axes with exact positions
+ax1 = fig.add_axes(ax1_pos)
+ax2 = fig.add_axes(ax2_pos)
+ax3 = fig.add_axes(ax3_pos)
+ax4 = fig.add_axes(ax4_pos)
+ax5 = fig.add_axes(ax5_pos)
 
-# Plot 3: RMY PSD
-axes[1, 0].plot(periods[valid_mask], psd_rmy_scipy[valid_mask])
-axes[1, 0].set_xlabel('Period [hours]')
-axes[1, 0].set_ylabel('PSD RMY GIC [A^2/Hz]')
-axes[1, 0].set_xscale('log')
-axes[1, 0].set_yscale('log')
-axes[1, 0].set_title('RMY GIC PSD')
-axes[1, 0].invert_xaxis()
+# Now plot on each axis
+ax1.plot(periods[valid_mask], psd_asy_scipy[valid_mask], color='red', linewidth=2)
+ax1.set_xlabel('Period [hours]')
+ax1.set_ylabel('PSD ASYM [nT²/Hz]')
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.set_title('ASYM-H PSD - Geomagnetic Activity Index', fontsize=14, fontweight='bold')
+ax1.invert_xaxis()
+ax1.grid(True, alpha=0.3)
 
-# Plot 4: MZT PSD
-axes[1, 1].plot(periods[valid_mask], psd_mzt_scipy[valid_mask])
-axes[1, 1].set_xlabel('Period [hours]')
-axes[1, 1].set_ylabel('PSD MZT GIC [A^2/Hz]')
-axes[1, 1].set_xscale('log')
-axes[1, 1].set_yscale('log')
-axes[1, 1].set_title('MZT GIC PSD')
-axes[1, 1].invert_xaxis()
+ax2.plot(periods[valid_mask], psd_lav_scipy[valid_mask], color='blue')
+#ax2.set_xlabel('Period [hours]')
+ax2.set_ylabel('PSD LAV GIC [A²/Hz]')
+ax2.set_xscale('log')
+ax2.set_yscale('log')
+ax2.set_title('LAV GIC PSD')
+ax2.invert_xaxis()
+ax2.grid(True, alpha=0.3)
 
-# Adjust layout and display
-plt.tight_layout()
+ax3.plot(periods[valid_mask], psd_qro_scipy[valid_mask], color='green')
+#ax3.set_xlabel('Period [hours]')
+ax3.set_ylabel('PSD QRO GIC [A²/Hz]')
+ax3.set_xscale('log')
+ax3.set_yscale('log')
+ax3.set_title('QRO GIC PSD')
+ax3.invert_xaxis()
+ax3.grid(True, alpha=0.3)
+
+ax4.plot(periods[valid_mask], psd_rmy_scipy[valid_mask], color='purple')
+ax4.set_xlabel('Period [hours]')
+ax4.set_ylabel('PSD RMY GIC [A²/Hz]')
+ax4.set_xscale('log')
+ax4.set_yscale('log')
+ax4.set_title('RMY GIC PSD')
+ax4.invert_xaxis()
+ax4.grid(True, alpha=0.3)
+
+ax5.plot(periods[valid_mask], psd_mzt_scipy[valid_mask], color='orange')
+ax5.set_xlabel('Period [hours]')
+ax5.set_ylabel('PSD MZT GIC [A²/Hz]')
+ax5.set_xscale('log')
+ax5.set_yscale('log')
+ax5.set_title('MZT GIC PSD')
+ax5.invert_xaxis()
+ax5.grid(True, alpha=0.3)
+
+# No tight_layout needed since we manually positioned everything
 plt.show()
 
 
+sys.exit('end of process')
 #powerlaw
 from scipy.optimize import curve_fit
 # Power-law fitting function

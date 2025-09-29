@@ -15,14 +15,14 @@ from night_time import night_time
 
 
 
-def gic_diurnalbase(gic, stat):   
+def gic_diurnalbase(gic, idate, fdate, stat):   
        
     stddev_20 = gic.resample('20Min').std().fillna(method='ffill')
-    threshold_value, indices = threshold(stddev_20)
+    threshold_value = threshold(stddev_20, idate, fdate, stat)
     exceed_indices = stddev_20[stddev_20 > threshold_value].index
     
     print(f'Exceeding indices for {stat}: {len(exceed_indices)}')
-    idx_daily = pd.date_range(start = gic.index[719], end = gic.index[-722], freq= 'D' )
-    qd, offset = get_diurnalvar(gic[719:-721], idx_daily, 'regmex', stat.lower())
+    idx_daily = pd.date_range(start = gic.index[0], end = gic.index[-1], freq= 'D' )
+    qd, offset = get_diurnalvar(gic, idx_daily, 'regmex', stat.lower())
     
-    return(gic[719:-721] - qd, qd)
+    return(gic - qd, qd)

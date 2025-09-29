@@ -68,10 +68,7 @@ def base_line(data, net, st):
 
     picks = max_IQR(data, 60, pickwindow[0], method='iqr')
     
-    x, GPD, knee, threshold = get_threshold(picks)
-
-    # Validate GPD fit using the second derivative
-    second_derivative = np.gradient(np.gradient(GPD))
+    threshold = get_threshold(picks, st)
 
     # Daily IQR picks and classification
     daily_picks = med_IQR(data, 60, 24, method='iqr')

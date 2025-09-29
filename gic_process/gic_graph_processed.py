@@ -17,8 +17,8 @@ fyear = int(fdate[0:4])
 fmonth = int(fdate[4:6])
 fday = int(fdate[6:8])
 
-stat = ['LAV', 'QRO', 'RMY', 'MZT']
-
+#stat = ['LAV', 'QRO', 'RMY', 'MZT']
+st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
 
 finaldate= datetime(fyear, fmonth,fday)

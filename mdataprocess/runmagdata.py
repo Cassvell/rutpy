@@ -6,14 +6,15 @@ from magdata_processing import get_diurnalvar, base_line
 from plots import plot_process
 from aux_time_DF import index_gen, convert_date
 from magnetic_datstruct import get_dataframe
-
+import matplotlib.pyplot as plt
 net = sys.argv[1]
 st= sys.argv[2]
-idate = sys.argv[3]# "formato(yyyymmdd)"
-fdate = sys.argv[4]
+data_class = sys.argv[3]
+idate = sys.argv[4]# "formato(yyyymmdd)"
+fdate = sys.argv[5]
+
 
 year = int(idate[0:4])
-
 
 enddata = fdate+ ' 23:59:00'
 idx = pd.date_range(start = pd.Timestamp(idate), \
@@ -27,17 +28,44 @@ filenames_out = []
 filenames_out2 = []
 dates = []
 path = ''
+
+
+def new_namedate(date):
+    date = str(date)
+    year = date[2:4]
+    month = date[4:6]
+    day = date[6:8]
+    
+    month_names = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    month_idx = int(month)-1
+   # print(f'{year}, {month_names[month_idx]}, {day}')
+    return year, month_names[month_idx], day
+
+
 if net == 'regmex':
-    #path = f"/home/isaac/datos/{net}/{st}/{st}20240/" # magnetic data path
-    path = f"/home/isaac/datos/{net}/{st}/{st}_raw/" # magnetic data path
+    #
+    
+    if data_class == 'preprocessed':
+        path = f"/home/isaac/datos/{net}/{st}/{st}_raw/" # magnetic data path
+    elif data_class == 'raw':
+        path = f"/home/isaac/datos/{net}/{st}/raw/" # magnetic data path
+    
     for i in idx_daily:
         date_name = str(i)[0:10]
         dates.append(date_name)
         date_name_newf = convert_date(date_name,'%Y-%m-%d', '%Y%m%d')
+        year, month, day = new_namedate(date_name_newf)
         new_name = str(date_name_newf)[0:8]
         
-        #fname = f"{st}{new_name}rK.min"
-        fname = f"{st}_{new_name}.clean.dat"
+        if data_class == 'preprocessed':
+            fname = f"{st}_{new_name}.clean.dat"
+        elif data_class == 'raw':
+            if st == 'teo' or st == 'jur':
+                fname = f"{st}{new_name}rK.min"
+               
+            elif st == 'coe' or st == 'itu':
+                fname = f"{st}{day}{month}.{year}m"
+       # print(path+fname)
         fname2 = st+'_'+new_name+'M.dat'
         fname3 = st+'_'+new_name+'M_XYZ.dat'
         filenames.append(fname)
@@ -60,18 +88,20 @@ else:
         filenames_out2.append(fname3)
 
 
-magdata = get_dataframe(filenames, path, idx, dates, net)
+
+magdata = get_dataframe(filenames, st, data_class,path, idx, dates, net)
 #magdata = get_dataframe(filenames, path, idx, dates, net)
 
+
+#sys.exit('end')
 H = magdata['H']
 X = magdata['X']
 Y = magdata['Y']
 Z = magdata['Z']
-D = magdata['D']
-I = magdata['I']
+#D = magdata['D']
+#I = magdata['I']
 
-
-
+#sys.exit('end of child process')
 baseline_curve = base_line(H, net, st)
 #base_lineX = base_line(X, net, st)
 #base_lineY = base_line(Y, net, st)
