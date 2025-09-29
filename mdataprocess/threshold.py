@@ -82,7 +82,85 @@ def gpd_ad_p_value_approximate(a2, n):
     return np.clip(p, 1e-100, 1.0)
 
 
+def final_params(sorted_picks_norp, cdf,bound):
+    
+    idx = np.searchsorted(cdf, bound)
+    
+    # Initialize lists to store parameters
+    AD_results = []
+    p_values = []  # New list for p-values
+    params_k = []
+    params_s = []
+    params_u = []
+    start_indices = []
+    sample_sizes = []  # Store sample sizes for reference
 
+    for i in range(len(sorted_picks_norp[0:idx])):
+        # Get subset of data from current index to bound
+        data_subset = sorted_picks_norp[i:idx]
+        n_subset = len(data_subset)
+        
+        if n_subset >= 3:  # Need at least 3 points for L-moments
+            tmp_k, tmp_s, tmp_u = GPD_params(data_subset)
+            
+            # Calculate Anderson-Darling statistic
+            a_tmp = anderson_darling_r(data_subset, tmp_k, tmp_s, tmp_u)
+            
+            # Calculate p-value from A² statistic
+            p_tmp = gpd_ad_p_value_approximate(a_tmp, n_subset)
+            
+            # Store all results
+            params_k.append(tmp_k)
+            params_s.append(tmp_s)
+            params_u.append(tmp_u)
+            start_indices.append(i)
+            AD_results.append(a_tmp)
+            p_values.append(p_tmp)
+            sample_sizes.append(n_subset)
+            
+            # Print results for this iteration
+            #print(f"Start index {i}: k={tmp_k:.4f}, s={tmp_s:.4f}, u={tmp_u:.4f}, "
+            #    f"n={n_subset}, A²={a_tmp:.4f}, p-value={p_tmp:.6f}")
+                
+        else:
+            print(f"Skipping start index {i}: insufficient data points ({n_subset})")
+
+    # Convert to numpy arrays for easier analysis
+    params_k = np.array(params_k)
+    params_s = np.array(params_s)
+    params_u = np.array(params_u)
+    start_indices = np.array(start_indices)
+    AD_results = np.array(AD_results)
+    p_values = np.array(p_values)
+    sample_sizes = np.array(sample_sizes)
+    
+#    print(AD_results)
+    u_candidates = []
+    k_candidates = []
+    s_candidates = []
+    pval_candidates = []
+    A_candidates = []
+    for i in range(len(AD_results)):
+       # if AD_results[i] < 10:
+        if p_values[i] < 1 and p_values[i] > 0.7:
+           # print(f'A²={AD_results[i]}, p-values={p_values[i]}, U= {params_u[i]}')
+            u_candidates.append(params_u[i])
+            pval_candidates.append(p_values[i])   
+            A_candidates.append(AD_results[i])     
+            k_candidates.append(params_k[i])
+            s_candidates.append(params_s[i])
+    
+    if len(u_candidates) > 1:
+        u_idx = np.argmax(np.array(u_candidates))
+        u_max = np.max(np.array(u_candidates))
+        definitive_params = {'u' : u_max, 'k' : k_candidates[u_idx], 's' : s_candidates[u_idx], \
+            'A2' : A_candidates[u_idx], 'p' : pval_candidates[u_idx]}
+    else:
+        u_max = np.array(u_candidates)
+        definitive_params = {'u' : u_max, 'k' : k_candidates[0], 's' : s_candidates[0], \
+            'A2' : A_candidates[0], 'p' : pval_candidates[0]}
+
+    return definitive_params
 
 
 def get_threshold(picks, st):
@@ -112,68 +190,12 @@ def get_threshold(picks, st):
     bound =   0.95
     idx = np.searchsorted(cdf, bound)
     
-    results = []
     
-    for i in range(len(sorted_picks_norp[0:idx])):
-        data_subset = sorted_picks_norp[i:idx]
-        n_subset = len(data_subset)
-        
-        if n_subset >= 3:
-            k, s, u = GPD_params(data_subset)
-            a2 = anderson_darling_r(data_subset, k, s, u)
-            p_val = gpd_ad_p_value_approximate(a2, n_subset)
-            
-            results.append({
-                'start_index': i,
-                'k': k, 's': s, 'u': u,
-                'A2': a2, 'p_value': p_val,
-                'n_points': n_subset
-            })
-    
-    if not results:
-        raise ValueError("No valid configurations found!")
-    
-    # Convert to DataFrame for easier filtering (or use list comprehension)
-    df = pd.DataFrame(results)
-    
-    #print(f"Total configurations: {len(df)}")
-    #print(f"P-value range: {df['p_value'].min():.6f} to {df['p_value'].max():.6f}")
-    
-    # Filter by your criteria
-    target_results = df[(df['p_value'] > 0.8) & (df['p_value'] < 1.0)]
-    
-    if len(target_results) > 0:
-        # Select row with highest u value
-        best_row = target_results.loc[target_results['u'].idxmax()]
-        method = "highest_u_p_0.8_to_1"
-    else:
-        # Relax criteria
-        relaxed_results = df[df['p_value'] > 0.6]
-        if len(relaxed_results) > 0:
-            best_row = relaxed_results.loc[relaxed_results['u'].idxmax()]
-            method = "highest_u_p_0.5_to_1_relaxed"
-        else:
-            # Fallback
-            best_row = df.loc[df['p_value'].idxmax()]
-            method = "fallback_highest_p"
-    
-    definitive_params = {
-        'u': best_row['u'], 'k': best_row['k'], 's': best_row['s'],
-        'A2': best_row['A2'], 'p': best_row['p_value'],
-        'start_index': best_row['start_index'], 'method': method
-    }
-    
-    k_0 = definitive_params['k']
-    s_0 = definitive_params['s']
+    definitive_params = final_params(sorted_picks_norp, cdf,bound)
+
+    p_0 = definitive_params['p']
     u_0 = definitive_params['u']
     A_0 = definitive_params['A2']
-    p_0 = definitive_params['p']
-    
-    # Print final selection
-    print(f"\n FINAL SELECTION:")
-    #print(f"   Start index: {selected_start_idx}")
-    print(f"   u = {u_0:.6f}, A² = {A_0:.6f}, p-value = {p_0:.6f}")
-
     
     # Quality assessment
     if p_0 > 0.8:
@@ -184,8 +206,8 @@ def get_threshold(picks, st):
         quality = " Marginal fit"
     else:
         quality = " Poor fit"
+        
     print(f'Quality of fitness: {quality} \n')
-
     x_fit = np.linspace(min(sorted_picks_norp), max(sorted_picks_norp), 1000)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
@@ -225,7 +247,7 @@ def get_threshold(picks, st):
 
 
     plt.tight_layout()
-    plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre5/gpd_magdata/CDF_{st}_GPD.png', dpi=300)
+    #plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre5/gpd_magdata/CDF_{st}_GPD.png', dpi=300)
     plt.show()
 
 

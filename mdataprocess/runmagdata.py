@@ -152,7 +152,7 @@ df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
 
 
 # Define path
-path = f"/home/isaac/datos/{net}/{st}/experiment/"  
+path = f"/home/isaac/datos/{net}/{st}/minV2/"  
 os.makedirs(path, exist_ok=True)  # Creates directory if it does not exist
 
 # Iterate over daily indexes

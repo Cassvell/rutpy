@@ -176,7 +176,7 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
         df_2['D'] = D
         df_2['I'] = I
             
-        print(H)
+        #print(H)
         #sys.exit('end of child process')    
 
     else: #si se trata de intermagnet
