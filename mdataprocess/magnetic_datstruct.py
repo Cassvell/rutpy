@@ -104,12 +104,14 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
             
         if data_class == 'preprocessed':        
             for i in range(len(filenames)):    
-
-                full_path = os.path.join(path, filenames[i])                    # Check if the file exists
+                
+                full_path = os.path.join(path, filenames[i])   
+                #print(full_path)# Check if the file exists
                 if os.path.isfile(full_path):
                     try:
                         # Read the file into a dataframe
                         df_c = pd.read_csv(full_path, header=None, sep = '\\s+')
+                        #print(df_c)
                         dfs_c.append(df_c)  
                     except Exception as e:
                         # Handle any read errors
@@ -128,13 +130,12 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
                     #Fill the last 5 columns with np.nan
                     df_c[:, 5:] = np.nan               
                     df_c = pd.DataFrame(df_c)        
-    
+                    dfs_c.append(df_c)  
 
             df = pd.concat(dfs_c, axis=0, ignore_index=True)    
-        
+
             df = df.replace(999999.00, np.nan) 
             df = df.replace(9999.00, np.nan)      
-
             #df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0], format='%Y%m%d')
         # Combine Date and Time columns as strings
             df['DateTime'] =  df.iloc[:, 0]+ ' ' + df.iloc[:, 1]

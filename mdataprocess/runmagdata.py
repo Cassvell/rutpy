@@ -58,7 +58,7 @@ if net == 'regmex':
         new_name = str(date_name_newf)[0:8]
         
         if data_class == 'preprocessed':
-            fname = f"{st}_{new_name}.clean.dat"
+            fname = f"{st}_{new_name}.dat"
         elif data_class == 'raw':
             if st == 'teo' or st == 'jur':
                 fname = f"{st}{new_name}rK.min"
@@ -121,12 +121,12 @@ diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
 
 H_raw = H
 
-#H = H_detrend-diurnal_baseline
+H = H_detrend-diurnal_baseline
 #X = X_detrend - diurnal_baselineX
 #Y = Y_detrend - diurnal_baselineY
 #Z = Z_detrend - diurnal_baselineZ
 
-H_noff1 = H_detrend-offset
+H_noff1 = H-offset
 #X_noff1 = X-offsetX
 #Y_noff1 = Y-offsetY
 #Z_noff1 = Z-offsetZ

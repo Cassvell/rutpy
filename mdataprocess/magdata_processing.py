@@ -147,19 +147,26 @@ def get_diurnalvar(data, idx_daily, net, st):
         utc = float(utc)
     print(f"universal Coordinated time: {utc}") 
 
-    
     qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', ndays)
 
     qdl = [[0] * 1440 for _ in range(ndays)]
-    
+
+
+    for i in range(ndays):
+        qd = (str(qd_list[i])[0:10])
+        
+        qd_arr = data[qd]
+        
+        qdl[i] = qd_arr
+        
+        #plt.plot(qd_arr)
+
     baseline = []
 ###############################################################################
 #diurnal variation computation
 ###############################################################################
-   # QDS = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5']    
-    #print('qdl list, \t H[nT] \n')     
-    #print(qd_list)
-    #plt.title('Local Quiet Days, June 2024: St: '+st, fontweight='bold', fontsize=18)
+    print(qd_list)
+
     for i in range(ndays):
         qd = (str(qd_list[i])[0:10])
         
@@ -172,6 +179,7 @@ def get_diurnalvar(data, idx_daily, net, st):
             ini = int(abs(utc)*60)
             fin = ini+180    
             qd_2h = qdl[i].iloc[ini:fin]    
+            
             baseline_value = np.nanmedian(qd_2h)
             baseline.append(baseline_value)
         elif utc >= 0:
@@ -206,6 +214,9 @@ def get_diurnalvar(data, idx_daily, net, st):
     # Compute the mean across rows (axis=0) to get a 1x1440 array
     qd_average = qdl_concat.median(axis=1)        
 
+    import matplotlib.pyplot as plt
+    
+
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
                           5.787e-5, 6.9444e-5])    
     
@@ -221,8 +232,37 @@ def get_diurnalvar(data, idx_daily, net, st):
     fcomb = dcomb(n//2,1,f,freqs) 
     qd_average = np.array(qd_average)
 
- 
-    Gw = fftpack.fft(qd_average, axis=0)/np.sqrt(n)
+    if np.any(np.isnan(qd_average)):
+        mask2 = ~np.isnan(qd_average)
+        x_interpol = np.arange(len(qd_average))
+        
+        from scipy import interpolate
+        if qd_average.ndim == 2:
+            qd_interpolated = np.zeros_like(qd_average)
+            for col in range(len(qd_average)):
+                col_data = qd_average
+                mask_col = ~np.isnan(col_data)
+                if np.any(mask_col):
+                    f = interpolate.interp1d(x_interpol[mask_col], col_data[mask_col], 
+                                        kind='linear', fill_value='extrapolate')
+                    qd_interpolated[:, col] = f(x_interpol)
+                else:
+                    qd_interpolated[:, col] = 0  # or handle all-NaN column as needed
+        else:
+            # 1D case (for your 1440 data points array)
+            mask2 = ~np.isnan(qd_average)
+            if np.any(mask2):
+                f = interpolate.interp1d(x_interpol[mask2], qd_average[mask2], 
+                                    kind='linear', fill_value='extrapolate')
+                qd_interpolated = f(x_interpol)
+            else:
+                qd_interpolated = np.zeros_like(qd_average)
+        
+        Gw = fftpack.fft(qd_interpolated, axis=0)/np.sqrt(n)
+    else:
+        Gw = fftpack.fft(qd_average, axis=0)/np.sqrt(n)
+    
+
     Gw = Gw[0:n//2]
     
     G_filt = Gw*fcomb.T 
@@ -236,6 +276,7 @@ def get_diurnalvar(data, idx_daily, net, st):
     
     phi = aphase(G)                                             # 1x7
     X = 2*abs(G)/np.sqrt(n)                                     # 1x7
+    
     Ag = np.cos(k*np.multiply(Td, np.arange(7)) + phi)          # Nx7              
     ii = np.multiply(Ag,X)                                      # Nx7      
     suma = np.sum(ii, axis=1)                                   # Nx1  

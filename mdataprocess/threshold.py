@@ -174,7 +174,6 @@ def get_threshold(picks, st):
     
     hist, bins = np.histogram(picks, bins=ndays*2, density=True)    
 
-    #plt.show()
     sorted_picks = np.array(picks)
     sorted_picks = np.sort(sorted_picks)
 
@@ -210,17 +209,17 @@ def get_threshold(picks, st):
     print(f'Quality of fitness: {quality} \n')
     x_fit = np.linspace(min(sorted_picks_norp), max(sorted_picks_norp), 1000)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    #fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
     # --- Plot 1: PDF Comparison (Histogram + Fitted GPD) ---
-    ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
-            histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
-    ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
+    #ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
+    #        histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
+    #ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
 
-    ax1.set_title(f"{st.upper()} - magnetic data distribution picks (PDF)")
-    ax1.set_ylabel('Density')
-    ax1.legend()
-    ax1.grid(True, which='both', alpha=0.3)
+    #ax1.set_title(f"{st.upper()} - magnetic data distribution picks (PDF)")
+    #ax1.set_ylabel('Density')
+    #ax1.legend()
+    #ax1.grid(True, which='both', alpha=0.3)
 
     # Add goodness-of-fit info to CDF plot
     fit_text = f'Goodness-of-fit: A²={A_0:.3f}, p={p_0:.6f}'
@@ -231,24 +230,24 @@ def get_threshold(picks, st):
     else:
         fit_quality = 'Poor fit'
 
-    plt.text(0.1, 0.8, f'Fitness Quality: {quality}', horizontalalignment='center',
-     verticalalignment='center', transform=ax2.transAxes)
+    #plt.text(0.1, 0.8, f'Fitness Quality: {quality}', horizontalalignment='center',
+    # verticalalignment='center', transform=ax2.transAxes)
 
     # --- Plot 2: Empirical CDF ---
-    ax2.plot(np.sort(sorted_picks_norp), cdf, 'b-', linewidth=2, label='Empirical CDF')
-    ax2.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
-    ax2.set_xlabel('Value')
-    ax2.set_ylabel('CDF')
-    ax2.set_title('Empirical Cumulative Distribution')
-    ax2.legend()
-    ax2.grid(True, which='both', alpha=0.3)
+    #ax2.plot(np.sort(sorted_picks_norp), cdf, 'b-', linewidth=2, label='Empirical CDF')
+    #ax2.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
+    #ax2.set_xlabel('Value')
+    #ax2.set_ylabel('CDF')
+    #ax2.set_title('Empirical Cumulative Distribution')
+    #ax2.legend()
+    #ax2.grid(True, which='both', alpha=0.3)
 
 
 
 
-    plt.tight_layout()
-    #plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre5/gpd_magdata/CDF_{st}_GPD.png', dpi=300)
-    plt.show()
+    #plt.tight_layout()
+    #plt.savefig(f'/home/isaac/MEGA/posgrado/doctorado/semestre5/gpd_magdata/CDF_{st}_StPatrick_GPD.png', dpi=300)
+    #plt.show()
 
 
 

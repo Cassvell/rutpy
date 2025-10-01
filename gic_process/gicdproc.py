@@ -543,6 +543,8 @@ def df_Kloc(date1, date2, dir_path, stat):
     station = ''
     if stat == 'mex':
        station =  'mexico'
+    elif stat == 'coe':
+        station == 'coeneo'
     elif stat == 'teo':
         station = 'teoloyucan'
     elif stat == 'itu':
@@ -552,7 +554,9 @@ def df_Kloc(date1, date2, dir_path, stat):
     list_fnames = list_names(idx_list, str1, ext)
     dfs_c = []
     for filename in list_fnames:
+        #print(filename)
         if os.path.exists(dir_path+filename): #si el archivo diario ya está en la carpeta local, leelo
+            #print(dir_path+filename)
             df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
             df_c = df_c.iloc[:-1, :]   
 

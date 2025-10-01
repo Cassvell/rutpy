@@ -35,8 +35,8 @@ nextday = finaldate+timedelta(days=1)
 nextday = str(nextday)[0:10]
 
 stat = ['QRO', 'LAV', 'RMY', 'MZT']
-idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 12:01:00'), \
-                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='min')
+idx1 = pd.date_range(start = pd.Timestamp(i_date+ ' 00:00:00'), \
+                          end = pd.Timestamp(f_date + ' 23:59:00'), freq='min')
 
 ndays = calculate_days_difference(i_date, f_date)
 tot_data = (ndays+1)*1440
@@ -44,13 +44,13 @@ tot_data = (ndays+1)*1440
 path2 = '/home/isaac/datos/gics_obs/'
 file = []
 
-gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
+#gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
 
-gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
+#gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
 
-gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
+#gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
 
-gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
+#gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
 
 ###############################################################################
 
@@ -61,9 +61,9 @@ gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat
 
 #sys.exit('end of test')
 
-yp = np.pad(gicTW_lav, (0,1))
-delta = np.diff(yp, axis=0)
-spikes = np.abs(mz_score(delta)) >= 10 #n
+#yp = np.pad(gicTW_lav, (0,1))
+#delta = np.diff(yp, axis=0)
+#spikes = np.abs(mz_score(delta)) >= 10 #n
 
 
 #gicTW_lav = gicTW_lav.reset_index()
@@ -96,12 +96,12 @@ fdate = datetime.strptime(f_date, '%Y%m%d')
 fdate2 = fdate + timedelta(days=1)
 fdate2 = str(fdate2.strftime('%Y%m%d'))
 
-H = df_dH(i_date, fdate2, dir_path, H_stat)
+H = df_dH(i_date, f_date, dir_path, H_stat)
 
 ###############################################################################
 ###############################################################################
 dir_path = '/home/isaac/datos/Kmex/'
-k = df_Kloc(i_date, fdate2, dir_path, H_stat)
+k = df_Kloc(i_date, f_date, dir_path, H_stat)
 k = round(k)
 
 colorsValue = []
@@ -116,7 +116,10 @@ for i, value in enumerate(k):
     else:
         colorsValue.append('red')
 
+print(f'max Kmex value: {np.nanmax(k)}, min dH: {np.nanmin(H)}')
 
+
+sys.exit('end of child process')
 # Initialize inicio and final in case no dataset has valid data
 inicio, final = None, None
 
@@ -139,7 +142,7 @@ k = k.replace(999, np.nan)
 print(k)
 print(f'max Kmex index for {H_stat}: {np.max(k)}')
 
-#sys.exit('end of child process')
+
 
 
 inicio = H.index[0]
