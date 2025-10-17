@@ -81,18 +81,83 @@ def base_line(data, net, st):
             #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
 
     
-    baseline_line = [np.nanmedian(daily_stacked)]*ndata
-     
-    inicio = data.index[0]
-    final =  data.index[-1]
+    from sklearn.linear_model import LinearRegression
     
+    baseline_line = [np.nanmedian(daily_stacked)]*ndata
+    
+    daily_stacked_cleaned = np.array(daily_stacked)
+    daily_stacked_cleaned[daily_stacked_cleaned > 29500] = np.nan 
+
+        
+    y = np.array(daily_stacked_cleaned)
+    y_clean = y[~np.isnan(y)]  
+    x_clean = np.arange(len(y_clean))
+
+    x_clean = x_clean.reshape(-1, 1)  # Shape: (n_samples, n_features)
+
+    model = LinearRegression()
+    model.fit(x_clean, y_clean)
+
+    slope = model.coef_[0]
+    intercept = model.intercept_
+
+    # Create the fit for the DAILY positions
+    daily_fit = model.predict(x_clean)
+
+    points_per_day = 1440
+    daily_x_positions = np.arange(len(daily_stacked)) * points_per_day + points_per_day // 2  # Center of each day
+
+    # Create array with NaN values preserved
+    daily_fit_with_nans = np.full(len(daily_stacked_cleaned), np.nan)
+    valid_indices = ~np.isnan(daily_stacked_cleaned)
+    daily_fit_with_nans[valid_indices] = daily_fit
+
+    # Get the valid positions for interpolation
+    valid_x_positions = daily_x_positions[valid_indices]
+    valid_y_values = daily_fit_with_nans[valid_indices]
+
+    # Create interpolation function using ONLY valid points
+    f_linear = interp1d(valid_x_positions, valid_y_values, kind='linear', 
+                        bounds_error=False, fill_value='extrapolate')
+
+    # Interpolate for ALL daily positions
+    daily_fit_interpolated = f_linear(daily_x_positions)
+    #second fit
+    
+    x1 = np.arange(len(daily_fit_interpolated))
+    y1 = daily_fit_interpolated
+    
+    x1 = x1.reshape(-1, 1)  # Shape: (n_samples, n_features)
+
+    model2 = LinearRegression()
+    model2.fit(x1, y1)
+    
+    total_days = len(daily_stacked)
+    x_full_minutes = np.arange(len(data))
+    x_full_days_positions = x_full_minutes / points_per_day  # Convert minutes to day units
+
+    # Predict minute-resolution fit using the linear regression model
+    full_fit = model2.predict(x_full_days_positions.reshape(-1, 1))    
+        
+   # plt.plot(np.arange(len(data)), data, color='k', label='Minute data')
+   # plt.plot(daily_x_positions, daily_stacked_cleaned, color='b', marker='o', linestyle='', markersize=5, label='Daily picks')
+    # Plot the linear fit at daily positions
+   # plt.plot(daily_x_positions, daily_fit_interpolated, color='g', linewidth=2, label='Linear fit')
+
+   # plt.plot(np.arange(len(data)), full_fit, color='m', linewidth=2, label='Linear fit min')
+    
+   # plt.plot(np.arange(len(data)), baseline_line, color='r', label='Baseline')
+   # plt.legend()
+   # plt.show()
+
     #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
     #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
+    
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
-    return baseline_line#baseline_curve, undisturbed_days_sample
+    return full_fit#baseline_curve, undisturbed_days_sample
 
 ###############################################################################
 #diurnal variation computation
