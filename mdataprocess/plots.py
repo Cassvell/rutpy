@@ -119,14 +119,15 @@ def plot_qdl(xaxis, template, n, qdl, st, idx_daily):
     final = idx_daily[-1].strftime('%Y-%m-%d')
     print(n)
     for i in range(n):
-        plt.plot(xaxis, qdl[i])
+        if len(qdl[i]) == 1440:
+            plt.plot(xaxis, qdl[i])
     
     plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
     plt.legend()
     plt.title(f'{st.upper()} diurnal variation')   
     plt.tight_layout() 
  
-    plt.savefig(f'{path}semestre4/qdl/{st}_{inicio}_{final}_.png')
+    plt.savefig(f'{path}semestre5/qdl/{st}_{inicio}_{final}.png')
 
     plt.show()
     return

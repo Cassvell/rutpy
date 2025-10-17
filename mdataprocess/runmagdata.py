@@ -58,7 +58,7 @@ if net == 'regmex':
         new_name = str(date_name_newf)[0:8]
         
         if data_class == 'preprocessed':
-            fname = f"{st}_{new_name}.dat"
+            fname = f"{st}_{new_name}.clean.dat"
         elif data_class == 'raw':
             if st == 'teo' or st == 'jur':
                 fname = f"{st}{new_name}rK.min"
@@ -91,6 +91,7 @@ else:
 
 magdata = get_dataframe(filenames, st, data_class,path, idx, dates, net)
 #magdata = get_dataframe(filenames, path, idx, dates, net)
+import matplotlib.pyplot as plt    
 
 
 #sys.exit('end')
@@ -101,7 +102,6 @@ Z = magdata['Z']
 #D = magdata['D']
 #I = magdata['I']
 
-#sys.exit('end of child process')
 baseline_curve = base_line(H, net, st)
 #base_lineX = base_line(X, net, st)
 #base_lineY = base_line(Y, net, st)

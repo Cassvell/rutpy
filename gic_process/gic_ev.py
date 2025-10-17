@@ -9,7 +9,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from calc_daysdiff import calculate_days_difference
 from ts_acc import mz_score
-from gic_threshold import threshold
+from gic_threshold import threshold, threshold_sigma
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 
@@ -48,20 +48,28 @@ fdate = sys.argv[2]
 stat = ['LAV', 'QRO', 'RMY', 'MZT']
 year = int(idate[0:4])
 
-idx_d = pd.date_range(start = pd.Timestamp(idate + ' 00:00:00'), end= pd.Timestamp(fdate + ' 23:59:59'), freq='D')
+start_date = pd.Timestamp(f"{idate[0:4]}-{idate[4:6]}-{idate[6:8]} 00:00:00")
+end_date = pd.Timestamp(f"{fdate[0:4]}-{fdate[4:6]}-{fdate[6:8]} 23:59:59")
+        
+idx_d = pd.date_range(start=start_date, end=end_date, freq='D')
+
+#idx_d = pd.date_range(start = pd.Timestamp(f"{idate[0:4]}-{idate[4:6]}-{idate[6:8]} + ' 00:00:00'), end= pd.Timestamp(str(fdate) + ' 23:59:59'), freq='D')
 ndays = len(idx_d)
+
 
 file_days = idx_d.strftime('%Y%m%d').tolist()
 
-data_dir = f'/home/isaac/datos/gics_obs/processed/{year}/'
+data_dir = f'/home/isaac/datos/gics_obs/processed/'
 #data_dir2 = f'/home/isaac/datos/regmex/teo/{year}/'
 # Initialize station data storage
 stat_dir = {s: [] for s in stat}
 
 for s in stat:
     df_tmp = []
-    for day in file_days:
-        file = os.path.join(data_dir, s, f'gic_{s}_{day}.csv')
+    for day in range(len(file_days)):
+        year = file_days[day][0:4]
+        
+        file = os.path.join(f'{data_dir}{str(year)}/', s, f'gic_{s}_{file_days[day]}.csv')
         if os.path.isfile(file):
             df = pd.read_csv(file, index_col=0, header=None, parse_dates=True, sep=',')
             
@@ -74,8 +82,8 @@ for s in stat:
         else:
             print(f'File not found: {file} - creating empty DataFrame')
             idx = pd.date_range(
-                start=pd.Timestamp(day + ' 00:00:00'),
-                end=pd.Timestamp(day + ' 23:59:00'),
+                start=pd.Timestamp(str(file_days[day]) + ' 00:00:00'),
+                end=pd.Timestamp(str(file_days[day]) + ' 23:59:00'),
                 freq='min'
             )
             df = pd.DataFrame(
@@ -85,7 +93,7 @@ for s in stat:
     
     stat_dir[s] = pd.concat(df_tmp, axis=0)
 
-
+stat_dir['QRO'] = stat_dir['QRO']/11.5
 
 clicked_dates = []
 
@@ -102,7 +110,7 @@ def on_click(event):
 
 
 #upload dH index for GS reference
-stat_H = 'teo'
+stat_H = 'coe'
 dir_path = f'/home/isaac/datos/dH_{stat_H}/'
 H = df_dH(idate, fdate, dir_path, stat_H)
 
@@ -112,7 +120,7 @@ fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(10, 12))
 
 # Plot data for each station
 stations = {
-    'TEO': ('black', ax1),
+    'COE': ('black', ax1),
     'LAV': ('blue', ax2),
     'QRO': ('orange', ax3),
     'RMY': ('green', ax4),
@@ -120,8 +128,8 @@ stations = {
 }
 
 for name, (color, ax) in stations.items():
-    if name == 'TEO':
-        ax.plot(H.index, H, label='TEO', color=color, alpha=0.7)
+    if name == 'COE':
+        ax.plot(H.index, H, label='COE', color=color, alpha=0.7)
     else:
         ax.plot(stat_dir[name].index, stat_dir[name], label=name, color=color, alpha=0.7)
         ax.set_xlim(stat_dir[name].index[0], stat_dir[name].index[-1])
@@ -161,7 +169,7 @@ if len(clicked_dates) >= 2:
             
             med = np.nanmedian(zoom_data[station])
             std = np.nanstd(zoom_data[station])
-            print(f'median of zoom data: {med} \n stdev of zoom data: {std}')
+            #print(f'median of zoom data: {med} \n stdev of zoom data: {std}')
             if med >= 0+std/2 or med <= 0 - std/2:
                 zoom_data[station] = zoom_data[station] - med
             else:
@@ -172,20 +180,20 @@ if len(clicked_dates) >= 2:
             
             # Remove any remaining NaN values for threshold calculation
             clean_data = resampled_data.dropna()
-            
+            clean_data_noresampled = zoom_data[station].dropna()
             if len(clean_data) > 0:
                 print(f"Data for {station}")
 
                 
-                threshold_value = threshold(clean_data, idate, fdate, station)
-                    
-                     
+                threshold_value, quality = threshold(clean_data, idate, fdate, station)
+                sigma2, dif1 = threshold_sigma(clean_data_noresampled, zoom_data[station], threshold_value, quality, station)    
+                #print(f'\n {station.upper()} results: \n GPD Threshold: {threshold_value}, 2σ: {sigma2} \n %difference GPD - 2σ: {dif1}')     
                 #print(f'Threshold for {station} ST: {threshold_value:.4f}')
                 print(f'Max abs value: {np.max(abs(clean_data))}\n')
             #else:
                 #print(f"No valid data for threshold calculation in {station}")
-else:
-    print("\n\n CHINGAS A TU PUTA MADRE, NO SELECCIONASTE NADA!!!\n\n")
+else:    
+    print("\n\n CHINGAS A TU MADRE, NO SELECCIONASTE NADA!!!\n\n")
 
 sys.exit('End of script')
 

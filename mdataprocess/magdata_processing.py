@@ -151,15 +151,16 @@ def get_diurnalvar(data, idx_daily, net, st):
 
     qdl = [[0] * 1440 for _ in range(ndays)]
 
-
+    import matplotlib.pyplot as plt
     for i in range(ndays):
         qd = (str(qd_list[i])[0:10])
         
         qd_arr = data[qd]
         
-        qdl[i] = qd_arr
+        if len(qd_arr) == 1440:
         
-        #plt.plot(qd_arr)
+            qdl[i] = qd_arr
+
 
     baseline = []
 ###############################################################################
@@ -174,7 +175,7 @@ def get_diurnalvar(data, idx_daily, net, st):
         
         qdl[i] = qd_arr
         
-       # plt.plot(xaxis, qdl[i], label=f'QD{i+1}: {qd}')
+        plt.plot(xaxis, qdl[i], label=f'QD{i+1}: {qd}')
         if utc <= 0:
             ini = int(abs(utc)*60)
             fin = ini+180    
@@ -202,11 +203,13 @@ def get_diurnalvar(data, idx_daily, net, st):
                
         baseline_value = np.nanmedian(qd_2h)
         baseline.append(baseline_value)
+        
         qdl[i] = qdl[i] - baseline_value
         
         qdl[i] = qdl[i].reset_index()
         qdl[i] = qdl[i].drop(columns=['index'])
-
+    plt.show()
+    sys.exit('End of child process')
     # Generate the average array
 # Combine all DataFrames into a single DataFrame with shape (n, 1440)
     qdl_concat = pd.concat(qdl, axis=1, ignore_index=True)
@@ -214,7 +217,7 @@ def get_diurnalvar(data, idx_daily, net, st):
     # Compute the mean across rows (axis=0) to get a 1x1440 array
     qd_average = qdl_concat.median(axis=1)        
 
-    import matplotlib.pyplot as plt
+    
     
 
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
@@ -285,7 +288,8 @@ def get_diurnalvar(data, idx_daily, net, st):
     
     template = T[0:1440]
     
-    #plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
+    plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
+    sys.exit('end of child process')
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset

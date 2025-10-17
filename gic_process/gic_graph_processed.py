@@ -18,7 +18,8 @@ fmonth = int(fdate[4:6])
 fday = int(fdate[6:8])
 
 #stat = ['LAV', 'QRO', 'RMY', 'MZT']
-st = ['QRO', 'QRO', 'RMY', 'MZT']
+stat = ['MZT', 'QRO', 'RMY', 'MZT']
+#st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
 
 finaldate= datetime(fyear, fmonth,fday)
@@ -36,18 +37,19 @@ dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
 for i in stat:
     gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
 
-    
-    
+
     if not gic_st.isnull().all():
-        gic_res, qd = gic_diurnalbase(gic_st, i)    
+        gic_res, qd = gic_diurnalbase(gic_st, idate, fdate, i)    
         #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
         
         if i == 'LAV':
             gic_resample = gic_res.resample('30Min').median().fillna(method='ffill')
-            threshold = threshold(gic_resample)   
-            gic_corr = corr_offset(gic_res, threshold[0], 60) 
-
-            gic_corr = corr_offset(gic_corr, threshold[0], 60) 
+            
+            
+            threshold, quality = threshold(gic_resample, idate, fdate, stat)   
+            print(f'Quality: {quality}')
+            gic_corr = corr_offset(gic_res, threshold, 60) 
+            gic_corr = corr_offset(gic_corr, threshold, 60) 
             gic_res = gic_corr
         
         

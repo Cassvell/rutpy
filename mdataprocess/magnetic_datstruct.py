@@ -92,15 +92,16 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
                                                 })        
 
                 df = df.set_index(df['datetime'])   
-                df = df.loc[~df.index.duplicated(keep='first')]            
+                df = df.loc[~df.index.duplicated(keep='first')]                           
+                
                 df = df.reindex(idx)    
                 df2 = df.iloc[:,5:9]#df.drop(colums=[0,1,2, 'DateTime'])
-                H = df2.iloc[:,1]    
+                H = df2.iloc[:,1] 
+
                 D = df2.iloc[:,0]
                 Z = df2.iloc[:,2]
                 F = df2.iloc[:,3]
-            
-            
+              
             
         if data_class == 'preprocessed':        
             for i in range(len(filenames)):    
@@ -160,10 +161,10 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
         Y = H*np.sin(D)
         I = np.tan(Z/H)
 
-        H = despike(H, threshd = 7.5)
-        X = despike(X, threshd = 7.5)
-        Y = despike(Y, threshd = 7.5)
-        Z = despike(Z, threshd = 7.5)
+        #H = despike(H, threshd = 7.5)
+        #X = despike(X, threshd = 7.5)
+        #Y = despike(Y, threshd = 7.5)
+        #Z = despike(Z, threshd = 7.5)
 
         for i in range(len(H)):
             if H[i] > 60000:
