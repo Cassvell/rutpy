@@ -127,7 +127,7 @@ def plot_qdl(xaxis, template, n, qdl, st, idx_daily):
     plt.title(f'{st.upper()} diurnal variation')   
     plt.tight_layout() 
  
-    plt.savefig(f'{path}semestre5/qdl/{st}_{inicio}_{final}.png')
+    plt.savefig(f'{path}semestre5/qdl/{st}_{inicio}_{final}_gics.png')
 
     plt.show()
     return

@@ -91,45 +91,54 @@ else:
 
 magdata = get_dataframe(filenames, st, data_class,path, idx, dates, net)
 #magdata = get_dataframe(filenames, path, idx, dates, net)
-import matplotlib.pyplot as plt    
-
-
-#sys.exit('end')
 H = magdata['H']
 X = magdata['X']
 Y = magdata['Y']
 Z = magdata['Z']
-#D = magdata['D']
-#I = magdata['I']
+D = magdata['D']
+I = magdata['I']
 
 baseline_curve = base_line(H, net, st)
 #base_lineX = base_line(X, net, st)
 #base_lineY = base_line(Y, net, st)
-#base_lineZ = base_line(Z, net, st)
+base_lineZ = base_line(Z, net, st)
+#base_lineD = base_line(D, net, st)
 
+sys.exit('end')
 H_detrend = H-baseline_curve
 #X_detrend = X-base_lineX
 #Y_detrend = Y-base_lineY
-#Z_detrend = Z-base_lineZ
+Z_detrend = Z-base_lineZ
+D_detrend = D-base_lineD
+
 #diurnal base line
 
-
 diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
+diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st)
+diurnal_baselineD, offsetD = get_diurnalvar(D_detrend, idx_daily, net, st)
 #diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st)
 #diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st)
-#diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st)
 
 H_raw = H
+Z_raw = Z
+D_raw = D
 
+
+
+Z = Z_detrend - diurnal_baselineZ
 H = H_detrend-diurnal_baseline
 #X = X_detrend - diurnal_baselineX
 #Y = Y_detrend - diurnal_baselineY
-#Z = Z_detrend - diurnal_baselineZ
+
+D = D_detrend - diurnal_baselineD
+
+#sys.exit('end of child process')
 
 H_noff1 = H-offset
 #X_noff1 = X-offsetX
 #Y_noff1 = Y-offsetY
-#Z_noff1 = Z-offsetZ
+Z_noff1 = Z-offsetZ
+D_noff1 = D-offsetD
 
 #sys.exit('end of the child process')
 dst = []
@@ -137,22 +146,60 @@ hr = int(len(H)/60)
 for i in range(hr):
     tmp_h = np.nanmedian(H_noff1[i*60:(i+1)*60])
     dst.append(tmp_h)
-    
-plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr)
 
+
+def hourly(data):
+    hourly_data = []
+    hr = int(len(data)/60)
+    for i in range(hr):
+        tmp = np.nanmedian(data[i*60:(i+1)*60])
+        hourly_data.append(tmp)
+    
+    return hourly_data
+
+H_hr = hourly(H_noff1)
+Z_hr = hourly(Z_noff1)
+D_hr = hourly(D_noff1)
+
+#plt.plot(idx, Z_raw, color='k')
+#plt.plot(idx, base_lineZ, color = 'r')
+#plt.show()
+
+
+#plt.plot(idx, D_raw, color='k')
+#plt.plot(idx, base_lineD, color = 'r')
+#plt.show()
+
+
+#sys.exit('end of test')
+    
+#plot_process(H, H_raw, H_detrend, H_noff1, H_hr, baseline_curve, diurnal_baseline, st, idx_hr, 'H')
+#plot_process(D, D_raw, D_detrend, D_noff1, D_hr, base_lineD, diurnal_baselineD, st, idx_hr, 'D')
+#plot_process(Z, Z_raw, Z_detrend, Z_noff1, Z_hr, base_lineZ, diurnal_baselineZ, st, idx_hr, 'Z')
+
+H = H_noff1+baseline_curve+diurnal_baseline
+D = D_noff1+base_lineD+diurnal_baselineD
+Z = Z_noff1+base_lineZ+diurnal_baselineZ
 # Data dictionaries
-dat = {'H': H_noff1, 'baseline_line': baseline_curve, 'SQ': diurnal_baseline}
+dat = {'H': H_noff1,
+       'D': D_noff1, 
+       'Z': Z_noff1}
+
+
 #dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
 
 # Create DataFrames
-df = pd.DataFrame(dat).fillna(9999.9)   # Ensure NaN replacement
+df = pd.DataFrame(dat).fillna(999.9)   # Ensure NaN replacement
 #df2 = pd.DataFrame(dat2).fillna(9999.9) # Ensure NaN replacement
 
 
 
+header = " ".join(f"{key:>10}" for key in dat.keys())
+
+header = f"{'H':>7}{'D':>14}{'Z':>13}"
 
 # Define path
-path = f"/home/isaac/datos/{net}/{st}/minV2/"  
+path = f"/home/isaac/datos/{net}/{st}/experiment_{st}/"  
 os.makedirs(path, exist_ok=True)  # Creates directory if it does not exist
 
 # Iterate over daily indexes
@@ -167,27 +214,19 @@ for i in range(len(idx_daily)):
 
     # Slice daily data
     daily_data = df[start_idx:end_idx].reset_index(drop=True)
-    #daily_data2 = df2[start_idx:end_idx].reset_index(drop=True)
 
-    # Define filenames
+    # Define filename
     full_path = os.path.join(path, filenames_out[i])
-    full_path2 = os.path.join(path, filenames_out2[i])
-
     filenames.append(full_path)
 
-    # Write first file
+    # Write file with header
     with open(full_path, 'w') as f:
+        # Write header
+        f.write(header + '\n')
+        
+        # Write data rows
         for _, row in daily_data.iterrows():
-            line = f"{row['H']:7.2f}{row['baseline_line']:10.2f}{row['SQ']:6.2f}\n"
+            line = f"{row['H']:10.2f}{row['D']:16.10f}{row['Z']:10.2f}\n"
             f.write(line)
 
     print(f"Saved: {full_path}")
-
-    # Write second file
-    #with open(full_path2, 'w') as f2:
-    #    for _, row in daily_data2.iterrows():
-    #        line = f"{row['X']:7.2f}{row['Y']:8.2f}{row['Z']:8.2f}{row['D']:6.2f}{row['I']:6.2f}\n"
-    #        f2.write(line)  # FIXED: Now correctly writes to f2
-
-    #print(f"Saved: {full_path2}")   
-#df.to_csv()

@@ -17,8 +17,8 @@ fyear = int(fdate[0:4])
 fmonth = int(fdate[4:6])
 fday = int(fdate[6:8])
 
-#stat = ['LAV', 'QRO', 'RMY', 'MZT']
-stat = ['MZT', 'QRO', 'RMY', 'MZT']
+stat = ['LAV', 'QRO', 'RMY', 'MZT']
+#stat = ['MZT', 'QRO', 'RMY', 'MZT']
 #st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
 
@@ -39,20 +39,37 @@ for i in stat:
 
 
     if not gic_st.isnull().all():
-        gic_res, qd = gic_diurnalbase(gic_st, idate, fdate, i)    
-        #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
+        
+        
         
         if i == 'LAV':
-            gic_resample = gic_res.resample('30Min').median().fillna(method='ffill')
+            plt.plot(gic_st, label=f'{i} GIC ', color='black', alpha=0.7)
+            gic_resample = gic_st.resample('30Min').median().fillna(method='ffill')
+            
+            threshold = threshold(gic_resample, idate, fdate, stat, '2s')   
+            stddev = np.nanstd(gic_resample)         
+            
+
+            for j in range(ndays):
+                start_idx = j * 1440
+                end_idx = (j + 1) * 1440
+                gic_corr = corr_offset(gic_st[start_idx:end_idx], threshold, 60, stddev)
+                gic_st[start_idx:end_idx] = gic_corr 
+                #second_filter = corr_offset(gic_st[start_idx:end_idx], threshold, 20, stddev)
+                #gic_st[start_idx:end_idx] = second_filter 
             
             
-            threshold, quality = threshold(gic_resample, idate, fdate, stat)   
-            print(f'Quality: {quality}')
-            gic_corr = corr_offset(gic_res, threshold, 60) 
-            gic_corr = corr_offset(gic_corr, threshold, 60) 
-            gic_res = gic_corr
-        
-        
+            plt.plot(gic_st, label=f'{i} GIC corr', color='red', alpha=0.8)
+
+            plt.show()
+           # print(f'Quality: {quality}')
+            
+            #gic_corr = corr_offset(gic_corr, threshold, 60) 
+            #gic_st = gic_corr
+
+
+        gic_res, qd = gic_diurnalbase(gic_st, idate, fdate, i.lower())    
+        sys.exit('end of child process')
         dict_gic[i] = gic_res
     else:
         dict_gic[i] = gic_st
@@ -60,7 +77,7 @@ for i in stat:
         
         #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
 
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12))  # 3 rows, 1 column
+fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12))  # 3 rows, 1 column#
 
 
 ax1.plot(dict_gic['LAV'], label='LAV', color='blue', alpha=0.7)

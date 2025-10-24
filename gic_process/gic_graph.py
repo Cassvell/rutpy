@@ -51,19 +51,18 @@ tot_data = (ndays+1)*1440
 path2 = '/home/isaac/datos/gics_obs/'
 file = []
 
-#gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
+gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
 
-#gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
+gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
+gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
 
-#gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
-
-#gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
+gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
 
 ###############################################################################
 
 #detection of changing points
 
-#mz_score = mz_score(gicTW_lav)
+mz_score = mz_score(gicTW_lav)
 #plt.plot(gicTW_lav)
 
 #sys.exit('end of test')
@@ -128,28 +127,6 @@ H_index = np.argmin(H)
 print(f'data from: {H_stat.upper()} \n on {k.index[k_index]}, \
     max Kmex value: {np.nanmax(k)}, \n on {H.index[H_index]} min dH: {np.nanmin(H)}')
 
-
-# Create figure with subplots
-fig, ax = plt.subplots(2, 1, figsize=(12, 8))
-
-# Plot H data
-ax[0].plot(H, color='k')
-ax[0].set_ylabel(r'$\Delta H_{coe}$ [nT]', fontweight='bold')
-ax[0].set_title(f'Indices geomagnéticos, Estación {H_stat.upper()}', fontsize=18)
-ax[0].grid()
-ax[0].set_xlim(H.index[0], H.index[-1])  # Use actual data indices
-
-ax[1].bar(k.index, k, width=0.1, align='edge', color=colorsValue, alpha=0.8)  # Added alpha to bars
-ax[1].set_ylim(0, 9)
-ax[1].set_xlim(H.index[0], H.index[-1])
-ax[1].set_ylabel('Kcoe', fontweight='bold')
-ax[1].grid(True, alpha=0.3)  # Only call grid once with the desired settings
-
-
-# Improve layout
-plt.tight_layout()
-plt.show()
-sys.exit('end of child process')
 # Initialize inicio and final in case no dataset has valid data
 inicio, final = None, None
 

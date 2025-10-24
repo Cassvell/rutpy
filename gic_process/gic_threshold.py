@@ -212,8 +212,9 @@ def check_data_type(data):
     else:
         return "Neither Pandas nor NumPy"
 
-def threshold(picks, i_date, f_date, st):
-    sorted_picks = np.array(picks)
+def threshold(picks, i_date, f_date, st, method):
+    
+    sorted_picks = np.array(np.abs(picks))
     sorted_picks = np.sort(sorted_picks)
 
     sorted_picks_norp = np.unique(sorted_picks)
@@ -232,139 +233,154 @@ def threshold(picks, i_date, f_date, st):
 
 
    # optimal_mu, optimal_p, result = find_optimal_mu_constrained(sorted_picks_norp, k, s, u, n_simulations=500)
-    bound =   0.95
-    idx = np.searchsorted(cdf, bound)
-    
-    results = []
-    
-    for i in range(len(sorted_picks_norp[0:idx])):
-        data_subset = sorted_picks_norp[i:idx]
-        n_subset = len(data_subset)
+    bound = 95
+    idx = np.percentile(sorted_picks, bound)
+    if method == '2s':
+        idx = np.percentile(sorted_picks, bound)
+
+        threshold = idx
+    elif method == '3s':
+        bound =   99
+        idx = np.percentile(sorted_picks, bound)
+
+        threshold = idx
         
-        if n_subset >= 3:
-            k, s, u = GPD_params(data_subset)
-            a2 = anderson_darling_r(data_subset, k, s, u)
-            p_val = gpd_ad_p_value_approximate(a2, n_subset)
+    elif method == 'GPD':
+        results = []
+        
+        for i in range(len(sorted_picks_norp[0:idx])):
+            data_subset = sorted_picks_norp[i:idx]
+            n_subset = len(data_subset)
             
-            results.append({
-                'start_index': i,
-                'k': k, 's': s, 'u': u,
-                'A2': a2, 'p_value': p_val,
-                'n_points': n_subset
-            })
-    
-    if not results:
-        raise ValueError("No valid configurations found!")
-    
-    # Convert to DataFrame for easier filtering (or use list comprehension)
-    df = pd.DataFrame(results)
-    
-    #print(f"Total configurations: {len(df)}")
-    #print(f"P-value range: {df['p_value'].min():.6f} to {df['p_value'].max():.6f}")
-    
-    # Filter by your criteria
-    target_results = df[(df['p_value'] > 0.9) & (df['p_value'] < 1.0)]
-    
-    if len(target_results) > 0:
-        # Select row with highest u value
-        best_row = target_results.loc[target_results['u'].idxmax()]
-        method = "highest_u_p_0.8_to_1"
-    else:
-        # Relax criteria
-        relaxed_results = df[df['p_value'] > 0.7]
-        if len(relaxed_results) > 0:
-            best_row = relaxed_results.loc[relaxed_results['u'].idxmax()]
-            method = "highest_u_p_0.5_to_1_relaxed"
+            if n_subset >= 3:
+                k, s, u = GPD_params(data_subset)
+                a2 = anderson_darling_r(data_subset, k, s, u)
+                p_val = gpd_ad_p_value_approximate(a2, n_subset)
+                
+                results.append({
+                    'start_index': i,
+                    'k': k, 's': s, 'u': u,
+                    'A2': a2, 'p_value': p_val,
+                    'n_points': n_subset
+                })
+        
+        if not results:
+            raise ValueError("No valid configurations found!")
+        
+        # Convert to DataFrame for easier filtering (or use list comprehension)
+        df = pd.DataFrame(results)
+        
+        #print(f"Total configurations: {len(df)}")
+        #print(f"P-value range: {df['p_value'].min():.6f} to {df['p_value'].max():.6f}")
+        
+        # Filter by your criteria
+        target_results = df[(df['p_value'] > 0.9) & (df['p_value'] < 1.0)]
+        
+        if len(target_results) > 0:
+            # Select row with highest u value
+            best_row = target_results.loc[target_results['u'].idxmax()]
+            method = "highest_u_p_0.8_to_1"
         else:
-            # Fallback
-            best_row = df.loc[df['p_value'].idxmax()]
-            method = "fallback_highest_p"
-    
-    definitive_params = {
-        'u': best_row['u'], 'k': best_row['k'], 's': best_row['s'],
-        'A2': best_row['A2'], 'p': best_row['p_value'],
-        'start_index': best_row['start_index'], 'method': method
-    }
-    
-    k_0 = definitive_params['k']
-    s_0 = definitive_params['s']
-    u_0 = definitive_params['u']
-    A_0 = definitive_params['A2']
-    p_0 = definitive_params['p']
-    
-    # Print final selection
-    #print(f"\n FINAL SELECTION:")
-    #print(f"   Start index: {selected_start_idx}")
-    print(f"   u = {u_0:.6f}, A² = {A_0:.6f}, p-value = {p_0:.6f}")
+            # Relax criteria
+            relaxed_results = df[df['p_value'] > 0.7]
+            if len(relaxed_results) > 0:
+                best_row = relaxed_results.loc[relaxed_results['u'].idxmax()]
+                method = "highest_u_p_0.5_to_1_relaxed"
+            else:
+                # Fallback
+                best_row = df.loc[df['p_value'].idxmax()]
+                method = "fallback_highest_p"
+        
+        definitive_params = {
+            'u': best_row['u'], 'k': best_row['k'], 's': best_row['s'],
+            'A2': best_row['A2'], 'p': best_row['p_value'],
+            'start_index': best_row['start_index'], 'method': method
+        }
+        
+        k_0 = definitive_params['k']
+        s_0 = definitive_params['s']
+        u_0 = definitive_params['u']
+        A_0 = definitive_params['A2']
+        p_0 = definitive_params['p']
+        
+        # Print final selection
+        #print(f"\n FINAL SELECTION:")
+        #print(f"   Start index: {selected_start_idx}")
+        print(f"   u = {u_0:.6f}, A² = {A_0:.6f}, p-value = {p_0:.6f}")
 
-    
-    # Quality assessment
-    if p_0 > 0.9:
-        quality = " Excellent fit"
-    elif p_0 > 0.5:
-        quality = " Good fit"
-    elif p_0 > 0.10:
-        quality = " Acceptable  fit"
-    else:
-        quality = " Poor fit"
-    print(f'Quality of fitness: {quality} \n')
+        
+        # Quality assessment
+        if p_0 > 0.9:
+            quality = " Excellent fit"
+        elif p_0 > 0.5:
+            quality = " Good fit"
+        elif p_0 > 0.10:
+            quality = " Acceptable  fit"
+        else:
+            quality = " Poor fit"
+        print(f'Quality of fitness: {quality} \n')
 
-    x_fit = np.linspace(min(sorted_picks_norp), max(sorted_picks_norp), 1000)
-
-
-    
-   # print(f'final Threshold: {u_0}, p-val: {p_0}')
-    
-    
-    # Calculate GPD PDF and CDF using final parameters
-    #pdf_pareto = gpd_pdf(x_fit, k_0, s_0, u_0)
-    #cdf_pareto = gpd_cdf(x_fit, k_0, s_0, u_0)
-
-    # Create figure with three subplots
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
-
-    # --- Plot 1: PDF Comparison (Histogram + Fitted GPD) ---
-    ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
-            histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
-    ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
-
-    ax1.set_title(f"{st} - GPD Fit (PDF)")
-    ax1.set_ylabel('Density')
-    ax1.legend()
-    ax1.grid(True, which='both', alpha=0.3)
-
-    # Add goodness-of-fit info to CDF plot
-    fit_text = f'Goodness-of-fit: A²={A_0:.3f}, p={p_0:.6f}'
-    if p_0 > 0.9:
-        fit_quality = 'Excellent fit'
-    elif p_0 > 0.5:
-        fit_quality = 'good fit' 
-    elif p_0 > 0.1:
-        fit_quality = 'acceptable fit'
-    else:
-        fit_quality = 'Poor fit'
-
-    plt.text(0.1, 0.8, f'Fitness Quality: {quality}', horizontalalignment='center',
-     verticalalignment='center', transform=ax2.transAxes)
-
-    # --- Plot 2: Empirical CDF ---
-    ax2.plot(np.sort(sorted_picks_norp), cdf, 'b-', linewidth=2, label='Empirical CDF')
-    ax2.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
-    ax2.set_xlabel('Value')
-    ax2.set_ylabel('CDF')
-    ax2.set_title('Empirical Cumulative Distribution')
-    ax2.legend()
-    ax2.grid(True, which='both', alpha=0.3)
+        x_fit = np.linspace(min(sorted_picks_norp), max(sorted_picks_norp), 1000)
 
 
+        
+    # print(f'final Threshold: {u_0}, p-val: {p_0}')
+        
+        
+        # Calculate GPD PDF and CDF using final parameters
+        #pdf_pareto = gpd_pdf(x_fit, k_0, s_0, u_0)
+        #cdf_pareto = gpd_cdf(x_fit, k_0, s_0, u_0)
+
+        # Create figure with three subplots
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+
+        # --- Plot 1: PDF Comparison (Histogram + Fitted GPD) ---
+        ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
+                histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
+        ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
+
+        ax1.set_title(f"{st} - GPD Fit (PDF)")
+        ax1.set_ylabel('Density')
+        ax1.legend()
+        ax1.grid(True, which='both', alpha=0.3)
+
+        # Add goodness-of-fit info to CDF plot
+        fit_text = f'Goodness-of-fit: A²={A_0:.3f}, p={p_0:.6f}'
+        if p_0 > 0.9:
+            fit_quality = 'Excellent fit'
+        elif p_0 > 0.5:
+            fit_quality = 'good fit' 
+        elif p_0 > 0.1:
+            fit_quality = 'acceptable fit'
+        else:
+            fit_quality = 'Poor fit'
+
+        plt.text(0.1, 0.8, f'Fitness Quality: {quality}', horizontalalignment='center',
+        verticalalignment='center', transform=ax2.transAxes)
+
+        # --- Plot 2: Empirical CDF ---
+        ax2.plot(np.sort(sorted_picks_norp), cdf, 'b-', linewidth=2, label='Empirical CDF')
+        ax2.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
+        ax2.set_xlabel('Value')
+        ax2.set_ylabel('CDF')
+        ax2.set_title('Empirical Cumulative Distribution')
+        ax2.legend()
+        ax2.grid(True, which='both', alpha=0.3)
 
 
-    plt.tight_layout()
-    plt.savefig(f'/home/isaac/rutpy/gicsOutput/gic_dist/CDF_{st}_{i_date}_{f_date}.png', dpi=300)
-    plt.close()
 
 
-    return u_0, quality
+        plt.tight_layout()
+        plt.savefig(f'/home/isaac/rutpy/gicsOutput/gic_dist/CDF_{st}_{i_date}_{f_date}.png', dpi=300)
+        plt.close()
+        threshold = u_0
+
+
+
+
+    return threshold
+
+    return 
 
 def threshold_sigma(data, data_nan, threshold, quality, st):
     ini = data_nan.index[0]
@@ -442,6 +458,5 @@ def threshold_sigma(data, data_nan, threshold, quality, st):
     plt.show()
     
     #tomando como base inicial sigma 2
-    dif1 = ((threshold - (popt[2]*2)) / (popt[2]*2)) * 100#diferencia porcentual entre GPD y sigma 2
     
-    return popt[2]*2, dif1
+    return popt[2]*2

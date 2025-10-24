@@ -149,13 +149,14 @@ def final_params(sorted_picks_norp, cdf,bound):
             A_candidates.append(AD_results[i])     
             k_candidates.append(params_k[i])
             s_candidates.append(params_s[i])
-    
+        
     if len(u_candidates) > 1:
         u_idx = np.argmax(np.array(u_candidates))
         u_max = np.max(np.array(u_candidates))
         definitive_params = {'u' : u_max, 'k' : k_candidates[u_idx], 's' : s_candidates[u_idx], \
             'A2' : A_candidates[u_idx], 'p' : pval_candidates[u_idx]}
     else:
+        
         u_max = np.array(u_candidates)
         definitive_params = {'u' : u_max, 'k' : k_candidates[0], 's' : s_candidates[0], \
             'A2' : A_candidates[0], 'p' : pval_candidates[0]}
@@ -163,7 +164,7 @@ def final_params(sorted_picks_norp, cdf,bound):
     return definitive_params
 
 
-def get_threshold(picks, st):
+def get_threshold(picks, st, method):
 
     ndays = int(len(picks)/4)
 
@@ -173,63 +174,75 @@ def get_threshold(picks, st):
     picks = np.unique(picks)
     
     hist, bins = np.histogram(picks, bins=ndays*2, density=True)    
+    
+    sorted_picks = np.sort(picks)
 
-    sorted_picks = np.array(picks)
-    sorted_picks = np.sort(sorted_picks)
-
-    sorted_picks_norp = np.unique(sorted_picks)
+    
     nbins = int(len(sorted_picks) / 3)
 
-    stddev_res = (np.array(sorted_picks_norp).flatten())
+    stddev_res = (np.array(sorted_picks).flatten())
 
     frequencies, bin_edges = np.histogram(stddev_res, bins=nbins*2, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    cdf = np.arange(1, len(sorted_picks_norp)+1) / len(sorted_picks_norp) 
+    cdf = np.arange(1, len(sorted_picks)+1) / len(sorted_picks) 
+    
+   # optimal_mu, optimal_p, result = find_optimal_mu_constrained(sorted_picks_norp, k, s, u, n_simulations=500)
+    bound = 95
+    idx = np.percentile(sorted_picks, bound)
+    if method == '2s':
+        idx = np.percentile(sorted_picks, bound)
 
-    bound =   0.95
-    idx = np.searchsorted(cdf, bound)
-    
-    
-    definitive_params = final_params(sorted_picks_norp, cdf,bound)
+        threshold = idx
+    elif method == '3s':
+        bound =   99
+        idx = np.percentile(sorted_picks, bound)
 
-    p_0 = definitive_params['p']
-    u_0 = definitive_params['u']
-    A_0 = definitive_params['A2']
-    
-    # Quality assessment
-    if p_0 > 0.8:
-        quality = " Excellent fit"
-    elif p_0 > 0.6:
-        quality = " Good fit"
-    elif p_0 > 0.05:
-        quality = " Marginal fit"
-    else:
-        quality = " Poor fit"
+        threshold = idx
         
-    print(f'Quality of fitness: {quality} \n')
-    x_fit = np.linspace(min(sorted_picks_norp), max(sorted_picks_norp), 1000)
+    elif method == 'GPD':
+        results = []
+    
+    elif method == 'GPD':
+        definitive_params = final_params(sorted_picks, cdf,bound)
 
-    #fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+        p_0 = definitive_params['p']
+        u_0 = definitive_params['u']
+        A_0 = definitive_params['A2']
+        
+        # Quality assessment
+        if p_0 > 0.8:
+            quality = " Excellent fit"
+        elif p_0 > 0.6:
+            quality = " Good fit"
+        elif p_0 > 0.05:
+            quality = " Marginal fit"
+        else:
+            quality = " Poor fit"
+            
+        print(f'Quality of fitness: {quality} \n')
+        x_fit = np.linspace(min(sorted_picks), max(sorted_picks), 1000)
 
-    # --- Plot 1: PDF Comparison (Histogram + Fitted GPD) ---
-    #ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
-    #        histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
-    #ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
+        #fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
-    #ax1.set_title(f"{st.upper()} - magnetic data distribution picks (PDF)")
-    #ax1.set_ylabel('Density')
-    #ax1.legend()
-    #ax1.grid(True, which='both', alpha=0.3)
+        # --- Plot 1: PDF Comparison (Histogram + Fitted GPD) ---
+        #ax1.hist(sorted_picks, bins=nbins*2, color='navy', 
+        #        histtype='stepfilled', alpha=0.4, density=True, label='Data histogram')
+        #ax1.axvline(x=u_0, color='red', linestyle='--', alpha=0.8, linewidth=1.5, label=f'Threshold = {u_0:.2f} nT')
 
-    # Add goodness-of-fit info to CDF plot
-    fit_text = f'Goodness-of-fit: A²={A_0:.3f}, p={p_0:.6f}'
-    if p_0 > 0.05:
-        fit_quality = 'Good fit'
-    elif p_0 > 0.01:
-        fit_quality = 'Marginal fit'
-    else:
-        fit_quality = 'Poor fit'
+        #ax1.set_title(f"{st.upper()} - magnetic data distribution picks (PDF)")
+        #ax1.set_ylabel('Density')
+        #ax1.legend()
+        #ax1.grid(True, which='both', alpha=0.3)
 
+        # Add goodness-of-fit info to CDF plot
+        fit_text = f'Goodness-of-fit: A²={A_0:.3f}, p={p_0:.6f}'
+        if p_0 > 0.05:
+            fit_quality = 'Good fit'
+        elif p_0 > 0.01:
+            fit_quality = 'Marginal fit'
+        else:
+            fit_quality = 'Poor fit'
+        threshold = u_0
     #plt.text(0.1, 0.8, f'Fitness Quality: {quality}', horizontalalignment='center',
     # verticalalignment='center', transform=ax2.transAxes)
 
@@ -250,8 +263,7 @@ def get_threshold(picks, st):
     #plt.show()
 
 
-
-    return u_0
+    return threshold
 ###############################################################################
 ###############################################################################
 #generates an array of variation picks    
