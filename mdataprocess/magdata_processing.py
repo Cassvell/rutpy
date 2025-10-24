@@ -327,11 +327,11 @@ def get_diurnalvar(data, idx_daily, net, st):
         # Calculate weights
         weights_list = []
         for iqr in iqr_values:
-            if iqr > threshold:
+            if iqr < threshold:
                 weight = 1 / (threshold * 2)
-            elif iqr > (threshold / 1.5):
+            elif iqr < (threshold / 1.5):
                 weight = 1 / (threshold * 1.5)
-            elif iqr > (threshold / 2):
+            elif iqr < (threshold / 2):
                 weight = 1 / threshold
             else:
                 weight = 1.0
