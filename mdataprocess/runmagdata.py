@@ -98,13 +98,14 @@ Z = magdata['Z']
 D = magdata['D']
 I = magdata['I']
 
-baseline_curve = base_line(H, net, st)
+
 #base_lineX = base_line(X, net, st)
 #base_lineY = base_line(Y, net, st)
-base_lineZ = base_line(Z, net, st)
-#base_lineD = base_line(D, net, st)
+base_lineZ = base_line(Z, net, st, '2s')
+base_lineD = base_line(D, net, st, '2s')
+baseline_curve = base_line(H, net, st, '2s')
 
-sys.exit('end')
+D_detrend = D-base_lineD
 H_detrend = H-baseline_curve
 #X_detrend = X-base_lineX
 #Y_detrend = Y-base_lineY
@@ -113,9 +114,9 @@ D_detrend = D-base_lineD
 
 #diurnal base line
 
-diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st)
-diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st)
-diurnal_baselineD, offsetD = get_diurnalvar(D_detrend, idx_daily, net, st)
+diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+diurnal_baselineD, offsetD = get_diurnalvar(D_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
 #diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st)
 #diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st)
 
@@ -124,13 +125,13 @@ Z_raw = Z
 D_raw = D
 
 
-
+D = D_detrend - diurnal_baselineD
 Z = Z_detrend - diurnal_baselineZ
 H = H_detrend-diurnal_baseline
 #X = X_detrend - diurnal_baselineX
 #Y = Y_detrend - diurnal_baselineY
 
-D = D_detrend - diurnal_baselineD
+
 
 #sys.exit('end of child process')
 
@@ -173,9 +174,9 @@ D_hr = hourly(D_noff1)
 
 #sys.exit('end of test')
     
-#plot_process(H, H_raw, H_detrend, H_noff1, H_hr, baseline_curve, diurnal_baseline, st, idx_hr, 'H')
-#plot_process(D, D_raw, D_detrend, D_noff1, D_hr, base_lineD, diurnal_baselineD, st, idx_hr, 'D')
-#plot_process(Z, Z_raw, Z_detrend, Z_noff1, Z_hr, base_lineZ, diurnal_baselineZ, st, idx_hr, 'Z')
+plot_process(H, H_raw, H_detrend, H_noff1, H_hr, baseline_curve, diurnal_baseline, st, idx_hr, 'H')
+plot_process(D, D_raw, D_detrend, D_noff1, D_hr, base_lineD, diurnal_baselineD, st, idx_hr, 'D')
+plot_process(Z, Z_raw, Z_detrend, Z_noff1, Z_hr, base_lineZ, diurnal_baselineZ, st, idx_hr, 'Z')
 
 H = H_noff1+baseline_curve+diurnal_baseline
 D = D_noff1+base_lineD+diurnal_baselineD

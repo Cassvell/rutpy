@@ -15,7 +15,7 @@ reproc:  Reproceso todos los datasets de GIC
          
 
 """
-
+import warnings
 import os
 import sys
 import glob
@@ -189,7 +189,7 @@ def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
 
     if os.path.isfile(SG2[0]):
         df = df_gic(i_date, f_date, path2, stat)
-
+        
         # Ensure df is a dictionary and contains the key stat
         if isinstance(df, dict) and stat in df:
             gic_data = df[stat].loc[:, "gic"]
@@ -214,11 +214,41 @@ def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
         gic_data = df["gic"]
         T1_data = df["T1"]
         T2_data = df["T2"]
-        
+    
+    #import matplotlib.pyplot as plt
+    #plt.plot(gic_data)
+    #plt.show()
     return gic_data, T1_data, T2_data
 
 ###############################################################################
 ###############################################################################
+def skip_initial_empty_rows(file_path, delimiter=None):
+    """Skip rows until we find one with substantial content"""
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    
+    for i, line in enumerate(lines):
+        # Use the same whitespace splitting logic as pd.read_csv(sep='\\s+')
+        if delimiter:
+            # If specific delimiter provided
+            non_empty_fields = [field for field in line.strip().split(delimiter) if field.strip()]
+        else:
+            # Use whitespace splitting (multiple spaces/tabs)
+            non_empty_fields = line.strip().split()
+        
+        #print(f"Row {i}: {len(non_empty_fields)} columns - {non_empty_fields}")
+        
+        if len(non_empty_fields) >= 8:  # Adjust based on your expected column count
+            row = i
+            break
+            
+        #    return i
+        else:
+            row = 0
+            
+            
+    return row
+
 def df_gic(date1, date2, dir_path, stat):
     col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
     
@@ -232,12 +262,14 @@ def df_gic(date1, date2, dir_path, stat):
     nextday = str(nextday)[0:10]
     
     
-    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:01:00' ), end =\
-                         pd.Timestamp(nextday+' 12:00:00'), freq='min')
+    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 12:00:00' ), end =\
+                         pd.Timestamp(nextday+' 11:59:00'), freq='min')
+    
     
     idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
                                           end = pd.Timestamp(str(date2)), freq='D')
         
+
     idx_list = (idx_daylist.strftime('%Y-%m-%d')) 
     str1 = "GIC_"
     ext = "_"+stat+".dat"
@@ -247,108 +279,154 @@ def df_gic(date1, date2, dir_path, stat):
 
     dfs_c = []
     missing_vals = ["NaN", "NO DATA"] 
-
+    column_names = ['Datetime', 'gic', 'T1', 'T2', 'gic_proc', 'T1_proc', 'T2_proc']
     for i in range(len(list_fnames)):      
-        year = idx_daylist[i].year  # Extract year directly from the Timestamp
+        year = idx_daylist[i].year
         SG2 = f"{dir_path}{year}/{stat}/daily/"
         
-        
         try:
-            # Read first 5 rows
-            df_c = pd.read_csv(SG2+list_fnames[i], header=0, sep='\t',parse_dates = [0], na_values = missing_vals)
+            # Construct full file path
+            file_path = os.path.join(SG2, list_fnames[i])
             
-            # Count empty values
-            empty_counts = df_c.isna().sum()  # Count NaN values
-            empty_strings = (df_c == '').sum()  # Count empty strings
-            total_empty = empty_counts + empty_strings
-            
-            # Check if any empty values exist (sum across all columns)
-            if total_empty.sum() > 0:
-                print(f"Found {total_empty.sum()} empty values to replace")
+            # Check if file exists
+            if os.path.isfile(file_path):
                 
-                # Replace both NaN and empty strings
-                df_c.replace({'': -999.999}, inplace=True)
-                df_c.fillna(-999.999, inplace=True)
                 
-                # Save back to same file (consider using a different filename for safety)
-                #output_filename = filename
-                #df.to_csv(path + output_filename, sep='\t', index=False, na_rep='-999.999')
-                #print(f"File saved with empty values replaced: {path + output_filename}")
-            else:
-                print("No empty values found in first 5 rows")
+                file_path = file_path
+                skip_rows = skip_initial_empty_rows(file_path)             
+
+                tmp_idx = idx1[i*1440: (i+1)*1440]
+
+                # Then use the appropriate format
+                column_names_modified = ['date', 'time'] + column_names[1:]
+                df_c = pd.read_csv(file_path, header=None,skiprows=skip_rows, sep='\\s+', 
+                                na_values=missing_vals, keep_default_na=True, names=column_names_modified)
                 
+                
+                #datetime_parts = df_c.iloc[:, 0].str.extract(r'(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2}:\d{2})')
+                df_c['Datetime'] = pd.to_datetime(df_c['date'] + ' ' + df_c['time'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                
+                df_c = df_c.drop(['date', 'time'], axis=1)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=FutureWarning)
+                    
+                    if df_c.isna().any().any():
+                        numeric_cols = df_c.select_dtypes(include=[np.number]).columns
+                        object_cols = df_c.select_dtypes(include=['object']).columns
+                        
+                        if len(numeric_cols) > 0:
+                            df_c[numeric_cols] = df_c[numeric_cols].fillna(-999.999)
+
+                      
+                df_c = df_c.set_index(df_c['Datetime'])
+                df_c = df_c[~df_c.index.duplicated(keep='first')]
+                df_c = df_c.reindex(tmp_idx)
+                
+                #df_c = df_c.set_index(tmp_idx)
+                
+                df_c = df_c.drop(columns=['Datetime', 'gic', 'T1', 'T2'])
+                df_c = df_c.rename(columns={'gic_proc':'gic', 'T1_proc':'T1', 'T2_proc':'T2'})          
+       
+            else: 
+                # If no file exists, create consistent DataFrame structure
+                # Define idx1 appropriately - you'll need to define this variable
+                #idx1 = ...  # Define your timestamp index here
+                
+                df_c = pd.DataFrame({
+                    'gic_proc': np.full(1440, -999.999), 'T1_proc': np.full(1440, -999.999),
+                    'T2_proc': np.full(1440,-999.999)})
+                df_c = df_c.set_index(tmp_idx)
+
         except FileNotFoundError:
             print(f"Error: File not found - {SG2+list_fnames[i]}")
         except Exception as e:
             print(f"Error occurred: {str(e)}")
-        
-        
-        #df_c = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\s+', parse_dates = [0], na_values = missing_vals)
-        
-            #df_c = df_c.iloc[:-1, :]   
+  
         dfs_c.append(df_c)     
-          
-    df = pd.concat(dfs_c, axis=0, ignore_index=True)
-      
-    df = df.replace(-999.999, np.nan)        
- #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
-  #                                    end = pd.Timestamp(date2), freq='H')  
-    df = df.set_index(idx1)
 
-    #df = df.drop(columns=[0, 1, 2, 3, 4])
-    df = df.rename(columns={5:'gic', 6:'T1', 7:'T2'})
-    #gic = df.iloc[:,5]
-    #T1  = df.iloc[:,6]
-    #T2  = df.iloc[:,7]
+    df = pd.concat(dfs_c, axis=0)
+
+    df = df.replace(-999.999, np.nan)        
+
     output = {}
     output.update({stat:df})
-    #return(df)
     return(output)
 
-def df_gic_daily(date, dir_path, stat):
-    col_names = ['Datetime','gic', 'T1','T2', 'gic_proc', 'T1_proc',	'T2_proc']
-    
-    fyear = int(date[0:4])
-    fmonth = int(date[4:6])
-    fday = int(date[6:8])
-
-
-    finaldate= datetime(fyear, fmonth,fday)
-    nextday = finaldate+timedelta(days=1)
-    nextday = str(nextday)[0:10]
+def df_gic_pp(date1, date2, dir_path, stat):
+    col_names = ['Datetime','gic', 'T1','T2']
     
     
-    idx1 = pd.date_range(start = pd.Timestamp(str(date)+' 12:01:00' ), end =\
-                         pd.Timestamp(nextday+' 12:00:00'), freq='T')
-        
-    idx_list = (date.strftime('%Y-%m-%d')) 
-    str1 = "GIC_"
-    ext = "_"+stat+".dat"
+    
+    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 00:00:00' ), end =\
+                         pd.Timestamp(str(date2)+' 23:59:00'), freq='min')
+    
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
+                                          end = pd.Timestamp(str(date2)), freq='D')
+    idx_list = (idx_daylist.strftime('%Y-%m-%d')) 
+    str1 = f"{stat}_"
+    ext = ".pp.csv"
 
    # remote_path= '/data/output/indexes/'+station+'/'
+    list_fnames = list_names(idx_list, str1, ext)
 
-    missing_vals = ["NaN", "NO DATA"] 
+    dfs_c = []
+    column_names = ['Datetime', 'gic', 'T1', 'T2']
+    for i in range(len(list_fnames)):      
+        year = idx_daylist[i].year
+        
+        try:
+            # Construct full file path
+            file_path = os.path.join(dir_path, str(year), stat, "daily", list_fnames[i])
+            
+            # Check if file exists
+            if os.path.isfile(file_path):
+                
+                tmp_idx = idx1[i*1440: (i+1)*1440]
+
+                # Read data
+                #column_names_modified = ['date', 'time'] + column_names[1:]
+                df_c = pd.read_csv(file_path, header=0, sep='\t')
+                #print(df_c)
+                #sys.exit('end')
+                # Create datetime index
+                df_c['Datetime'] = pd.to_datetime(df_c['Datetime'], 
+                                                format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                #df_c = df_c.drop(['date', 'time'], axis=1)
+
+                #dt = datetime.datetime.fromtimestamp(df_c['Datetime'])
+                
+                
+                
+                # Set index and handle duplicates
+                df_c = df_c.set_index(df_c['Datetime'])
+                df_c = df_c[~df_c.index.duplicated(keep='first')]
+                df_c = df_c.replace(999.9, np.nan)
+                
+            else: 
+                # Create consistent empty DataFrame
+                tmp_idx = idx1[i*1440: (i+1)*1440]
+                # Use the actual column structure from your data
+                empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
+                df_c = pd.DataFrame(empty_data)
+                df_c = df_c.set_index(tmp_idx)
+
+        except Exception as e:
+            print(f"Error processing file {list_fnames[i]}: {str(e)}")
+            # Create empty DataFrame on error too
+            tmp_idx = idx1[i*1440: (i+1)*1440]
+            empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
+            df_c = pd.DataFrame(empty_data)
+            df_c = df_c.set_index(tmp_idx)
     
-    year = idx_list.year  # Extract year directly from the Timestamp
-    SG2 = f"{dir_path}{year}/{stat}/daily/"
-      
-    df = pd.read_csv(SG2+list_fnames[i], header=None, skiprows = 1, sep='\\s+', parse_dates = [0], na_values = missing_vals)
-         
-    df = pd.concat(dfs_c, axis=0, ignore_index=True)
-      
-    df = df.replace(-999.999, np.nan)        
- #   idx2 = pd.date_range(start = pd.Timestamp(date1), \
-  #                                    end = pd.Timestamp(date2), freq='H')  
-    df = df.set_index(idx1)
+        dfs_c.append(df_c)     
 
-    df = df.drop(columns=[0, 1, 2, 3, 4])
-    df = df.rename(columns={5:'gic', 6:'T1', 7:'T2'})
-    #gic = df.iloc[:,5]
-    #T1  = df.iloc[:,6]
-    #T2  = df.iloc[:,7]
-    output = {}
-    output.update({stat:df})
-    return(output)
+    # Final processing
+    df = pd.concat(dfs_c, axis=0)   
+    
+    
+    return(df)
+
 
 ###############################################################################
 ###############################################################################

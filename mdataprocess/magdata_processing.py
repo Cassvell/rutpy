@@ -9,7 +9,7 @@ import sys
 from scipy.interpolate import interp1d
 #from scipy.ndimage import gaussian_filter1d
 #from scipy.interpolate import NearestNDInterpolator
-
+import matplotlib.pyplot as plt
 from scipy.signal import medfilt
 from lowpass_filter import aphase, dcomb
 from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
@@ -34,7 +34,7 @@ from scipy import fftpack, signal
 ###############################################################################
 #Monthly base line
 ###############################################################################   
-def base_line(data, net, st):    
+def base_line(data, net, st,threshold_method):    
     ndata = len(data)
 ###############################################################################
 #Typical Day computation
@@ -68,7 +68,7 @@ def base_line(data, net, st):
 
     picks = max_IQR(data, 60, pickwindow[0], method='iqr')
     
-    threshold = get_threshold(picks, st)
+    threshold = get_threshold(picks, st, method=threshold_method)
     
     # Daily IQR picks and classification
     daily_picks = med_IQR(data, 60, 24, method='iqr')
@@ -80,23 +80,24 @@ def base_line(data, net, st):
             daily_stacked[j] = np.nan
             #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
 
+    #print(daily_picks)
     
+
     from sklearn.linear_model import LinearRegression
     
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
     
     daily_stacked_cleaned = np.array(daily_stacked)
-    daily_stacked_cleaned[daily_stacked_cleaned > 29500] = np.nan 
+    #daily_stacked_cleaned[daily_stacked_cleaned > 29500] = np.nan 
 
-    ''' 
+
     y = np.array(daily_stacked_cleaned)
     y_clean = y[~np.isnan(y)]  
     x_clean = np.arange(len(y_clean))
 
     x_clean = x_clean.reshape(-1, 1)  # Shape: (n_samples, n_features)
-    print(x_clean)
+
     
-    print(y_clean)
     model = LinearRegression()
     model.fit(x_clean, y_clean)
 
@@ -140,26 +141,26 @@ def base_line(data, net, st):
 
 
     full_fit = model2.predict(x_full_days_positions.reshape(-1, 1))    
-        
-   # plt.plot(np.arange(len(data)), data, color='k', label='Minute data')
-   # plt.plot(daily_x_positions, daily_stacked_cleaned, color='b', marker='o', linestyle='', markersize=5, label='Daily picks')
+    #import matplotlib.pyplot as    
+    #plt.plot(np.arange(len(data)), data, color='k', label='Minute data')
+    #plt.plot(daily_x_positions, daily_stacked_cleaned, color='b', marker='o', linestyle='', markersize=5, label='Daily picks')
     # Plot the linear fit at daily positions
-   # plt.plot(daily_x_positions, daily_fit_interpolated, color='g', linewidth=2, label='Linear fit')
+    #plt.plot(daily_x_positions, daily_fit_interpolated, color='g', linewidth=2, label='Linear fit')
 
    # plt.plot(np.arange(len(data)), full_fit, color='m', linewidth=2, label='Linear fit min')
     
-   # plt.plot(np.arange(len(data)), baseline_line, color='r', label='Baseline')
-   # plt.legend()
-   # plt.show()
+    #plt.plot(np.arange(len(data)), baseline_line, color='r', label='Baseline')
+    #plt.legend()
+    #plt.show()
 
     #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
     #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
-    '''   
+ 
 ###############################################################################
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
-    return baseline_line#full_fit#baseline_curve, undisturbed_days_sample
+    return full_fit#baseline_curve, undisturbed_days_sample
 
 ###############################################################################
 #diurnal variation computation
@@ -188,74 +189,80 @@ def mlt(lon, hem):
     return lt_c
 
 
-def get_diurnalvar(data, idx_daily, net, st):
+def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     ndata = len(data)
     totdays = int(ndata/1440)
                    
     iqr_picks = max_IQR(data, 60, 24, method='stddev')    
-    xaxis = np.linspace(1, 24, 1440)
+    xaxis = np.linspace(0, 23, 1440)
 
 #import UTC according to observatory
 
     #threshold = get_threshold(iqr_picks, st, 'GPD')
-    
-    
-    
-    ndays = 5
-    info = night_time(net, st)
-    
-    lt = mlt(float(info[5]), info[6])
-    
-    utc = lt
-    
-    print(f"local time: {lt}")
-
     ini = 0
-    fin = 0   
+    fin = 0      
     
-    try:
-        utc = int(utc)  # Attempt to convert to an integer
-    except ValueError:
-        utc = float(utc)
-    print(f"universal Coordinated time: {utc}") 
-
-    qd_list = get_qd_dd(iqr_picks, idx_daily, 'I_iqr', ndays)
-
-    qdl = [[0] * 1440 for _ in range(ndays)]
-
-    threshold = get_threshold(iqr_picks, st, '2s')    
-    exceeding_count = (qd_list.iloc[:, 1] > threshold).sum()
-
-    if exceeding_count > 0:
-        print(f"Found {exceeding_count} values exceeding threshold")
-        mask = qd_list.iloc[:, 1] > threshold
-        qd_list.loc[mask, qd_list.columns[1]] = np.nan
-        qd_list_nonan = qd_list[~qd_list.iloc[:, 1].isna()]
-    else:
-        print("No values exceed threshold")
-        qd_list_nonan = qd_list[~qd_list.iloc[:, 1].isna()]
-
+    if qd_method == 'qd5':   
+        ndays = 5
+        info = night_time(net, st)
         
-    ndays = len(qd_list_nonan)
-    qdl = [[0] * 1440 for _ in range(ndays)]
+        lt = mlt(float(info[5]), info[6])
+        
+        utc = lt
+        
+        print(f"local time: {lt}")
 
-    #print(str(qd_list_nonan.iloc[:,0])[5:15])
-    #sys.exit('end')
+ 
+        
+        try:
+            utc = int(utc)  # Attempt to convert to an integer
+        except ValueError:
+            utc = float(utc)
+        print(f"universal Coordinated time: {utc}") 
+
+        qd_list = get_qd_dd(iqr_picks, idx_daily, 'qdl', ndays)
+    
+    
+    elif qd_method == 'experimental':
+        qd_list = get_qd_dd(iqr_picks, idx_daily, 'I_iqr', ndays)
+        threshold = get_threshold(iqr_picks, st, threshold_method)    
+        exceeding_count = (qd_list.iloc[:, 1] > threshold).sum()
+
+        if exceeding_count > 0:
+            print(f"Found {exceeding_count} values exceeding threshold")
+            mask = qd_list.iloc[:, 1] > threshold
+            qd_list.loc[mask, qd_list.columns[1]] = np.nan
+            qd_list_nonan = qd_list[~qd_list.iloc[:, 1].isna()]
+        else:
+            print("No values exceed threshold")
+            qd_list_nonan = qd_list[~qd_list.iloc[:, 1].isna()]
+
+            #qd_list_nonan = qd_list[~qd_list.iloc[:, 1].isna()]   
+        qd_list = qd_list_nonan  
+
+    ndays = len(qd_list)
+    qdl = [[0] * 1440 for _ in range(ndays)]
+    
     baseline = []
+    #sys.exit('end')
 ###############################################################################
 #diurnal variation computation
 ###############################################################################
     import weightedstats
-    import matplotlib.pyplot as plt
+    
     for i in range(ndays):
-        qd = str(qd_list_nonan.iloc[i, 0])[0:10]
-        iqr = qd_list_nonan.iloc[i, 1]     
-
-        qd_arr = data[qd]
-        
+        if qd_method == 'experimental':
+            qd = str(qd_list.iloc[i, 0])[0:10]
+            iqr = qd_list.iloc[i, 1]     
+        elif qd_method == 'qd5':
+            qd = qd_list.iloc[i].strftime('%Y-%m-%d')
+            
+        qd_arr = data[qd]        
+        #plt.plot(xaxis, qd_arr)
         if len(qd_arr) == 1440:
             qdl[i] = qd_arr
-        
+#print(data['2024-05-25'])
+                   
         # Check if qdl[i] is not None before processing
         if qdl[i] is not None:
             if utc <= 0:
@@ -303,11 +310,9 @@ def get_diurnalvar(data, idx_daily, net, st):
             
             if len(qdl[i]) == 1440:
                 # Create xaxis if not defined
-                if 'xaxis' not in locals():
-                    xaxis = np.arange(1440)
-                plt.plot(xaxis, qdl[i], label=f'QD{i+1}: {qd}')
+                #plt.plot(xaxis, qdl[i] - baseline_value)
                 qdl[i] = qdl[i] - baseline_value
-            
+                
             # Reset index if it's a pandas object
             if hasattr(qdl[i], 'reset_index'):
                 qdl[i] = qdl[i].reset_index(drop=True)
@@ -315,77 +320,85 @@ def get_diurnalvar(data, idx_daily, net, st):
             qdl[i] = np.array(qdl[i]).flatten()
             
             # Append iqr to create array of length 1441
-            qdl[i] = np.append(qdl[i], iqr)
-
-
-    if qdl:
-        data_arrays = [arr[:-1] for arr in qdl]
-        iqr_values = [arr[-1] for arr in qdl]
-        
-        qdl_df = pd.DataFrame(np.array(data_arrays).T)
-        
-        # Calculate weights
-        weights_list = []
-        for iqr in iqr_values:
-            if iqr < threshold:
-                weight = 1 / (threshold * 2)
-            elif iqr < (threshold / 1.5):
-                weight = 1 / (threshold * 1.5)
-            elif iqr < (threshold / 2):
-                weight = 1 / threshold
-            else:
-                weight = 1.0
-            weights_list.append(weight)
-        
-        weights_array = np.array(weights_list)
-        weights_array = weights_array / np.mean(weights_array)
-        
-        # Process 30-minute segments
-        qd_30min_median_list = []
-        qd_30min_std_list = []
-        
-        for j in range(48):  # 48 segments of 30 minutes
-            start_idx = j * 30
-            end_idx = (j + 1) * 30
-            
-            # Extract 30-minute segment for all days
-            segment_df = qdl_df.iloc[start_idx:end_idx]
-            
-            # Calculate weighted median across days for this time segment (NO FILTER)
-            segment_median = segment_df.apply(
-                lambda col: weightedstats.weighted_median(col, weights=weights_array),
-                axis=1
-            ).median()  # Median of the 30 minutes
-            
-            # Calculate standard deviation across days for this time segment (NO FILTER)
-            segment_std = segment_df.std(axis=1).median()  # Median std of the 30 minutes
-            
-            qd_30min_median_list.append(segment_median)
-            qd_30min_std_list.append(segment_std)
-        
-        # Interpolate both back to 1440 points
-        x_30min = np.arange(48)
-        x_1440 = np.linspace(0, 47, 1440)
-        
-        qd_average = np.interp(x_1440, x_30min, qd_30min_median_list)
-        qd_std_raw = np.interp(x_1440, x_30min, qd_30min_std_list)
-        
-        # Apply moving median filter ONLY to the standard deviation array
-        window_size = 60
-        qd_std = pd.Series(qd_std_raw).rolling(window=window_size, center=True, min_periods=1).median().values
-        
-    else:
-        qd_average = None
-        qd_std = None
-        
+            if qd_method == 'experimental':
+                qdl[i] = np.append(qdl[i], iqr)
     
     
-    #plt.plot(xaxis, qd_average, color = 'black', linewidth=2)
-    #plt.plot(xaxis, qd_average + qd_std, color = 'red', linewidth=1)
-    #plt.plot(xaxis, qd_average - qd_std, color = 'red', linewidth=1)    
-    #plt.show()    
+    if qd_method == 'experimental':
+        if qdl:
+            data_arrays = [arr[:-1] for arr in qdl]
+            iqr_values = [arr[-1] for arr in qdl]
+            
+            qdl_df = pd.DataFrame(np.array(data_arrays).T)
+            
+            # Calculate weights
+            weights_list = []
+            for iqr in iqr_values:
+                if iqr < threshold:
+                    weight = 1 / (threshold * 2)
+                elif iqr < (threshold / 1.5):
+                    weight = 1 / (threshold * 1.5)
+                elif iqr < (threshold / 2):
+                    weight = 1 / threshold
+                else:
+                    weight = 1.0
+                weights_list.append(weight)
+            
+            weights_array = np.array(weights_list)
+            weights_array = weights_array / np.mean(weights_array)
+            
+            # Process 30-minute segments
+            qd_30min_median_list = []
+            qd_30min_std_list = []
+            
+            for j in range(48):  # 48 segments of 30 minutes
+                start_idx = j * 30
+                end_idx = (j + 1) * 30
+                
+                # Extract 30-minute segment for all days
+                segment_df = qdl_df.iloc[start_idx:end_idx]
+                
+                # Calculate weighted median across days for this time segment (NO FILTER)
+                segment_median = segment_df.apply(
+                    lambda col: weightedstats.weighted_median(col, weights=weights_array),
+                    axis=1
+                ).median()  # Median of the 30 minutes
+                
+                # Calculate standard deviation across days for this time segment (NO FILTER)
+                segment_std = segment_df.std(axis=1).median()  # Median std of the 30 minutes
+                
+                qd_30min_median_list.append(segment_median)
+                qd_30min_std_list.append(segment_std)
+            
+            # Interpolate both back to 1440 points
+            x_30min = np.arange(48)
+            x_1440 = np.linspace(0, 47, 1440)
+            
+            qd_average = np.interp(x_1440, x_30min, qd_30min_median_list)
+            qd_std_raw = np.interp(x_1440, x_30min, qd_30min_std_list)
+            
+            # Apply moving median filter ONLY to the standard deviation array
+            window_size = 60
+            qd_std = pd.Series(qd_std_raw).rolling(window=window_size, center=True, min_periods=1).median().values
+            
+        else:
+            qd_average = None
+            qd_std = None    
     
-    #sys.exit('end')
+    elif qd_method == 'qd5':
+        if qdl:
+            data_arrays = [arr[:] for arr in qdl]
+            #iqr_values = [arr[-1] for arr in qdl]        
+            qdl_df = pd.DataFrame(np.array(data_arrays).T)
+            qd_average = qdl_df.median(axis=1)
+            #print(qdl_df)
+            
+    
+    #for i in range(ndays):
+    #    if len(qdl[i]) == 1440:
+     #       plt.plot(xaxis, qdl[i], alpha=0.6)                                
+            
+    plt.plot(xaxis, qd_average, color='blue', linewidth=2)
 
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
                           5.787e-5, 6.9444e-5])    
@@ -455,13 +468,57 @@ def get_diurnalvar(data, idx_daily, net, st):
     
     template = T[0:1440]
     
-    plt.plot(xaxis, template, color = 'black', linewidth=3)
-    plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
-    plt.plot(xaxis, template - qd_std, color = 'red', linestyle='--', linewidth=3)        
-    plt.show()
+    inicio = idx_daily[0].strftime('%Y-%m-%d')
+    final = idx_daily[-1].strftime('%Y-%m-%d')    
     
-    #plot_qdl(xaxis, template, ndays, qdl, st, idx_daily)
-    sys.exit('end of child process')
+    path = '/home/isaac/MEGA/posgrado/doctorado/'
+    #plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
+    #plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
+    #plt.plot(xaxis, template - qd_std, color = 'red', linestyle='--', linewidth=3)    
+    #for i in range(ndays):
+    #    if len(qdl[i]) == 1440:
+    #        plt.plot(xaxis, qdl[i], alpha=0.6)
+    
+    #plt.xlim(0,23)
+    #plt.savefig(f'{path}semestre5/qdl/{st}_{inicio}_{final}_gics.png')
+    #plt.title(f'{st.upper()} diurnal variation')       
+    #plt.legend()
+    #plt.tight_layout() 
+    #plt.show()
+
+    
+        #archivos de salida 2: 
+        #modelo QDL y stddev con máximas y mínimas amplitudes
+    if qd_method == 'experimental':    
+        max_arg = np.argmax(template)
+        min_arg = np.argmin(template)
+        #, 'extemes' : [np.max(template), np.min(template), qd_std[max_arg], qd_std[min_arg]]
+        output = {'model' : template, 'stddev' :  qd_std}
+        df = pd.DataFrame(output).fillna(999.9)
+        
+        path2 = f'/home/isaac/datos/gics_obs/qdl/{st.upper()}/'
+        
+        directory = os.path.dirname(path2)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+            
+        
+        
+        doi_1 = idx_daily[0].timetuple().tm_yday
+        doi_2 = idx_daily[-1].timetuple().tm_yday
+        
+        output_name = f'{st}_{doi_1}_{doi_2}.qdl.dat'    
+        full_path = os.path.join(directory, output_name)
+        with open(full_path, 'w') as f:
+            for _, row in df.iterrows():
+                # Format both columns as floats with F10.7 format (10 characters wide, 7 decimal places)
+                model_str = f"{row['model']:10.7f}"
+                stddev_str = f"{row['stddev']:10.7f}"
+                # Write line with 3 spaces separation
+                f.write(f"{model_str}   {stddev_str}\n")
+    
+    
+    #sys.exit('end of child process')
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset

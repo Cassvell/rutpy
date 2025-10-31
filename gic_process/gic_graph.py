@@ -53,10 +53,12 @@ file = []
 
 gicTW_lav, T1TW_lav, T2TW_lav = process_station_data(i_date, f_date, path2, stat[1], idx1, tot_data)
 
+
 gicTW_qro, T1TW_qro, T2TW_qro = process_station_data(i_date, f_date, path2, stat[0], idx1, tot_data)
 gicTW_mzt, T1TW_mzt, T2TW_mzt = process_station_data(i_date, f_date, path2, stat[3], idx1, tot_data)
 
 gicTW_rmy, T1TW_rmy, T2TW_rmy = process_station_data(i_date, f_date, path2, stat[2], idx1, tot_data)
+
 
 ###############################################################################
 

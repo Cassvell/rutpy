@@ -132,9 +132,9 @@ def plot_qdl(xaxis, template, n, qdl, st, idx_daily):
     plt.show()
     return
 
-def plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr):
+def plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_baseline, st, idx_hr, component):
     fig, ax = plt.subplots(4, figsize=(12,8), dpi = 300) 
-    fig.suptitle(st+' Geomagnetic Obs' , fontsize=24, \
+    fig.suptitle(f'{st} {component}: Geomagnetic Obs' , fontsize=24, \
                 fontweight='bold') 
     inicio = H.index[0]
     final =  H.index[-1]

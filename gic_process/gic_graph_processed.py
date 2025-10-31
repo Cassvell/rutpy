@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-from gicdproc import  process_station_data
+from gicdproc import  process_station_data, df_gic_pp
 from calc_daysdiff import calculate_days_difference
 import matplotlib.pyplot as plt
 from gic_threshold import threshold
@@ -22,18 +22,29 @@ stat = ['LAV', 'QRO', 'RMY', 'MZT']
 #st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
 
+
 finaldate= datetime(fyear, fmonth,fday)
 nextday = finaldate+timedelta(days=1)
 nextday = str(nextday)[0:10]
-idx1 = pd.date_range(start = pd.Timestamp(idate+ ' 12:01:00'), \
-                          end = pd.Timestamp(nextday + ' 12:00:00'), freq='min')
+idx1 = pd.date_range(start = pd.Timestamp(idate+ ' 00:00:00'), \
+                          end = pd.Timestamp(fdate + ' 23:59:00'), freq='min')
 
 ndays = calculate_days_difference(idate, fdate)
 tot_data = (ndays+1)*1440
 
-file = []
-
 dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
+file = []
+for i in stat:
+    print(f'station:{i}')
+    data = df_gic_pp(idate, fdate, path, i)
+    dict_gic[i] = data['gic']
+    #print(data)
+plt.plot(dict_gic['LAV'], label = f'LAV')
+    
+plt.show()
+
+sys.exit('prueba')
+
 for i in stat:
     gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
 
@@ -42,26 +53,12 @@ for i in stat:
         
         
         
-        if i == 'LAV':
-            plt.plot(gic_st, label=f'{i} GIC ', color='black', alpha=0.7)
-            gic_resample = gic_st.resample('30Min').median().fillna(method='ffill')
-            
-            threshold = threshold(gic_resample, idate, fdate, stat, '2s')   
-            stddev = np.nanstd(gic_resample)         
-            
 
-            for j in range(ndays):
-                start_idx = j * 1440
-                end_idx = (j + 1) * 1440
-                gic_corr = corr_offset(gic_st[start_idx:end_idx], threshold, 60, stddev)
-                gic_st[start_idx:end_idx] = gic_corr 
-                #second_filter = corr_offset(gic_st[start_idx:end_idx], threshold, 20, stddev)
-                #gic_st[start_idx:end_idx] = second_filter 
             
             
-            plt.plot(gic_st, label=f'{i} GIC corr', color='red', alpha=0.8)
+            #plt.plot(gic_st, label=f'{i} GIC corr', color='red', alpha=0.8)
 
-            plt.show()
+            #plt.show()
            # print(f'Quality: {quality}')
             
             #gic_corr = corr_offset(gic_corr, threshold, 60) 
