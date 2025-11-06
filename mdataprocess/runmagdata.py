@@ -101,9 +101,10 @@ I = magdata['I']
 
 #base_lineX = base_line(X, net, st)
 #base_lineY = base_line(Y, net, st)
+baseline_curve = base_line(H, net, st, '2s')
 base_lineZ = base_line(Z, net, st, '2s')
 base_lineD = base_line(D, net, st, '2s')
-baseline_curve = base_line(H, net, st, '2s')
+
 
 D_detrend = D-base_lineD
 H_detrend = H-baseline_curve
@@ -184,7 +185,13 @@ Z = Z_noff1+base_lineZ+diurnal_baselineZ
 # Data dictionaries
 dat = {'H': H_noff1,
        'D': D_noff1, 
-       'Z': Z_noff1}
+       'Z': Z_noff1,
+       'H base line': baseline_curve, 
+       'D base line': base_lineD, 
+       'Z base line': base_lineZ, 
+       'H SQ': diurnal_baseline,
+       'D SQ': diurnal_baselineD,
+       'Z SQ': diurnal_baselineZ,}
 
 
 #dat2 = {'X': X_noff1, 'Y': Y_noff1, 'Z': Z_noff1, 'D': D, 'I': I}
@@ -197,7 +204,7 @@ df = pd.DataFrame(dat).fillna(999.9)   # Ensure NaN replacement
 
 header = " ".join(f"{key:>10}" for key in dat.keys())
 
-header = f"{'H':>7}{'D':>14}{'Z':>13}"
+header = f"{'H':>7}{'D':>14}{'Z':>13}{'Hbase':>12}{'Dbase':>10}{'Zbase':>12}{'HSQ':>8}{'DSQ':>10}{'ZSQ':>12}"
 
 # Define path
 path = f"/home/isaac/datos/{net}/{st}/experiment_{st}/"  
@@ -227,7 +234,7 @@ for i in range(len(idx_daily)):
         
         # Write data rows
         for _, row in daily_data.iterrows():
-            line = f"{row['H']:10.2f}{row['D']:16.10f}{row['Z']:10.2f}\n"
+            line = f"{row['H']:10.2f}{row['D']:16.10f}{row['Z']:10.2f}{row['H base line']:10.2f}{row['D base line']:12.8f}{row['Z base line']:12.2f}{row['H SQ']:6.2f}{row['D SQ']:14.8f}{row['Z SQ']:8.2f}\n"
             f.write(line)
 
     print(f"Saved: {full_path}")

@@ -371,7 +371,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
             
             non_nan_ratio = np.sum(~np.isnan(current_window)) / len(current_window)
             
-            if non_nan_ratio > 0.9:
+            if non_nan_ratio > 0.7:
                 QR1_hr = np.nanquantile(current_window, 0.25)
                 QR3_hr = np.nanquantile(current_window, 0.75)
                 iqr_hr = QR3_hr - QR1_hr
@@ -384,7 +384,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
     
     # Compute the hourly IQR
     hourly = hourly_IQR(data)
-
+    #print(hourly)
 
         # Compute trihourly standard deviation from the hourly output
     trihourly_stdev = []
@@ -404,6 +404,7 @@ def max_IQR(data, tw, tw_pick, method='iqr'):
     for i in range(int(24 / tw_pick) * ndays):        
         if method == 'iqr':
             iqr_mov = hourly[i * tw_pick : (i + 1) * tw_pick]
+            #print(iqr_mov)
             if len(iqr_mov) == 0:
                 continue  # Skip empty windows
             

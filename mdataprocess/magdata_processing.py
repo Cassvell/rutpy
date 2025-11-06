@@ -72,7 +72,7 @@ def base_line(data, net, st,threshold_method):
     
     # Daily IQR picks and classification
     daily_picks = med_IQR(data, 60, 24, method='iqr')
-
+   
     for j in range(len(daily_stacked)):
         # Ensure daily_picks is long enough
         #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
@@ -82,7 +82,7 @@ def base_line(data, net, st,threshold_method):
 
     #print(daily_picks)
     
-
+    #sys.exit('end')
     from sklearn.linear_model import LinearRegression
     
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
@@ -141,18 +141,18 @@ def base_line(data, net, st,threshold_method):
 
 
     full_fit = model2.predict(x_full_days_positions.reshape(-1, 1))    
-    #import matplotlib.pyplot as    
+    #import matplotlib.pyplot as   
     #plt.plot(np.arange(len(data)), data, color='k', label='Minute data')
     #plt.plot(daily_x_positions, daily_stacked_cleaned, color='b', marker='o', linestyle='', markersize=5, label='Daily picks')
     # Plot the linear fit at daily positions
     #plt.plot(daily_x_positions, daily_fit_interpolated, color='g', linewidth=2, label='Linear fit')
 
-   # plt.plot(np.arange(len(data)), full_fit, color='m', linewidth=2, label='Linear fit min')
+    #plt.plot(np.arange(len(data)), full_fit, color='m', linewidth=2, label='Linear fit min')
     
     #plt.plot(np.arange(len(data)), baseline_line, color='r', label='Baseline')
     #plt.legend()
     #plt.show()
-
+    #sys.exit('end')
     #plot_gpd = plot_GPD(data, picks, x, GPD, st, knee, threshold, inicio, final)
     #plot2 = plot_detrend(idate, fdate, data, original_daily_stacked,daily_stacked, st, baseline_line)
  
@@ -160,7 +160,7 @@ def base_line(data, net, st,threshold_method):
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
-    return full_fit#baseline_curve, undisturbed_days_sample
+    return baseline_line#full_fit#baseline_curve, undisturbed_days_sample
 
 ###############################################################################
 #diurnal variation computation

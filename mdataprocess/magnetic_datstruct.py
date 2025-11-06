@@ -154,11 +154,9 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
             Z = df2.iloc[:,2]
             F = df2.iloc[:,3]
 
-        Ddeg = D/60
-        deg2rad = np.pi / 180
-        D = deg2rad*Ddeg
-        X = H*np.cos(D)
-        Y = H*np.sin(D)
+        D_rad = np.radians(D)
+        X = H*np.cos(D_rad)
+        Y = H*np.sin(D_rad)
         I = np.tan(Z/H)
 
         #H = despike(H, threshd = 7.5)
@@ -175,7 +173,7 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
         data = {'H' : pd.Series(H), 'X' : pd.Series(X), 'Y' : pd.Series(Y), 'Z' : pd.Series(Z)}
         df_2 = pd.DataFrame(data)
         df_2 = df_2.set_index(idx)
-        df_2['D'] = D
+        df_2['D'] = D_rad
         df_2['I'] = I
             
         #print(H)

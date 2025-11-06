@@ -143,30 +143,29 @@ def plot_process(H, H_raw, H_detrend, H_noff1, dst, baseline_curve, diurnal_base
     #ax[0].axhline(y = baseline_line[0], color='g', label='base line monthly tendency')
     ax[0].grid()
     ax[0].set_xlim(inicio,final)
-    ax[0].set_ylabel('BH [nT]', fontweight='bold')
+    ax[0].set_ylabel(f'B {component} [nT]', fontweight='bold')
     ax[0].legend()
 
 
-    ax[1].plot(H.index, H_detrend, label='H - base curve')
+    ax[1].plot(H.index, H_detrend, label=f'{component} - base curve')
     ax[1].plot(H.index, diurnal_baseline, color='r', label='diurnal variation')
     ax[1].grid()
     ax[1].set_xlim(inicio,final)
-    ax[1].set_ylabel('BH [nT]', fontweight='bold')
+    ax[1].set_ylabel(f'B {component} [nT]', fontweight='bold')
     ax[1].legend()
 
     ax[2].plot(H.index, H_noff1, color='k', \
             label='H - (diurnal baseline + baseline+offset)')
     ax[2].grid()
     ax[2].set_xlim(inicio,final)
-    ax[2].set_ylabel(' BH [nT]', fontweight='bold')
+    ax[2].set_ylabel(f'B {component} [nT]', fontweight='bold')
     ax[2].legend()
 
     ax[3].plot(idx_hr, dst, color='k', label='Dst')
     ax[3].grid()
     ax[3].set_xlim(inicio,final)
-    ax[3].set_ylabel(' BH [nT]', fontweight='bold')
+    ax[3].set_ylabel(f'B {component} [nT]', fontweight='bold')
     ax[3].legend()
-    fig.savefig(f"{path}semestre4/"+\
-                st+'_'+str(inicio)[0:10]+"_"+str(final)[0:10]+".png")
+    fig.savefig(f"{path}semestre5/{st}_{str(inicio)[0:10]}_{str(final)[0:10]}_{component}.png")
     plt.tight_layout() 
     plt.show()
