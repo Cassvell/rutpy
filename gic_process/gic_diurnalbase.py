@@ -13,16 +13,10 @@ import magdata_processing
 from magdata_processing import get_diurnalvar, get_qd_dd
 from night_time import night_time
 
-
-
 def gic_diurnalbase(gic, idate, fdate, stat):   
-       
-    stddev_20 = gic.resample('20Min').std().fillna(method='ffill')
-    threshold_value = threshold(stddev_20, idate, fdate, stat, '2s')
-    #exceed_indices = stddev_20[stddev_20 > threshold_value].index
-    
-    #print(f'Exceeding indices for {stat}: {len(exceed_indices)}')
     idx_daily = pd.date_range(start = gic.index[0], end = gic.index[-1], freq= 'D' )
-    qd, offset = get_diurnalvar(gic, idx_daily, 'regmex', stat)
+    qd, offset = get_diurnalvar(gic, idx_daily, 'regmex', stat, qd_method='experimental', threshold_method='2s')
     
-    return(gic - qd, qd)
+    gic_res = gic - qd
+    gic_offsetcorr = gic_res - offset
+    return(gic_offsetcorr, qd)

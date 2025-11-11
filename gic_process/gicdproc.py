@@ -32,7 +32,7 @@ from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
 from datetime import datetime, timedelta
-
+from season_preprocess import window_27
 
 from get_files import get_files, list_names, get_file
 
@@ -422,12 +422,89 @@ def df_gic_pp(date1, date2, dir_path, stat):
         dfs_c.append(df_c)     
 
     # Final processing
-    df = pd.concat(dfs_c, axis=0)   
-    
-    
+    df = pd.concat(dfs_c, axis=0)       
     return(df)
 
+def gic_qd(date1, date2, dir_path, stat):
+    iwindows, fwindows = window_27(date1, date2)
+    dfs_c = []
+    for i in range(len(iwindows)):
+        tmp_wname = f'{dir_path}{stat}/{stat.lower()}_{iwindows[i]}_{fwindows[i]}.qdl.dat'
+        file_path = os.path.join(tmp_wname)
+        if os.path.isfile(file_path):
+            df_c = pd.read_csv(tmp_wname, header=None, sep='\\s+')
+        else:
+            df_c = pd.DataFrame(np.full((1440, 2), np.nan))
+        
+        dfs_c.append(df_c)
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)
+    
+    return df
 
+
+def df_gic_processed(date1, date2, dir_path, stat):
+    col_names = ['Datetime','gic']
+    
+    
+    
+    idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 00:00:00' ), end =\
+                         pd.Timestamp(str(date2)+' 23:59:00'), freq='min')
+    
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
+                                          end = pd.Timestamp(str(date2)), freq='D')
+    idx_list = (idx_daylist.strftime('%Y%m%d')) 
+    str1 = f"gic_{stat}_"
+    ext = ".csv"
+
+   # remote_path= '/data/output/indexes/'+station+'/'
+    list_fnames = list_names(idx_list, str1, ext)
+
+    dfs_c = []
+    column_names = ['Datetime', 'gic']
+    for i in range(len(list_fnames)):      
+        year = idx_daylist[i].year
+        
+        try:
+            # Construct full file path
+            file_path = os.path.join(dir_path, str(year), stat, list_fnames[i])
+            
+            # Check if file exists
+            if os.path.isfile(file_path):
+                
+                tmp_idx = idx1[i*1440: (i+1)*1440]
+
+                df_c = pd.read_csv(file_path, header=None, sep=',', names=column_names, usecols=[0, 1])               
+                
+                
+                # Set index and handle duplicates
+                df_c = df_c.set_index(df_c['Datetime'])
+                df_c = df_c[~df_c.index.duplicated(keep='first')]
+                df_c = df_c.replace(999.9, np.nan)
+                df_c = df_c.drop(columns=['Datetime'])
+                
+            else: 
+                # Create consistent empty DataFrame
+                tmp_idx = idx1[i*1440: (i+1)*1440]
+                # Use the actual column structure from your data
+                empty_data = {col: np.full(1440, np.nan) for col in column_names[0:]}
+                df_c = pd.DataFrame(empty_data)
+                df_c = df_c.set_index(tmp_idx)
+
+        except Exception as e:
+            print(f"Error processing file {list_fnames[i]}: {str(e)}")
+            # Create empty DataFrame on error too
+            tmp_idx = idx1[i*1440: (i+1)*1440]
+            empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
+            df_c = pd.DataFrame(empty_data)
+            df_c = df_c.set_index(tmp_idx)
+    
+        dfs_c.append(df_c)     
+
+    # Final processing
+    df = pd.concat(dfs_c, axis=0)   
+
+    return df
 ###############################################################################
 ###############################################################################
 def df_dH(date1, date2, dir_path, H_stat):
@@ -484,6 +561,41 @@ def df_dH(date1, date2, dir_path, H_stat):
     return(H)
 
 ###############################################################################
+def df_dH_exp(date1, date2, dir_path, H_stat):
+    idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
+                         pd.Timestamp(date2+' 23:59:00'), freq='min')
+    
+    idx_daylist = pd.date_range(start = pd.Timestamp(date1), \
+                                          end = pd.Timestamp(date2), freq='D')
+        
+    idx_list = (idx_daylist.strftime('%Y%m%d')) 
+    str1 = str(H_stat)+"_"
+    ext = "M.dat"
+    station = ''
+
+    list_fnames = list_names(idx_list, str1, ext)
+    dfs_c = []
+    for filename in list_fnames:
+        if os.path.exists(dir_path+filename): #si el archivo diario ya está en la carpeta local, leelo
+            df_c = pd.read_csv(dir_path+filename, header=0, sep=r'\s+')  
+            df_c = df_c.replace(9999.9, np.nan)
+            
+        dfs_c.append(df_c) #combina los dataframes, incluyendo los vacíos
+        
+
+        
+    df = pd.concat(dfs_c, axis=0, ignore_index=True)  
+
+    df = df.replace(999999.0, np.nan)        
+    df = df.set_index(idx1)
+    
+    #df = df.loc[date1:date2]
+    H  = df.iloc[:,0]
+    
+    return(H)
+
+
+
 def df_sym(date1, date2, dir_path):
     idx1 = pd.date_range(start = pd.Timestamp(date1), end =\
                          pd.Timestamp(date2+' 23:59:00'), freq='min')
@@ -495,29 +607,24 @@ def df_sym(date1, date2, dir_path):
     ext = 'm_D.dat'
 
     list_fnames = []
+    file_extensions = ['m_D.dat', 'm_P.dat', 'm_Q.dat']  # Define all extensions to try
+
     for i in idx_daylist:
         date_str = str(i)[0:10]  # Get yyyy-mm-dd format
+        file_found = False
         
-        # First try with m_D.dat
-        tmp = str1 + date_str + ext
-        if os.path.isfile(f'{dir_path}{tmp}'):
-            list_fnames.append(tmp)
-            continue  # Move to next date if found
+        # Try each extension in order
+        for ext in file_extensions:
+            filename = str1 + date_str + ext
+            file_path = os.path.join(dir_path, filename)
+            
+            if os.path.isfile(file_path):
+                list_fnames.append(filename)
+                file_found = True
+                break  # Stop checking other extensions once found
         
-        # If not found, try m_P.dat
-        ext = 'm_P.dat'
-        tmp = str1 + date_str + ext
-        if os.path.isfile(f'{dir_path}{tmp}'):
-            list_fnames.append(tmp)
-            continue  # Move to next date if found
-        
-        # If not found, try m_Q.dat
-        ext = 'm_Q.dat'
-        tmp = str1 + date_str + ext
-        if os.path.isfile(f'{dir_path}{tmp}'):
-            list_fnames.append(tmp)
-        else:
-            print(f'{tmp} file does not exist')
+        if not file_found:
+            print(f'No file found for date {date_str} with extensions: {file_extensions}')
 
     dfs_c = []
     
@@ -527,9 +634,8 @@ def df_sym(date1, date2, dir_path):
         dfs_c.append(df_c) 
                 
     df = pd.concat(dfs_c, axis=0, ignore_index=True)
-    
-    
-    index = {'DateTime' : idx1, 'ASYD' : df.iloc[:,0], 'ASYH' : df.iloc[:,1], 'SYMH' : df.iloc[:,2], 'SYMD' : df.iloc[:,3]}
+
+    index = {'DateTime' : idx1, 'ASYD' : df.iloc[:,0], 'ASYH' : df.iloc[:,1], 'SYMD' : df.iloc[:,2], 'SYMH' : df.iloc[:,3]}
     
     return(index)
 

@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-from gicdproc import  process_station_data, df_gic_pp
+from gicdproc import  process_station_data, df_gic_pp, df_gic_processed, df_sym, df_dH_exp
 from calc_daysdiff import calculate_days_difference
 import matplotlib.pyplot as plt
 from gic_threshold import threshold
@@ -32,67 +32,60 @@ idx1 = pd.date_range(start = pd.Timestamp(idate+ ' 00:00:00'), \
 ndays = calculate_days_difference(idate, fdate)
 tot_data = (ndays+1)*1440
 
+
 dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
-file = []
+pp_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
+dict_qd = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
+
+data = process_station_data(idate, fdate, path, 'MZT', idx1, tot_data)
+
 for i in stat:
-    print(f'station:{i}')
+    print(f'\n station: {i} \n')
     data = df_gic_pp(idate, fdate, path, i)
-    dict_gic[i] = data['gic']
-    #print(data)
-plt.plot(dict_gic['LAV'], label = f'LAV')
-    
-plt.show()
+    data['gic'] = np.where((data['gic'] >= 400) | (data['gic'] <= -400), np.nan, data['gic'])
+    pp_gic[i] = data['gic']
+    if not data['gic'].isnull().all():
 
-sys.exit('prueba')
-
-for i in stat:
-    gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
-
-
-    if not gic_st.isnull().all():
-        
-        
-        
-
-            
-            
-            #plt.plot(gic_st, label=f'{i} GIC corr', color='red', alpha=0.8)
-
-            #plt.show()
-           # print(f'Quality: {quality}')
-            
-            #gic_corr = corr_offset(gic_corr, threshold, 60) 
-            #gic_st = gic_corr
-
-
-        gic_res, qd = gic_diurnalbase(gic_st, idate, fdate, i.lower())    
-        sys.exit('end of child process')
+        gic_res, qd = gic_diurnalbase(data['gic'], idate, fdate, i.lower())    
+        #
         dict_gic[i] = gic_res
+        dict_qd[i] = qd
+        
     else:
-        dict_gic[i] = gic_st
+        # Create a 1-column DataFrame with idx1 as index, filled with NaN
+        nan_df = pd.DataFrame({i: np.full(len(idx1), np.nan)}, index=idx1)
+        dict_gic[i] = nan_df[i]  # or keep as DataFrame: dict_gic[i] = nan_df
+        
+        # Also create similar for dict_qd if needed
+        dict_qd[i] = pd.DataFrame({i: np.full(len(idx1), np.nan)}, index=idx1)[i]
         
         
         #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
+fig, axes = plt.subplots(4, 2, figsize=(25, 20))
+colors = ['blue', 'orange', 'green', 'purple']
 
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 12))  # 3 rows, 1 column#
+# Processed + QD Model in left column (0, 1, 2, 3)
+for i, station in enumerate(dict_gic):
+    axes[i, 0].plot(pp_gic[station], label=f'{station} Processed', color=colors[i], alpha=0.7, linewidth=1.5)
+    axes[i, 0].plot(idx1, dict_qd[station], label=f'{station} QD Model', color='red', alpha=0.7, linewidth=1.5)
+    axes[i, 0].set_title(f'{station} - Processed GIC vs QD Model')
+    axes[i, 0].set_ylabel('GIC')
+    axes[i, 0].legend()
+    axes[i, 0].grid(True, alpha=0.3)
 
+# Raw data in right column (0, 1, 2, 3)
+for i, station in enumerate(dict_gic):
+    axes[i, 1].plot(dict_gic[station], label=f'{station} no QD', color=colors[i], alpha=0.7, linewidth=1.5)
+    axes[i, 1].set_title(f'{station} - Raw GIC Data')
+    axes[i, 1].set_ylabel('GIC')
+    axes[i, 1].legend()
+    axes[i, 1].grid(True, alpha=0.3)
 
-ax1.plot(dict_gic['LAV'], label='LAV', color='blue', alpha=0.7)
-ax1.legend()
-
-ax2.plot(dict_gic['QRO'], label='QRO', color='orange', alpha=0.7)
-ax2.legend()
-
-ax3.plot(dict_gic['RMY'], label='RMY', color='green', alpha=0.7)
-ax3.legend()
-
-ax4.plot(dict_gic['MZT'], label='MZT', color='green', alpha=0.7)
-ax4.legend()
-
-
-plt.tight_layout()  # Prevents label overlapping
-plt.show()
-
+plt.tight_layout()
+plt.savefig(f'/home/isaac/rutpy/processed/gic_processed_{idate}_{fdate}.png', dpi=300)
+plt.close()
+#plt.show()
+#sys.exit('end of child process')
 output_path = f'/home/isaac/datos/gics_obs/processed/{fyear}/'
 
 for i in stat:
@@ -104,7 +97,7 @@ for i in stat:
         start_idx = j * 1440
         end_idx = (j + 1) * 1440
         daily_data = dict_gic[i].iloc[start_idx:end_idx]
-        daily_data.fillna(9999.9999, inplace=True)
+        daily_data.fillna(999.9, inplace=True)
         date_str = daily_data.index[0].strftime('%Y%m%d')
         daily_data.to_csv(output_path + f'{i}/gic_{i}_{date_str}.csv', header=False)
     #for j in 

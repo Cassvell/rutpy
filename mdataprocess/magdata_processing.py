@@ -195,7 +195,11 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
                    
     iqr_picks = max_IQR(data, 60, 24, method='stddev')    
     xaxis = np.linspace(0, 23, 1440)
-
+    info = night_time(net, st)
+    
+    lt = mlt(float(info[5]), info[6])
+    
+    utc = lt
 #import UTC according to observatory
 
     #threshold = get_threshold(iqr_picks, st, 'GPD')
@@ -204,11 +208,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     
     if qd_method == 'qd5':   
         ndays = 5
-        info = night_time(net, st)
-        
-        lt = mlt(float(info[5]), info[6])
-        
-        utc = lt
+
         
         print(f"local time: {lt}")
 
@@ -224,7 +224,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     
     
     elif qd_method == 'experimental':
-        qd_list = get_qd_dd(iqr_picks, idx_daily, 'I_iqr', ndays)
+        qd_list = get_qd_dd(iqr_picks, idx_daily, 'I_iqr', totdays)
         threshold = get_threshold(iqr_picks, st, threshold_method)    
         exceeding_count = (qd_list.iloc[:, 1] > threshold).sum()
 
@@ -310,7 +310,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
             
             if len(qdl[i]) == 1440:
                 # Create xaxis if not defined
-                #plt.plot(xaxis, qdl[i] - baseline_value)
+                plt.plot(xaxis, qdl[i] - baseline_value)
                 qdl[i] = qdl[i] - baseline_value
                 
             # Reset index if it's a pandas object
@@ -398,7 +398,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     #    if len(qdl[i]) == 1440:
      #       plt.plot(xaxis, qdl[i], alpha=0.6)                                
             
-    plt.plot(xaxis, qd_average, color='blue', linewidth=2)
+    #plt.plot(xaxis, qd_average, color='blue', linewidth=2)
 
     freqs = np.array([0.0, 1.1574e-5, 2.3148e-5, 3.4722e-5,4.6296e-5, \
                           5.787e-5, 6.9444e-5])    
@@ -472,19 +472,19 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     final = idx_daily[-1].strftime('%Y-%m-%d')    
     
     path = '/home/isaac/MEGA/posgrado/doctorado/'
-    #plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
+    plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
     #plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
     #plt.plot(xaxis, template - qd_std, color = 'red', linestyle='--', linewidth=3)    
     #for i in range(ndays):
     #    if len(qdl[i]) == 1440:
     #        plt.plot(xaxis, qdl[i], alpha=0.6)
     
-    #plt.xlim(0,23)
-    #plt.savefig(f'{path}semestre5/qdl/{st}_{inicio}_{final}_gics.png')
-    #plt.title(f'{st.upper()} diurnal variation')       
-    #plt.legend()
-    #plt.tight_layout() 
-    #plt.show()
+    plt.xlim(0,23)
+    plt.title(f'{st.upper()} diurnal variation')       
+    plt.legend()
+    plt.tight_layout() 
+    plt.savefig(f'{path}semestre5/qdl/QDL_GICS/{st}_{inicio}_{final}_gics.png')
+    plt.close()
 
     
         #archivos de salida 2: 
@@ -506,8 +506,9 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
         
         doi_1 = idx_daily[0].timetuple().tm_yday
         doi_2 = idx_daily[-1].timetuple().tm_yday
-        
-        output_name = f'{st}_{doi_1}_{doi_2}.qdl.dat'    
+        year_1 = idx_daily[0].strftime('%Y') 
+        year_2 = idx_daily[-1].strftime('%Y') 
+        output_name = f'{st}_{year_1}-{doi_1}_{year_2}-{doi_2}.qdl.dat'    
         full_path = os.path.join(directory, output_name)
         with open(full_path, 'w') as f:
             for _, row in df.iterrows():
@@ -517,8 +518,6 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
                 # Write line with 3 spaces separation
                 f.write(f"{model_str}   {stddev_str}\n")
     
-    
-    #sys.exit('end of child process')
     qd_offset = np.nanmedian(baseline)
 
     return T, qd_offset

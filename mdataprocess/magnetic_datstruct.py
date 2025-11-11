@@ -249,10 +249,10 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
         I = np.tan(Z / H)
         
         
-        H = despike(H, threshd = 7.5)
-        X = despike(X, threshd = 7.5)
-        Y = despike(Y, threshd = 7.5)
-        Z = despike(Z, threshd = 7.5)
+        #H = despike(H, threshd = 7.5)
+        #X = despike(X, threshd = 7.5)
+        #Y = despike(Y, threshd = 7.5)
+        #Z = despike(Z, threshd = 7.5)
 
         for i in range(len(H)):
             if H[i] > 60000:
