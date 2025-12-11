@@ -29,7 +29,7 @@ ndays = calculate_days_difference(idate, fdate)
 tot_data = (ndays+1)*1440
 
 
-stat = ['MZT', 'LAV', 'QRO', 'RMY']
+stat = ['QRO','MZT', 'LAV',  'RMY']
 #stat = ['MZT', 'QRO', 'RMY', 'MZT']
 #st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
@@ -41,8 +41,8 @@ ndays = calculate_days_difference(idate, fdate)
 tot_data = (ndays+1)*1440
 
 file = []
-dict_gic = {'MZT': [], 'LAV' : [],  'QRO' : [], 'RMY': []}
-gic_dic = {'MZT': [], 'LAV' : [],  'QRO' : [],  'RMY': []}
+dict_gic = {'QRO' : [],'MZT': [], 'LAV' : [],  'QRO' : [], 'RMY': []}
+gic_dic = {'QRO' : [],'MZT': [], 'LAV' : [],  'QRO' : [],  'RMY': []}
 '''
 for i in stat:
     print(f'station:{i}')
@@ -63,30 +63,14 @@ for i in stat:
         
         df_st = pd.DataFrame(dict_gic[i])   
         #plt.plot()     
-        if i == 'LAV':
-            #plt.plot(gic_st, label=f'{i} GIC ', color='black', alpha=0.7)
-            gic_resample = gic_st.resample('30Min').median().fillna(method='ffill')
-            
-            threshold = threshold(gic_resample, idate, fdate, stat, '2s')   
-            stddev = np.nanstd(gic_resample)         
-            
-
-            #for j in range(ndays):
-                #start_idx = j * 1440
-                #end_idx = (j + 1) * 1440
-                #gic_corr = corr_offset(df_st['gic'][start_idx:end_idx], threshold, 60, stddev)
-                #df_st['gic'][start_idx:end_idx] = gic_corr 
-                #second_filter = corr_offset(gic_st[start_idx:end_idx], threshold, 60, stddev)
-                #gic_st[start_idx:end_idx] = second_filter 
         df_st['gic'] = np.where((df_st['gic'] >= 400) | (df_st['gic'] <= -400), np.nan, df_st['gic'])
-        #plt.plot(df_st['gic'], label=f'{i} GIC ', color='red', alpha=0.7)
-        #plt.show()
 
             
-        new_index = df_st.index + pd.Timedelta(hours=12, minutes=00)
-        df_shifted = pd.DataFrame(data=df_st.values, index=new_index, columns=df_st.columns)
-        plt.plot(df_shifted['gic'], label=f'{i} GIC ', color='blue', alpha=1)            
-        plt.show()
+        new_idate = df_st.index[0] + pd.Timedelta(hours=12, minutes=00)
+        new_fdate = df_st.index[-1] - pd.Timedelta(hours=12, minutes=00)
+
+        df_shifted = df_st[new_idate:new_fdate] 
+        
         header = " ".join(f"{key:>10}" for key in dict_gic[i].keys())
 
         header = f"{'Datetime':>7}{'gic':>20}{'T1':>13}{'T2':>15}"

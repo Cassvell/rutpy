@@ -25,14 +25,14 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
                 if os.path.isfile(full_path):
                     try:
                         # Read the file into a dataframe
-                        if st == 'teo' or st == 'jur':
-                            df_c = pd.read_csv(full_path, header=17, sep='\\s+')
-                            
-                            dfs_c.append(df_c)
-                        elif st == 'itu' or st == 'coe':
-                            df_c = pd.read_csv(full_path, skiprows=2, sep = '\\s+')
+                        #if st == 'teo' or st == 'jur':
+                        df_c = pd.read_csv(full_path, header=17, sep='\\s+')
+                        
+                        dfs_c.append(df_c)
+                        #elif st == 'itu' or st == 'coe':
+                        #    df_c = pd.read_csv(full_path, skiprows=2, sep = '\\s+')
                            #print(df_c)
-                            dfs_c.append(df_c)  
+                        #    dfs_c.append(df_c)  
                     except Exception as e:
                         # Handle any read errors
                         print(f"Error reading {full_path}: {e}")
@@ -66,41 +66,42 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
             df = df.replace(999999.00, np.nan) 
             df = df.replace(9999.00, np.nan)      
             
-            if st == 'teo' or st == 'jur':
-                df['DateTime'] =  df.iloc[:, 0]+ ' ' + df.iloc[:, 1]
-                df['DateTime'] = pd.to_datetime(df['DateTime'])
+            #if st == 'teo' or st == 'jur':
+            df['DateTime'] =  df.iloc[:, 0]+ ' ' + df.iloc[:, 1]
+            df['DateTime'] = pd.to_datetime(df['DateTime'])
 
-                df = df.set_index(df['DateTime'])   
-                df = df.loc[~df.index.duplicated(keep='first')]
-                
-                
-                df = df.reindex(idx)          
-                df = df.drop(columns=['DATE', 'TIME', 'DateTime', '|'])    
+            df = df.set_index(df['DateTime'])   
+            df = df.loc[~df.index.duplicated(keep='first')]
+            
+            
+            df = df.reindex(idx)          
+            df = df.drop(columns=['DATE', 'TIME', 'DateTime', '|'])    
 
-                H = df.iloc[:,2]    
-                D = df.iloc[:,1]
-                Z = df.iloc[:,3]
-                F = df.iloc[:,4]
+            H = df.iloc[:,2]    
+            D = df.iloc[:,1]
+            Z = df.iloc[:,3]
+            F = df.iloc[:,4]
+            
+            
                 
-            elif st == 'coe' or st == 'itu':
-                df['datetime'] = pd.to_datetime({
-                                                    'year': df['YYYY'],
-                                                    'month': df['MM'], 
-                                                    'day': df['DD'],
-                                                    'hour': df['HH'],
-                                                    'minute': df['MM.1']
-                                                })        
+            #elif st == 'coe' or st == 'itu':
+            #    df['datetime'] = pd.to_datetime({
+            #                                        'year': df['YYYY'],
+            #                                        'month': df['MM'], 
+            #                                        'day': df['DD'],
+            #                                        'hour': df['HH'],
+            #                                        'minute': df['MM.1'] })        
 
-                df = df.set_index(df['datetime'])   
-                df = df.loc[~df.index.duplicated(keep='first')]                           
+                #df = df.set_index(df['datetime'])   
+                #df = df.loc[~df.index.duplicated(keep='first')]                           
                 
-                df = df.reindex(idx)    
-                df2 = df.iloc[:,5:9]#df.drop(colums=[0,1,2, 'DateTime'])
-                H = df2.iloc[:,1] 
+                #df = df.reindex(idx)    
+                #df2 = df.iloc[:,5:9]#df.drop(colums=[0,1,2, 'DateTime'])
+                #H = df2.iloc[:,1] 
 
-                D = df2.iloc[:,0]
-                Z = df2.iloc[:,2]
-                F = df2.iloc[:,3]
+                #D = df2.iloc[:,0]
+                #Z = df2.iloc[:,2]
+                #F = df2.iloc[:,3]
               
             
         if data_class == 'preprocessed':        
@@ -154,7 +155,25 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
             Z = df2.iloc[:,2]
             F = df2.iloc[:,3]
 
-        D_rad = np.radians(D)
+        
+    
+        D_rad = np.radians(D/60)
+        #D_offset = np.nanmedian(D_rad['2025-11-07 16:45':])
+
+        #D_offset2 = (np.nanmedian(D_rad[:'2025-11-07 16:45']))
+
+        #D_dif = D_offset2 - D_offset
+
+        #D_rad['2025-11-07 16:45':] = D_rad['2025-11-07 16:45':] + D_dif 
+        
+        #Z_offset = np.nanmedian(Z['2025-11-07 16:45':])
+
+        #Z_offset2 = (np.nanmedian(Z[:'2025-11-07 16:45']))
+
+        #Z_dif = Z_offset2 - Z_offset
+
+        #Z['2025-11-07 16:45':] = Z['2025-11-07 16:45':] + Z_dif         
+        
         X = H*np.cos(D_rad)
         Y = H*np.sin(D_rad)
         I = np.tan(Z/H)
@@ -164,11 +183,11 @@ def get_dataframe(filenames, st, data_class, path, idx, daily_idx, net):
         #Y = despike(Y, threshd = 7.5)
         #Z = despike(Z, threshd = 7.5)
 
-        for i in range(len(H)):
-            if H[i] > 60000:
-                H[i] = np.nan
-            if X[i] > 60000:
-                X[i] = np.nan    
+        #for i in range(len(H)):
+        #    if H[i] > 60000:
+        #        H[i] = np.nan
+        #    if X[i] > 60000:
+        #s        X[i] = np.nan    
 
         data = {'H' : pd.Series(H), 'X' : pd.Series(X), 'Y' : pd.Series(Y), 'Z' : pd.Series(Z)}
         df_2 = pd.DataFrame(data)

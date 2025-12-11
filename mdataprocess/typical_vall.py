@@ -237,7 +237,7 @@ def mode_hourly(data, mw):
         sum_mode = np.nanmean(tw_mode)
 
         mode_stacked.append(sum_mode)
-
+        
     return mode_stacked
 
 
@@ -336,9 +336,9 @@ def typical_value(mode, center_gauss, ndata):
     t_val = []
     
     for i in range(int(ndata)):
-    
+        #print(center_gauss[i],mode[i])
         if not center_gauss[i] > mode[i]:
-        
+            #print(center_gauss[i],mode[i])
             tmp_val = mode[i]
         
         else:
@@ -346,7 +346,7 @@ def typical_value(mode, center_gauss, ndata):
             tmp_val = center_gauss[i]    
 
         t_val.append(tmp_val)
-        
+        #print(t_val)
     return t_val
 '''
 data = get_dataframe(filenames, path, idx, dates)

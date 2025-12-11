@@ -47,16 +47,18 @@ def base_line(data, net, st,threshold_method):
 
     daily_gauss = []
 
-    for i in range(len(daily_mode)):
-        tmp = night_data[i*180: ((i+1)*180)-1]
-        tmp_gauss = gaus_center(tmp)
-        daily_gauss.append(tmp_gauss)
+    #for i in range(len(daily_mode)):
+        #tmp = night_data[i*180: ((i+1)*180)-1]
+        #tmp_gauss = gaus_center(tmp)
 
-    flat_daily_gauss = [item for sublist in daily_gauss for item in sublist]
+    #    daily_gauss.append(tmp_gauss)
+
+    #flat_daily_gauss = [item for sublist in daily_gauss for item in sublist]
 
     daily_sample = len(data)/1440
 
-    daily_stacked = typical_value(daily_mode, flat_daily_gauss, daily_sample)
+    #daily_stacked = typical_value(daily_mode, flat_daily_gauss, daily_sample)
+    daily_stacked = daily_mode
 ###############################################################################
 ###############################################################################
 #Use of threshold for identify and Isolate disturbed days from non disturbed
@@ -65,14 +67,14 @@ def base_line(data, net, st,threshold_method):
     #We determine first an array of variation picks using Inter Quartil Range
     pickwindow = [3,4]
     original_daily_stacked = np.copy(daily_stacked)
-
+    
     picks = max_IQR(data, 60, pickwindow[0], method='iqr')
     
     threshold = get_threshold(picks, st, method=threshold_method)
     
     # Daily IQR picks and classification
     daily_picks = med_IQR(data, 60, 24, method='iqr')
-   
+    
     for j in range(len(daily_stacked)):
         # Ensure daily_picks is long enough
         #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
@@ -89,7 +91,7 @@ def base_line(data, net, st,threshold_method):
     
     daily_stacked_cleaned = np.array(daily_stacked)
     #daily_stacked_cleaned[daily_stacked_cleaned > 29500] = np.nan 
-
+    #print(daily_stacked_cleaned)
 
     y = np.array(daily_stacked_cleaned)
     y_clean = y[~np.isnan(y)]  
@@ -141,9 +143,10 @@ def base_line(data, net, st,threshold_method):
 
 
     full_fit = model2.predict(x_full_days_positions.reshape(-1, 1))    
-    #import matplotlib.pyplot as   
+    #import matplotlib.pyplot as plt
     #plt.plot(np.arange(len(data)), data, color='k', label='Minute data')
     #plt.plot(daily_x_positions, daily_stacked_cleaned, color='b', marker='o', linestyle='', markersize=5, label='Daily picks')
+    
     # Plot the linear fit at daily positions
     #plt.plot(daily_x_positions, daily_fit_interpolated, color='g', linewidth=2, label='Linear fit')
 
@@ -160,7 +163,7 @@ def base_line(data, net, st,threshold_method):
 ###############################################################################
 #FILL GAPS BETWEEN EMPTY DAILY VALUES    
     baseline_line = [np.nanmedian(daily_stacked)]*ndata
-    return baseline_line#full_fit#baseline_curve, undisturbed_days_sample
+    return full_fit#baseline_curve, undisturbed_days_sample
 
 ###############################################################################
 #diurnal variation computation
@@ -473,8 +476,8 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     
     path = '/home/isaac/MEGA/posgrado/doctorado/'
     plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
-    #plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
-    #plt.plot(xaxis, template - qd_std, color = 'red', linestyle='--', linewidth=3)    
+    plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
+    plt.plot(xaxis, template - qd_std, color = 'red', linestyle='--', linewidth=3)    
     #for i in range(ndays):
     #    if len(qdl[i]) == 1440:
     #        plt.plot(xaxis, qdl[i], alpha=0.6)
@@ -483,7 +486,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     plt.title(f'{st.upper()} diurnal variation')       
     plt.legend()
     plt.tight_layout() 
-    plt.savefig(f'{path}semestre5/qdl/QDL_GICS/{st}_{inicio}_{final}_gics.png')
+    plt.savefig(f'{path}semestre5/qdl/QDL_GICS/{st.upper()}/{st}_{inicio}_{final}_gics.png')
     plt.close()
 
     
