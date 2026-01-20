@@ -98,7 +98,7 @@ mz_score = mz_score(gicTW_lav)
 
 ###############################################################################
 
-dir_path = '/home/isaac/datos/dH_'+str(H_stat)+'/'
+dir_path = f'/home/isaac/datos/dH_{str(H_stat)}/'
 
 fdate = datetime.strptime(f_date, '%Y%m%d')
 fdate2 = fdate + timedelta(days=1)

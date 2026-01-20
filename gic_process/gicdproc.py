@@ -525,18 +525,18 @@ def df_dH(date1, date2, dir_path, H_stat):
     elif H_stat == 'itu':
         station = 'iturbide'
 
-    remote_path= '/data/output/indexes/'+station+'/'
+    remote_path= f'/data/output/indexes/{station}/'
     list_fnames = list_names(idx_list, str1, ext)
     dfs_c = []
     for filename in list_fnames:
-        if os.path.exists(dir_path+filename): #si el archivo diario ya está en la carpeta local, leelo
-            df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+        if os.path.exists(f'{dir_path}{filename}'): #si el archivo diario ya está en la carpeta local, leelo
+            df_c = pd.read_csv(f'{dir_path}{filename}', header=None, sep=r'\s+', skip_blank_lines=True).T
             df_c = df_c.iloc[:-1, :]   
 
         else:
             wget = get_file(remote_path, dir_path, filename) #si no está, búscalo en la carpeta remota, copialo a la local y leelo
             if wget == True:
-                df_c = pd.read_csv(dir_path+filename, header=None, sep=r'\s+', skip_blank_lines=True).T
+                df_c = pd.read_csv(f'{dir_path}{filename}', header=None, sep=r'\s+', skip_blank_lines=True).T
                 df_c = df_c.iloc[:-1, :]   
             else: #si tampoco está en la local, genera un dataframe de archivos nulos
                 
@@ -725,16 +725,14 @@ def df_Kloc(date1, date2, dir_path, stat):
     str1 = f"{stat}_"
     ext = ".k_index.early"
     station = ''
-    if stat == 'mex':
-       station =  'mexico'
-    elif stat == 'coe':
-        station == 'coeneo'
+    if stat == 'coe':
+       station =  'coeneo'
     elif stat == 'teo':
         station = 'teoloyucan'
     elif stat == 'itu':
         station = 'iturbide'
     remote_path= f'/data/output/indexes/{station}/'
-    
+
     list_fnames = list_names(idx_list, str1, ext)
     dfs_c = []
     for filename in list_fnames:

@@ -77,7 +77,7 @@ for panel_idx in range(4):  # 4 paneles
             lt = mlt(float(info[5]), info[6])
 
             utc = lt
-            if utc > 0:
+            if utc > 0: 
                 new_idate = time[0] + pd.Timedelta(hours=utc, minutes=00)
                 new_fdate = time[-1] + pd.Timedelta(hours=utc, minutes=00)          
             else:
@@ -137,80 +137,6 @@ plt.savefig(f'/home/isaac/longitudinal_studio/fig/corr/TScorr_{idate}_{fdate}_{i
 plt.show()
     #print(f'Ventana {j+1}: r = {correlacion:.4f}')
         
-sys.exit('end')
-
-
-
-for vt, color in zip(vertical_times, colors):
-    axes[0].axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
-                    linestyle='--', alpha=0.7, linewidth=1.5)
-
-for i in range(len(st_sect)):
-    if i < 4:  # Only plot first 4 stations (panels 2-5)
-        print(f'Observatorio: {st_sect[i]}')
-        df = pd.read_csv(f'{path}{st_sect[i]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
-        H_I = df.iloc[:, 0]
-        ASYH = df.iloc[:, 1]
-        
-        #line1 = ax1.plot(time, ASYH, color='black', linewidth=3, label='ASYH')
-        
-        # Calculate and plot dASYH on right y-axis (ax1_right)
-        dASYH = np.gradient(ASYH, np.linspace(0, len(time), len(time)))
-        #line2 = ax1_right.plot(time, np.abs(dASYH), color='cornflowerblue', linewidth=1, linestyle='-', alpha=0.3)
-        
-        #axes[0].set_title('ASYH Index')
-        axes[0].plot(time, ASYH, color='black', linewidth=2, label='ASYH')
-        axes[0].set_ylabel('ASYH [nT]', fontsize=20)
-        #ax1_right.set_ylabel(r'$ \Delta_t | ASYH|$ [nT/min]', fontsize=20, color='black')
-        axes[0].grid(True, alpha=0.5)
-        axes[0].tick_params(labelsize=20)        
-        
-        axes[0].axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
-              alpha=0.3, color='gray')
-        
-        axes[0].axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
-              alpha=0.3, color='gray')        
-        
-        axes[0].axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
-              alpha=0.3, color='gray')
-
-        axes[0].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
-              alpha=0.3, color='gray')        
-        
-        axes[i+1].plot(time, H_I, color='red')
-        axes[i+1].set_ylim(-160,160)
-        #axes[i+1].set_title(f'Station: {st_sect[i]}')
-        axes[i+1].set_ylabel(rf' {st_sect[i].upper()} $H_I$ [nT]', fontsize=20)
-        axes[i+1].grid(True, alpha=0.5)
-        axes[i+1].tick_params(labelsize=20)
-        for vt, color in zip(vertical_times, colors):
-            axes[i+1].axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
-                            linestyle='--', alpha=0.7, linewidth=1.5)
-        axes[i+1].axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
-              alpha=0.3, color='gray')
-        
-        axes[i+1].axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
-              alpha=0.3, color='gray')        
-        
-        axes[i+1].axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
-              alpha=0.3, color='gray')
-
-        axes[i+1].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
-              alpha=0.3, color='gray')
-
-# Set x-axis label only on bottom panel
-axes[-1].xaxis.set_major_formatter(mdates.DateFormatter(' %m/%d %H h'))
-axes[-1].set_xlabel('Universal Time', fontsize=20)
-#axes[-1].tick_params(labelsize=16)    
-# Set x-limits
-for ax in axes:
-    ax.set_xlim(time[0], time[-1])
-
-plt.suptitle(f'2015/03/17 - 2015/03/18', fontsize=24, y=0.98)
-plt.tight_layout()
-plt.savefig(f'/home/isaac/longitudinal_studio/fig/asyh_{idate}_{fdate}.png', dpi=300)
-plt.show()
-
 sys.exit('end')
 
 for i in range(len(st_sect)):
