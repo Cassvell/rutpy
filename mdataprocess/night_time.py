@@ -37,7 +37,7 @@ def night_time(net, obs):
     obs_info = []
     path = '/home/isaac/datos' 
     file_path = f"{path}/{net}_stations.csv"
-    
+
     #info_tl = mlt()
     
     # Check if the file exists
