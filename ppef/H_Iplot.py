@@ -51,16 +51,16 @@ station_pairs = [('teo', 'jai'), ('sjg', 'hon'), ('gui', 'kak'), ('tam', 'bmt')]
 
 # Panel 1: ASYH (already defined separately)
 # We'll create a separate ASYH panel if needed, or you can keep it as panel 0
-fig, axes = plt.subplots(9, 1, figsize=(16, 16), sharex=True)
+fig, axes = plt.subplots(6, 1, figsize=(16, 20), sharex=False)
 # Panel 0: ASYH (from first station)
 df_asy = pd.read_csv(f'{path}{st_sect[0]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
 ASYH = df_asy.iloc[:, 1]
-axes[0].plot(time_m, ASYH, color='black', linewidth=2, label='ASYH')
-axes[0].set_ylabel('ASYH [nT]', fontsize=18)
+axes[0].plot(time_m, ASYH, color='black', linewidth=2)
+axes[0].set_xlim(time_m[0], time_m[-1])
+axes[0].set_ylabel('ASYH [nT]', fontsize=20)
 axes[0].grid(True, alpha=0.5)
-axes[0].tick_params(labelsize=16)
-axes[0].legend(loc='upper right')
-
+axes[0].tick_params(labelsize=20)
+axes[0].xaxis.set_visible(False)
 # Add shaded regions to ASYH panel
 axes[0].axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
               alpha=0.3, color='gray')
@@ -69,8 +69,49 @@ axes[0].axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:
 axes[0].axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
               alpha=0.3, color='gray')
 axes[0].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
+              alpha=0.3, color='gray')      
+      #print(f'Ob: {st}, UT: {time_h[0]}, UTC: {mlt}')      
+
+# Loop through station pairs (panels 1-4)
+for pair_idx, (station1, station2) in enumerate(station_pairs):
+    ax = axes[pair_idx + 1]  # +1 because panel 0 is ASYH
+    
+    # Load and plot first station
+    df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
+    H_I1 = df1.iloc[:, 0]
+    ax.plot(time_m, H_I1, color='red', linewidth=2, label=f'{station1.upper()}')
+    
+    # Load and plot second station
+    df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
+    H_I2 = df2.iloc[:, 0]
+    ax.plot(time_m, H_I2, color='blue', linewidth=2, label=f'{station2.upper()}')
+    
+    # Set y-limits and labels
+    ax.set_xlim(time_m[0], time_m[-1])
+    ax.set_ylim(-160, 160)
+    ax.set_ylabel(r'$\Delta \mathrm{mlon}$' '\n' r'$H_I$ [nT]', fontsize=20)
+    ax.grid(True, alpha=0.5)
+    ax.tick_params(labelsize=20)
+    ax.legend(loc='upper right', fontsize=20)
+    ax.xaxis.set_visible(False)
+    # Add vertical lines
+    for vt, color in zip(vertical_times, colors):
+        ax.axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
+                  linestyle='--', alpha=0.7, linewidth=1.5)
+    
+    # Add shaded regions
+    ax.axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
               alpha=0.3, color='gray')
 
+
+mlon = []
+df_all = []
 for st in range(len(st_sect)):
       df = pd.read_csv(f'{path}{st_sect[st]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
       H_I = df.iloc[:, 0]
@@ -85,6 +126,7 @@ for st in range(len(st_sect)):
         lon =  - int(float(info[9]))
       elif info[10] == 'E':
         lon = int(float(info[9]))
+      mlon.append(lon)
       mlt = []
       for j in range(len(time_m)):
             tmp = apex_out.mlon2mlt(int(float(info[9])), time_m[j])
@@ -107,58 +149,100 @@ for st in range(len(st_sect)):
       end_date_str = f"{fdate2.year}-{fdate2.month:02d}-{fdate2.day:02d} {mlt[-1]}"
 
       # Crear el date_range
-      mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
-      axes[st+1].plot(mlt_series[0:-1], H_I, color=colors_list[st], linewidth=2, label=f'{st_sect[st]}')
-      axes[st+1].grid(True, alpha=0.5)
-      axes[st+1].legend()
-plt.show()
       
-      #print(f'Ob: {st}, UT: {time_h[0]}, UTC: {mlt}')      
-sys.exit('end')
-# Loop through station pairs (panels 1-4)
-for pair_idx, (station1, station2) in enumerate(station_pairs):
-    ax = axes[pair_idx + 1]  # +1 because panel 0 is ASYH
-    
-    # Load and plot first station
-    df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
-    H_I1 = df1.iloc[:, 0]
-    ax.plot(time, H_I1, color='red', linewidth=2, label=f'{station1.upper()}')
-    
-    # Load and plot second station
-    df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
-    H_I2 = df2.iloc[:, 0]
-    ax.plot(time, H_I2, color='blue', linewidth=2, label=f'{station2.upper()}')
-    
-    # Set y-limits and labels
-    ax.set_ylim(-160, 160)
-    ax.set_ylabel(f'{station1.upper()}/{station2.upper()}\n$H_I$ [nT]', fontsize=16)
-    ax.grid(True, alpha=0.5)
-    ax.tick_params(labelsize=14)
-    ax.legend(loc='upper right', fontsize=12)
-    
-    # Add vertical lines
-    for vt, color in zip(vertical_times, colors):
-        ax.axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
-                  linestyle='--', alpha=0.7, linewidth=1.5)
-    
-    # Add shaded regions
-    ax.axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
-              alpha=0.3, color='gray')
+      mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
+      mlt_series = mlt_series[0:-1]
 
-# Set x-axis label only on bottom panel
-axes[-1].xaxis.set_major_formatter(mdates.DateFormatter(' %m/%d %H h'))
-axes[-1].set_xlabel('Universal Time', fontsize=16)
+      mlt_hours = []
+      for t in mlt:
+            h, m, s = map(int, t.split(':'))
+            mlt_hours.append(h + m/60 + s/3600)
+      
+      UT_hours = (time_m.hour
+                  + time_m.minute / 60
+                  + (time_m.day - time_m[0].day) * 24)      
+      
+      n = min(len(UT_hours), len(mlt_hours), len(H_I))
 
-# Set x-limits
-for ax in axes:
-    ax.set_xlim(time[0], time[-1])
+      UT_hours = UT_hours[:n]
+      mlt_hours = mlt_hours[:n]
+      H_I = H_I.iloc[:n].values
+      
+      UT_bin = (UT_hours * 60).astype(int)      # minutos UT
+      MLT_bin = (np.array(mlt_hours) * 60).astype(int)        
+      
+      df_station = pd.DataFrame({
+      'UT_min': UT_bin,
+      'MLT_min': MLT_bin,
+      'H_I': H_I,
+      'station': st_sect[st]
+      })
+      df_all.append(df_station)
 
-plt.tight_layout()
+df_all = pd.concat(df_all, ignore_index=True)
+bin_min = 10  # minutos
+
+df_all['UT_bin']  = (df_all['UT_min']  // bin_min) * bin_min
+df_all['MLT_bin'] = (df_all['MLT_min'] // bin_min) * bin_min
+
+Z = df_all.pivot_table(
+    values='H_I',
+    index='MLT_bin',
+    columns='UT_bin',
+    aggfunc='mean',
+    fill_value=0,
+)
+
+UT_grid = Z.columns.values / 60     # a horas
+MLT_grid = Z.index.values / 60
+
+UTg, MLTg = np.meshgrid(UT_grid, MLT_grid)
+Zvals = np.ma.masked_invalid(Z.values)
+      
+levels = np.arange(-150, 150, 10)
+from matplotlib.colors import TwoSlopeNorm
+
+norm = TwoSlopeNorm(vmin=-150, vcenter=0, vmax=150)
+pcm = axes[-1].pcolormesh(
+    UTg,
+    MLTg,
+    Zvals,
+    cmap='seismic',
+    norm=norm,
+    shading='nearest',
+    hatch='O'
+)
+
+axes[-1].set_ylabel('MLT', fontsize=20)
+axes[-1].set_ylim(0, 24)
+axes[-1].set_yticks([6, 12, 18])
+axes[-1].set_yticklabels(['06', '12', '18'], fontsize=20)
+axes[-1].tick_params(labelsize=20)
+
+# MLT reference lines
+for h in [6, 12, 18]:
+    axes[-1].axhline(h, color='k', linestyle='--', linewidth=0.8)
+
+# Manual colorbar axes: [left, bottom, width, height]
+cax = fig.add_axes([0.15, 0.04, 0.70, 0.015])
+
+cbar = fig.colorbar(pcm, cax=cax, orientation='horizontal')
+cbar.set_label(r'$H_I$ [nT]', fontsize=20)
+cbar.ax.tick_params(labelsize=20)
+    
+xticks_hours = np.arange(0, 49, 6)
+
+xtick_labels = [
+    time_m[int(i / 48 * (len(time_m) - 1))].strftime('%H:%M')
+    for i in xticks_hours
+]
+
+axes[-1].set_xticks(xticks_hours)
+axes[-1].set_xticklabels(xtick_labels, fontsize=20)
+axes[-1].set_xlabel('Universal Time', fontsize=20)
+
+
+plt.subplots_adjust(hspace=0.1, bottom=0.1, top=0.95, right=0.95, left=0.1)
+#plt.tight_layout()
 plt.savefig(f'/home/isaac/longitudinal_studio/fig/asyh_{idate}_{fdate}V2.png', dpi=300)
 plt.close()
