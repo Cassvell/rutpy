@@ -47,7 +47,7 @@ apex_out = apexpy.Apex(date=2015.3)
 vertical_times = ['04:30:00', '07:00:00', '22:47:00']
 colors = ['green', 'green', 'green']
 
-station_pairs = [('teo', 'jai'), ('sjg', 'hon'), ('gui', 'kak'), ('tam', 'bmt')]
+station_pairs = [('teo', 'jai'), ('sjg', 'bmt'), ('gui', 'kak'), ('tam', 'hon')]
 
 # Panel 1: ASYH (already defined separately)
 # We'll create a separate ASYH panel if needed, or you can keep it as panel 0
@@ -72,44 +72,6 @@ axes[0].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:
               alpha=0.3, color='gray')      
       #print(f'Ob: {st}, UT: {time_h[0]}, UTC: {mlt}')      
 
-# Loop through station pairs (panels 1-4)
-for pair_idx, (station1, station2) in enumerate(station_pairs):
-    ax = axes[pair_idx + 1]  # +1 because panel 0 is ASYH
-    
-    # Load and plot first station
-    df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
-    H_I1 = df1.iloc[:, 0]
-    ax.plot(time_m, H_I1, color='red', linewidth=2, label=f'{station1.upper()}')
-    
-    # Load and plot second station
-    df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
-    H_I2 = df2.iloc[:, 0]
-    ax.plot(time_m, H_I2, color='blue', linewidth=2, label=f'{station2.upper()}')
-    
-    # Set y-limits and labels
-    ax.set_xlim(time_m[0], time_m[-1])
-    ax.set_ylim(-160, 160)
-    ax.set_ylabel(r'$\Delta \mathrm{mlon}$' '\n' r'$H_I$ [nT]', fontsize=20)
-    ax.grid(True, alpha=0.5)
-    ax.tick_params(labelsize=20)
-    ax.legend(loc='upper right', fontsize=20)
-    ax.xaxis.set_visible(False)
-    # Add vertical lines
-    for vt, color in zip(vertical_times, colors):
-        ax.axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
-                  linestyle='--', alpha=0.7, linewidth=1.5)
-    
-    # Add shaded regions
-    ax.axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
-              alpha=0.3, color='gray')
-    ax.axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
-              alpha=0.3, color='gray')
-
-
 mlon = []
 df_all = []
 for st in range(len(st_sect)):
@@ -128,13 +90,16 @@ for st in range(len(st_sect)):
         lon = int(float(info[9]))
       mlon.append(lon)
       mlt = []
-      for j in range(len(time_m)):
-            tmp = apex_out.mlon2mlt(int(float(info[9])), time_m[j])
-            duration = datetime.timedelta(hours=tmp)
+      
+      index=[0,-1]
+      for j in range(2):
+            tmp_mlt = apex_out.mlon2mlt(int(float(info[9])), time_m[index[j]])
+            duration = datetime.timedelta(hours=tmp_mlt)
             total_minutes_td = duration.total_seconds() / 60
             seconds = total_minutes_td * 60
             time_format = time.strftime("%H:%M:%S", time.gmtime(seconds))
             mlt.append(time_format)
+      
       
       idate2 = time_d[0]
       fdate2 = time_d[1] + datetime.timedelta(days=1)
@@ -147,26 +112,22 @@ for st in range(len(st_sect)):
       
       start_date_str = f"{idate2.year}-{idate2.month:02d}-{idate2.day:02d} {mlt[0]}"
       end_date_str = f"{fdate2.year}-{fdate2.month:02d}-{fdate2.day:02d} {mlt[-1]}"
-
       # Crear el date_range
       
       mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
+      
       mlt_series = mlt_series[0:-1]
 
-      mlt_hours = []
-      for t in mlt:
-            h, m, s = map(int, t.split(':'))
-            mlt_hours.append(h + m/60 + s/3600)
+      mlt_hours = (mlt_series.hour
+                  + mlt_series.minute / 60
+                  + (mlt_series.day - mlt_series[0].day) * 24)       
       
       UT_hours = (time_m.hour
                   + time_m.minute / 60
                   + (time_m.day - time_m[0].day) * 24)      
-      
-      n = min(len(UT_hours), len(mlt_hours), len(H_I))
-
-      UT_hours = UT_hours[:n]
-      mlt_hours = mlt_hours[:n]
-      H_I = H_I.iloc[:n].values
+            
+      UT_hours = UT_hours
+      mlt_hours = mlt_hours
       
       UT_bin = (UT_hours * 60).astype(int)      # minutos UT
       MLT_bin = (np.array(mlt_hours) * 60).astype(int)        
@@ -177,10 +138,14 @@ for st in range(len(st_sect)):
       'H_I': H_I,
       'station': st_sect[st]
       })
+      
+      print(df_station)
+      
       df_all.append(df_station)
 
 df_all = pd.concat(df_all, ignore_index=True)
 bin_min = 10  # minutos
+
 
 df_all['UT_bin']  = (df_all['UT_min']  // bin_min) * bin_min
 df_all['MLT_bin'] = (df_all['MLT_min'] // bin_min) * bin_min
@@ -189,8 +154,7 @@ Z = df_all.pivot_table(
     values='H_I',
     index='MLT_bin',
     columns='UT_bin',
-    aggfunc='mean',
-    fill_value=0,
+    aggfunc='mean'
 )
 
 UT_grid = Z.columns.values / 60     # a horas
@@ -242,7 +206,50 @@ axes[-1].set_xticklabels(xtick_labels, fontsize=20)
 axes[-1].set_xlabel('Universal Time', fontsize=20)
 
 
+
+
+# Loop through station pairs (panels 1-4)
+for pair_idx, (station1, station2) in enumerate(station_pairs):
+    ax = axes[pair_idx + 1]  # +1 because panel 0 is ASYH
+    
+    # Load and plot first station
+    df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
+    H_I1 = df1.iloc[:, 0]
+    ax.plot(time_m, H_I1, color='red', linewidth=2, label=f'{station1.upper()}')
+    
+    # Load and plot second station
+    df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
+    H_I2 = df2.iloc[:, 0]
+    ax.plot(time_m, H_I2, color='blue', linewidth=2, label=f'{station2.upper()}')
+    
+    # Set y-limits and labels
+    ax.set_xlim(time_m[0], time_m[-1])
+    ax.set_ylim(-160, 160)
+    ax.set_ylabel(r'$\Delta \mathrm{mlon}$' '\n' r'$H_I$ [nT]', fontsize=20)
+    ax.grid(True, alpha=0.5)
+    ax.tick_params(labelsize=20)
+    ax.legend(loc='upper right', fontsize=20)
+    ax.xaxis.set_visible(False)
+    # Add vertical lines
+    for vt, color in zip(vertical_times, colors):
+        ax.axvline(x=pd.Timestamp(f'{idate} {vt}'), color=color, 
+                  linestyle='--', alpha=0.7, linewidth=1.5)
+    
+    # Add shaded regions
+    ax.axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
+              alpha=0.3, color='gray')
+    ax.axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
+              alpha=0.3, color='gray')
+
+
+
+
+
 plt.subplots_adjust(hspace=0.1, bottom=0.1, top=0.95, right=0.95, left=0.1)
 #plt.tight_layout()
-plt.savefig(f'/home/isaac/longitudinal_studio/fig/asyh_{idate}_{fdate}V2.png', dpi=300)
+plt.savefig(f'/home/isaac/longitudinal_studio/fig/asyh_{idate}_{fdate}.png', dpi=300)
 plt.close()
