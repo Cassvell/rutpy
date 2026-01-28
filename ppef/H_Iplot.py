@@ -26,6 +26,49 @@ from night_time import night_time
 idate = sys.argv[1]# "formato(yyyy-mm-dd)"
 fdate = sys.argv[2]
 
+def compute_mlt_hours(station, time_m, apex_out):
+    """
+    Returns MLT in hours (0–24) for a station over time_m
+    """
+    net = 'regmex' if station == 'teo' else 'intermagnet'
+    info = night_time(net, station)
+
+    mlon = float(info[9])     # station magnetic longitude
+    hemi = info[10]
+
+    if hemi == 'W':
+        mlon = -mlon
+
+    mlt = []
+
+    index=[0,-1]
+    for j in range(2):
+        tmp_mlt = apex_out.mlon2mlt(int(float(info[9])), time_m[index[j]])
+        duration = datetime.timedelta(hours=tmp_mlt)
+        total_minutes_td = duration.total_seconds() / 60
+        seconds = total_minutes_td * 60
+        time_format = time.strftime("%H:%M:%S", time.gmtime(seconds))
+        mlt.append(time_format)
+
+
+    idate2 = time_d[0]
+    fdate2 = time_d[1] + datetime.timedelta(days=1)
+    if datetime.datetime.strptime(mlt[0], "%H:%M:%S").time() >= datetime.time(12, 0):
+        idate2 = time_d[0] - datetime.timedelta(days=1)
+        fdate2 = fdate2 - datetime.timedelta(days=1)      
+    else:
+        idate2 = idate2
+        fdate2 = fdate2
+
+    start_date_str = f"{idate2.year}-{idate2.month:02d}-{idate2.day:02d} {mlt[0]}"
+    end_date_str = f"{fdate2.year}-{fdate2.month:02d}-{fdate2.day:02d} {mlt[-1]}"
+    # Crear el date_range
+
+    mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
+
+    mlt_series = mlt_series[0:-1]
+    return mlt_series, mlon
+
 sector = ['TW1', 'TW2']
 
 path2 = '/home/isaac/longitudinal_studio/fig/ppef_dist/'
@@ -52,10 +95,20 @@ station_pairs = [('teo', 'jai'), ('sjg', 'bmt'), ('gui', 'kak'), ('tam', 'hon')]
 # Panel 1: ASYH (already defined separately)
 # We'll create a separate ASYH panel if needed, or you can keep it as panel 0
 fig, axes = plt.subplots(6, 1, figsize=(16, 20), sharex=False)
-# Panel 0: ASYH (from first station)
+fig.suptitle('March 17 to 18, 2015', fontsize=26, fontweight='bold')
+
 df_asy = pd.read_csv(f'{path}{st_sect[0]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
 ASYH = df_asy.iloc[:, 1]
+
+target_times = [pd.Timestamp('2015-03-17 13:57:00'), pd.Timestamp('2015-03-17 16:42:00'), pd.Timestamp('2015-03-17 23:40:00')]
+
 axes[0].plot(time_m, ASYH, color='black', linewidth=2)
+
+for t in target_times:
+    idx = time_m.get_loc(t)
+
+    axes[0].plot(time_m[idx],ASYH[idx],marker='o',markersize=10,color='black',markeredgecolor='black',zorder=5)
+
 axes[0].set_xlim(time_m[0], time_m[-1])
 axes[0].set_ylabel('ASYH [nT]', fontsize=20)
 axes[0].grid(True, alpha=0.5)
@@ -72,56 +125,17 @@ axes[0].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:
               alpha=0.3, color='gray')      
       #print(f'Ob: {st}, UT: {time_h[0]}, UTC: {mlt}')      
 
-mlon = []
 df_all = []
 for st in range(len(st_sect)):
       df = pd.read_csv(f'{path}{st_sect[st]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
       H_I = df.iloc[:, 0]
-      if not st_sect[st] == 'teo':
-            net = 'intermagnet'
-      else:
-            net = 'regmex'
 
-      info = night_time(net, st_sect[st])
-        
-      if info[10] == 'W':
-        lon =  - int(float(info[9]))
-      elif info[10] == 'E':
-        lon = int(float(info[9]))
-      mlon.append(lon)
-      mlt = []
-      
-      index=[0,-1]
-      for j in range(2):
-            tmp_mlt = apex_out.mlon2mlt(int(float(info[9])), time_m[index[j]])
-            duration = datetime.timedelta(hours=tmp_mlt)
-            total_minutes_td = duration.total_seconds() / 60
-            seconds = total_minutes_td * 60
-            time_format = time.strftime("%H:%M:%S", time.gmtime(seconds))
-            mlt.append(time_format)
-      
-      
-      idate2 = time_d[0]
-      fdate2 = time_d[1] + datetime.timedelta(days=1)
-      if datetime.datetime.strptime(mlt[0], "%H:%M:%S").time() >= datetime.time(12, 0):
-            idate2 = time_d[0] - datetime.timedelta(days=1)
-            fdate2 = fdate2 - datetime.timedelta(days=1)      
-      else:
-            idate2 = idate2
-            fdate2 = fdate2
-      
-      start_date_str = f"{idate2.year}-{idate2.month:02d}-{idate2.day:02d} {mlt[0]}"
-      end_date_str = f"{fdate2.year}-{fdate2.month:02d}-{fdate2.day:02d} {mlt[-1]}"
-      # Crear el date_range
-      
-      mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
-      
-      mlt_series = mlt_series[0:-1]
-
-      mlt_hours = (mlt_series.hour
-                  + mlt_series.minute / 60
-                  + (mlt_series.day - mlt_series[0].day) * 24)       
-      
+      mlt_series, mlon = compute_mlt_hours(st_sect[st], time_m, apex_out)
+      mlt_hours = (
+      mlt_series.hour
+      + mlt_series.minute / 60
+      )   
+            
       UT_hours = (time_m.hour
                   + time_m.minute / 60
                   + (time_m.day - time_m[0].day) * 24)      
@@ -139,12 +153,10 @@ for st in range(len(st_sect)):
       'station': st_sect[st]
       })
       
-      print(df_station)
-      
       df_all.append(df_station)
 
 df_all = pd.concat(df_all, ignore_index=True)
-bin_min = 10  # minutos
+bin_min = 15  # minutos
 
 
 df_all['UT_bin']  = (df_all['UT_min']  // bin_min) * bin_min
@@ -215,17 +227,34 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     # Load and plot first station
     df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
     H_I1 = df1.iloc[:, 0]
-    ax.plot(time_m, H_I1, color='red', linewidth=2, label=f'{station1.upper()}')
+
     
     # Load and plot second station
     df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
     H_I2 = df2.iloc[:, 0]
-    ax.plot(time_m, H_I2, color='blue', linewidth=2, label=f'{station2.upper()}')
     
+    mlt1, mlon1 = compute_mlt_hours(station1, time_m, apex_out)    
+    mlt2, mlon2 = compute_mlt_hours(station2, time_m, apex_out)
+    dlon = ((mlon2 - mlon1 + 180) % 360) - 180
+    #important hours
+        
+    ax.plot(time_m, H_I1, color='darkorange', linewidth=2, label=rf'{station1.upper()}, $\phi_m=$ {mlon1}°')
+    ax.plot(time_m, H_I2, color='green', linewidth=2, label=f'{station2.upper()}, $\phi_m=$ {mlon2}°')
+    for t in target_times:
+        idx = time_m.get_loc(t)
+
+        ax.plot(time_m[idx],H_I1[idx],marker='o',markersize=10,color='darkorange',markeredgecolor='black',zorder=5)
+        ax.plot(time_m[idx],H_I2[idx],marker='o',markersize=10,color='green',markeredgecolor='black',zorder=5)
+        
+    
+        yloc = []
+        ax.text(time_m[idx], 110,mlt1[idx].strftime('%H:%M'),color='darkorange',fontsize=18,ha='center',va='bottom')
+        ax.text(time_m[idx], -170,mlt2[idx].strftime('%H:%M'),color='green',fontsize=18,ha='center',va='bottom')
+        
     # Set y-limits and labels
     ax.set_xlim(time_m[0], time_m[-1])
-    ax.set_ylim(-160, 160)
-    ax.set_ylabel(r'$\Delta \mathrm{mlon}$' '\n' r'$H_I$ [nT]', fontsize=20)
+    ax.set_ylim(-175, 150)
+    ax.set_ylabel(rf'$\Delta \mathrm{{\phi_m}}$ = {dlon:.2f}$^\circ$' '\n' r'$H_I$ [nT]', fontsize=20)
     ax.grid(True, alpha=0.5)
     ax.tick_params(labelsize=20)
     ax.legend(loc='upper right', fontsize=20)
@@ -244,10 +273,6 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
               alpha=0.3, color='gray')
     ax.axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
               alpha=0.3, color='gray')
-
-
-
-
 
 plt.subplots_adjust(hspace=0.1, bottom=0.1, top=0.95, right=0.95, left=0.1)
 #plt.tight_layout()
