@@ -3,12 +3,17 @@ import numpy as np
 import sys
 from datetime import datetime, timedelta, timezone
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
+#import cartopy.crs as ccrs
 import matplotlib.path as mpath
 from matplotlib.colors import ListedColormap
+import os
 import aacgmv2
+module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
+sys.path.append(module_dir)
+from night_time import night_time
+
 path = '/home/isaac/datos/ampere/'
-filename = f'{path}20150317.ncdf'
+filename = f'{path}20150317.0600.86400.600.north.grd.ncdf'
 
 ds = xr.open_dataset(filename)
 
@@ -17,7 +22,8 @@ iminute = sys.argv[2]
 
 def prep_j(j_par, nlon, nlat, jrmin, jrmax):
     
-    jr2d = np.reshape(j_par, (nlat.item(), nlon.item()))
+    j_par_cleaned = np.where(np.abs(j_par) <= 0.3, 0, j_par)
+    jr2d = np.reshape(j_par_cleaned, ( nlon.item(), nlat.item(),))
     
     jr2d = jr2d.T
     
@@ -41,70 +47,105 @@ def prep_j(j_par, nlon, nlat, jrmin, jrmax):
     
     return(jr2d)
 
-def plot_j(jr, jr2d, latmin, lonmin, latmax, lonmax, nlat, nlon, dt):
+def obs_mlon(obs):
     
-    J_mag = np.ma.masked_where(np.abs(jr2d) <= 0.2, jr2d)
-    fig = plt.figure(figsize=(17, 17))
-    ax = plt.axes(projection=ccrs.NorthPolarStereo(central_longitude=0))
+    data = []
+    
+    for i in obs:
+        #print(f'Observatorio: {i.lower()}')
+        if i.lower() == 'teo':
+            net = 'regmex'
+        else:
+            net = 'intermagnet'
+        
+        info = night_time(net, i.lower())
+        mlon = float(info[9])     # station magnetic longitude
+        hemi = info[10]
 
+        if hemi == 'W':
+            mlon = -mlon 
+        #print(i.lower(), mlon)
+        data.append(mlon)
+    return(data)
 
-    ax.set_extent([lonmin, lonmax, latmin, latmax],crs=ccrs.PlateCarree())
-    theta = np.linspace(0, 2*np.pi, 100)
-    center, radius = [0.5, 0.5], 0.5
-    verts = np.vstack([np.sin(theta), np.cos(theta)]).T * radius + center
-    circle = mpath.Path(verts)
+def obs_mlt(obs_mlon, dt):
+    mlt_data = []
+    for i in range(len(obs_mlon)):
+        mlt = aacgmv2.convert_mlt(obs_mlon[i], dt, m2a=False)
+        mlt_data.append(mlt.item())   
+    
+    return(mlt_data)
 
-    # Set the boundary
-    ax.set_boundary(circle, transform=ax.transAxes)
-    
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, xlocs=np.arange(-180, 181, 90),
-        ylocs=np.arange(60, 91, 20),linewidth=0.6,color="gray",alpha=0.9)
+def plot_j(J_mag, latmin, lonmin, latmax, lonmax, MLT_obs):
+    # --- Datos base ---
 
-    globe = plt.imread("globe_aacgm_800km.jpg")
-    mlt_hours = np.arange(0, 24) # 0–23 hours
-    
-    mlon = mlt_hours * 15.0
-    
-    shift_px = int(mlon[0] * globe.shape[1] / 360.0)
-    globe = np.roll(globe, -shift_px, axis=1)
-    
-    #ax.imshow(globe,origin="upper",transform=ccrs.PlateCarree(),extent=[-180, 180, -90, 90],alpha=0.9,zorder=0)     
-   
     ny, nx = jr2d.shape
-    lat_edges = np.linspace(latmin, latmax, ny + 1)
-    lon_edges = np.linspace(lonmin, lonmax, nx + 1)
-    lon2d, lat2d = np.meshgrid(lon_edges, lat_edges)    
-    # Crear malla de puntos
-    lon2d, lat2d = np.meshgrid(lon_edges, lat_edges)
 
-    # Dibujar puntos sobre el eje polar
-    #ax.scatter(lon2d, lat2d,
-    #        transform=ccrs.PlateCarree(),
-    #        s=3, color="black", alpha=0.6, zorder=10)
+    # Bordes en lat/lon
+    lat_edges = np.linspace(latmin, latmax, ny+1)
+    lon_edges = np.linspace(lonmin, lonmax, nx+1)
 
-    img = ax.pcolormesh(lon_edges,lat_edges,J_mag,transform=ccrs.PlateCarree(),cmap='seismic',vmin=jrmin,
-                        vmax=jrmax,alpha=0.8)
+    # Centros para graficar
+    lat_centers = 0.5 * (lat_edges[:-1] + lat_edges[1:])
+    lon_centers = 0.5 * (lon_edges[:-1] + lon_edges[1:])
+    lon2d, lat2d = np.meshgrid(lon_centers, lat_centers)
+
+    # --- Conversión a coordenadas polares ---
+    r = lat2d - latmin
+    theta = -np.deg2rad(lon2d)
+    # --- Gráfico polar ---
+    fig = plt.figure(figsize=(10,10))
+    ax = plt.subplot(111, polar=True)
+
+    # Mapa de densidad
+    c = ax.pcolormesh(theta, r, J_mag,
+                    cmap='seismic', vmin=jrmin, vmax=jrmax, shading='auto')
+
+    # Ajustes estéticos para orientación MLT
+    ax.set_theta_zero_location("S")   # 0 MLT abajo
+    ax.set_theta_direction(1)         # sentido antihorario: 12 arriba, 6 derecha, 18 izquierda
     
 
+   # r_zoom_min = latmax - lat_zoom_max # inner radius (closer to pole)
+    r_min = 0,
+    r_max = int(latmax-latmin)
 
-    # Add MLT labels like a clock
-    mlt_labels = {0: (0, latmin-5), 6: (90, latmin-5), 12: (180, latmin-5), 18: (-90, latmin-5)}
-    for hour, (lon, lat) in mlt_labels.items():
-        ax.text(lon, lat, f"{hour:02d} MLT",
-                transform=ccrs.PlateCarree(),
-                ha="center", va="center", fontsize=10,
-                bbox=dict(facecolor="white", alpha=0.8), zorder=5)
-
+    #ax.set_rlim(r_max, 0)
+    ax.set_rticks(np.arange(0, r_max+1, 10))
+    ax.set_theta_offset(np.pi/2)
+    ax.set(xticklabels=[])
+    ax.set(yticklabels=[])
     
-    cax = fig.add_axes([0.90, 0.70, 0.02, 0.15])
+    # Etiquetas de MLT
+    ax.set_xticks(np.deg2rad([0, 90, 180, 270])) 
+    #ax.set_xticklabels(["12 MLT", "18 MLT", "0 MLT", "6 MLT"]) # inverted order
 
-    cb = plt.colorbar(img,cax=cax,orientation="vertical")
+    sectors = [0, 6, 12, 18]
+    for i in range(4):
+        angle = np.deg2rad((sectors[i]*15) - 180)
+        ax.text(angle, 52, f"{sectors[i]} MLT", fontsize = 15, color ="black",
+                    ha="center", va="center", bbox=dict(facecolor="white", alpha=0.8))
 
-    cb.set_label(r"$\mu A/m^2$")    
-   
-    #plt.title("Projected Vector Field (Polar)")
+    mlts = list(MLT_obs.values()) 
+    obs = list(MLT_obs.keys())
 
-    plt.show()
+    for h in range(len(mlts)):
+        angle = np.deg2rad((mlts[h]*15) - 180)    
+        ax.text(angle, 44, f"{obs[h]}", fontsize = 14, color ="darkgreen",
+                    ha="center", va="center")
+        ax.plot(angle,38,marker='o',markersize=10,
+                color='darkgreen',markeredgecolor='black',zorder=5)
+    
+    #divider = make_axes_locatable(ax)
+    #cax = divider.append_axes("right", size="5%", pad=0.05)
+    
+    cb = plt.colorbar(c, orientation="vertical",  pad=0.2)
+    cb.set_label(r"$\mu A/m^2$")
+
+    plt.savefig(f'/home/isaac/longitudinal_studio/fig/ampere/20150317.{ihour}.{iminute}.png', dpi=300)
+    plt.close()
+
+    return
 
 
 if sys.argv[1] == "help":
@@ -125,7 +166,7 @@ else:
     # set limit variables
     dimensions = [1000, 500]
 
-    latmin = 60.0
+    latmin = 50.0
     latmax = 90.0
     lonmin = -180
     lonmax = 180
@@ -134,8 +175,8 @@ else:
     dlon = 90
     dlatmin = 40
 
-    jrmin = -2.0
-    jrmax = 2.0
+    jrmin = -3.0
+    jrmax = 3.0
 
     arrow_scl = 2000.    
     
@@ -153,13 +194,15 @@ else:
     itime = time[idx]
     iavrs = avgint[idx]
 
-    
+  
     dt = datetime(iyear.item(), 1, 1, int(ihour), int(iminute), tzinfo=timezone.utc) + timedelta(days=idoy.item() - 1)
     #grid info
     nlat = ds.nLatGrid.values[idx]
     nlon = ds.nLonGrid.values[idx]
     
-    colat = ds.cLat_deg.values[idx]
+    colat = ds.cLat_deg.values[idx,:]
+    geocolat = ds.geo_cLat_deg.values[idx,:]
+
     mlt = ds.mlt_hr.values[idx,:]    
     lat = 90.0 - colat
     lon = mlt * 15.0
@@ -173,12 +216,18 @@ else:
     dens_curr = ds['jPar']
     j_dim = dens_curr.dims
     j_par = dens_curr.values[idx, :]
-
+    
+    #MLT_obs = [10.8, 9.33, 13, 14.4, 18.9, 20.4, 20.9, 14.9]
+    obs = ["TEO", "SJG", "GUI", "TAM", "JAI", "BMT", "KAK", "HON"]
+    
+    mlon_data = obs_mlon(obs)
+    obs_mlt = obs_mlt(mlon_data, dt)
+    
+    mlt_dict = dict(zip(obs, obs_mlt))
     
     jr2d = prep_j(j_par, nlon, nlat,jrmin, jrmax)
  
-    
-    plot_j = plot_j(j_par, jr2d, latmin, lonmin, latmax, lonmax, nlat, nlon, dt)
+    plot_j = plot_j(jr2d, latmin, lonmin, latmax, lonmax, mlt_dict)
     
     #print(lat)
 

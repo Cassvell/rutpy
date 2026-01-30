@@ -13,7 +13,7 @@ from scipy.stats import halfnorm, rayleigh
 import datetime
 import time
 import matplotlib.dates as mdates
-import apexpy
+import aacgmv2
 module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
 sys.path.append(module_dir)
 
@@ -25,6 +25,14 @@ from night_time import night_time
 
 idate = sys.argv[1]# "formato(yyyy-mm-dd)"
 fdate = sys.argv[2]
+
+def obs_mlt(obs_mlon, dt):
+    mlt_data = []
+    for i in range(len(obs_mlon)):
+        mlt = aacgmv2.convert_mlt(obs_mlon[i], dt, m2a=False)
+        mlt_data.append(mlt.item())   
+    
+    return(mlt_data)
 
 def compute_mlt_hours(station, time_m, apex_out):
     """
@@ -85,7 +93,7 @@ nwindows = ndata // window_len  # 16 ventanas
 time_m = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:59:00', freq='min')
 time_h = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:00:00', freq='h')
 time_d = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:00:00', freq='D')
-apex_out = apexpy.Apex(date=2015.3)
+
 #fig, axes = plt.subplots(5, 1, figsize=(16, 16), sharex=True)
 vertical_times = ['04:30:00', '07:00:00', '22:47:00']
 colors = ['green', 'green', 'green']
