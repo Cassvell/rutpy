@@ -473,7 +473,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     
     inicio = idx_daily[0].strftime('%Y-%m-%d')
     final = idx_daily[-1].strftime('%Y-%m-%d')    
-    
+    '''
     path = '/home/isaac/MEGA/posgrado/doctorado/'
     plt.plot(xaxis, template, label="model", color='k',linewidth=4.0 )
     plt.plot(xaxis, template + qd_std, color = 'red', linestyle='--',linewidth=3)
@@ -489,7 +489,7 @@ def get_diurnalvar(data, idx_daily, net, st, qd_method, threshold_method):
     plt.savefig(f'{path}semestre5/qdl/QDL_GICS/{st.upper()}/{st}_{inicio}_{final}_gics.png')
     plt.close()
 
-    
+    '''
         #archivos de salida 2: 
         #modelo QDL y stddev con máximas y mínimas amplitudes
     if qd_method == 'experimental':    

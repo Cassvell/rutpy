@@ -120,6 +120,53 @@ plt.tight_layout()
 plt.savefig(f'{path2}HPPEFdist_{idate}_{fdate}.png', dpi=300)
 plt.close()
 
+fig, axes = plt.subplots(4, 2, figsize=(12, 12))
+for pair_idx, (station1, station2) in enumerate(station_pairs):
+
+    for col_idx, station in enumerate([station1, station2]):
+
+        ax = axes[pair_idx, col_idx]
+
+        # =====================
+        #Leer archivo
+        # =====================
+        df = pd.read_csv(f'{path}{station}_{idate}_{fdate}.dat',header=None,sep='\\s+')
+
+        # =====================
+        # Series (columnas 2 y 3)
+        # =====================
+        dp2_1 = df.iloc[:, 2].dropna().values
+        dp2_2 = df.iloc[:, 3].dropna().values
+
+
+        
+        
+        ax.plot(time, dp2_1,color='navy',alpha=0.8,label=r'$\mathrm{H_{PPEF}}$')
+
+        ax.plot(time,dp2_2,color='orange',alpha=0.8,label=r'$\mathrm{H_{PPEF}^\prime}$')
+
+        # =====================
+        # 6. Estética
+        # =====================
+        ax.set_xlim(time[0], time[-1])
+        #ax.set_ylim(0, 0.1)
+        ax.grid(True, alpha=0.3)
+        ax.set_title(station.upper(), fontsize=15)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))        
+        if col_idx == 1:
+            ax.legend(fontsize=14, loc='upper right')
+        elif col_idx ==0:
+            ax.set_ylabel(r'$H_{PPEF}$ [nT]', fontsize=18)
+ 
+fig.text(0.5, 0.99, 'March 17 & 18, 2015', ha='center', va='top', fontsize=22, fontweight='bold')
+fig.text(0.5, 0.03, 'Universal Time', ha='center', va='top', fontsize=18)
+
+plt.subplots_adjust(hspace=0.24, wspace=0.1, bottom=0.06, top=0.93, right=0.98, left=0.07)
+plt.savefig(f'{path2}HPPEF_{idate}_{fdate}.png', dpi=300)
+plt.close()
+
+
+
 '''  
 # --- Bottom: Time series ---
 ax3.plot(time, dp2, color='navy', label=r'$H_{}$')
