@@ -1,50 +1,10 @@
-
-import matplotlib.pyplot as plt
-from gicdproc import  process_station_data
-from timeit import default_timer as timer
-
-import pandas as pd
-import os.path
-
 import numpy as np
-from datetime import datetime, timedelta
-from calc_daysdiff import calculate_days_difference
-from ts_acc import mz_score
-from scipy.optimize import minimize
-from scipy.stats import norm
-import matplotlib.dates as mdates
-#from corr_offset import corr_offset
-import sys
-import os
+#from lmoments3 import distr
 import lmoments3 as lm
-from scipy.stats import genpareto, halfnorm
-from scipy.stats import percentileofscore
-import math
-from scipy.optimize import curve_fit
-
-def gpd_pdf(x, k, sigma, mu):
-    """
-    Generalized Pareto Distribution PDF
-    
-    Parameters:
-    x: array-like, input values
-    k: shape parameter
-    sigma: scale parameter (sigma > 0)
-    mu: location parameter
-    """
-    x = np.array(x)
-    z = (x - mu) / sigma
-    
-    if k == 0:
-        # Exponential special case
-        return (1/sigma) * np.exp(-z)
-    else:
-        # General case (k != 0)
-        # Check support: 1 + k*z > 0
-        mask = (1 + k*z) > 0
-        result = np.zeros_like(x)
-        result[mask] = (1/sigma) * (1 + k*z[mask])**(-1 - 1/k)
-        return result
+#import kneed as kn
+#from scipy.stats import genpareto, kstest #anderson
+import matplotlib.pyplot as plt
+import pandas as pd
 
 def gpd_cdf(x, k, sigma, mu):
     """
@@ -60,7 +20,6 @@ def gpd_cdf(x, k, sigma, mu):
         result = np.zeros_like(x)
         result[mask] = 1 - (1 + k*z[mask])**(-1/k)
         return result
-
 
 def GPD_params(x):
     moments = lm.lmom_ratios(x, nmom=3)
@@ -190,32 +149,25 @@ def final_params(sorted_picks_norp, cdf,bound):
             A_candidates.append(AD_results[i])     
             k_candidates.append(params_k[i])
             s_candidates.append(params_s[i])
-    
+        
     if len(u_candidates) > 1:
         u_idx = np.argmax(np.array(u_candidates))
         u_max = np.max(np.array(u_candidates))
         definitive_params = {'u' : u_max, 'k' : k_candidates[u_idx], 's' : s_candidates[u_idx], \
             'A2' : A_candidates[u_idx], 'p' : pval_candidates[u_idx]}
     else:
+        
         u_max = np.array(u_candidates)
         definitive_params = {'u' : u_max, 'k' : k_candidates[0], 's' : s_candidates[0], \
             'A2' : A_candidates[0], 'p' : pval_candidates[0]}
-    
 
     return definitive_params
 
-def check_data_type(data):
-    if isinstance(data, (pd.DataFrame, pd.Series)):
-        return 0
-    elif isinstance(data, np.ndarray):
-        return 1
-    else:
-        return "Neither Pandas nor NumPy"
 
 def threshold(picks, i_date, f_date, st, method):
-    
-    sorted_picks = np.array(np.abs(picks))
-    sorted_picks = np.sort(sorted_picks)
+    picks_np_array = np.array(picks)
+    picks_clean = picks_np_array[~np.isnan(picks_np_array)]
+    sorted_picks = np.sort(np.abs(picks_clean))
 
     sorted_picks_norp = np.unique(sorted_picks)
     nbins = int(len(sorted_picks) / 3)
@@ -379,84 +331,3 @@ def threshold(picks, i_date, f_date, st, method):
 
 
     return threshold
-
-    return 
-
-def threshold_sigma(data, data_nan, threshold, quality, st):
-    ini = data_nan.index[0]
-    fin = data_nan.index[-1]
-    
-    
-    time_axis = pd.date_range(start = pd.Timestamp(ini), \
-                          end = pd.Timestamp(fin), freq='min')
-
-    data = np.array(data)
-    nbins = int(len(data)/5)
-    
-    frequencies, bin_edges = np.histogram(data, bins=nbins, density=True)
-    frequencies_abs, bin_edges_abs = np.histogram(np.abs(data), bins=nbins, density=True)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    def gaussian(x, a, mu, sigma):
-        return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
-
-    popt, pcov = curve_fit(gaussian, bin_centers, frequencies, 
-                        p0=[1, np.mean(data), np.std(data)])
-    x_fit = np.linspace(min(bin_edges), max(bin_edges), 500)
-    x_fit2 = np.linspace(min(bin_edges_abs), max(bin_edges_abs), 500)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), sharex=False)
-
-    # --- Top plot: PDF of ORIGINAL data ---
-    ax1.hist(data, density=True, bins=int(len(data) / 5), color='navy', 
-            histtype='stepfilled', alpha=0.4, label='GIC PDF distribution')
-    ax1.plot(x_fit, gaussian(x_fit, *popt), 'r-', linewidth=2, 
-            label=f'Gaussian fit: μ={popt[1]:.2f}, σ={popt[2]:.2f}')
-
-    ax1.axvline(x=threshold, color='red', linestyle='--', alpha=1, linewidth=1.5, 
-                label=f'Threshold = {threshold+popt[1]:.2f} nT ')
-        
-    ax1.axvline(x=popt[2]*2, color='green', linestyle='--', alpha=1, linewidth=1.5, 
-                label=f'2σ = {popt[1]+popt[2]*2:.2f} nT') 
-    
-    ax1.axvline(x=popt[2]*3, color='blue', linestyle='--', alpha=1, linewidth=1.5, 
-                label=f'3σ = {popt[1]+popt[2]*3:.2f} nT')     
-    
-    ax1.axvline(x=popt[1]+threshold*(-1), color='red', linestyle='--', alpha=1, linewidth=1.5)
-        
-    ax1.axvline(x=popt[1]+popt[2]*(-2), color='green', linestyle='--', alpha=1, linewidth=1.5)    
-    ax1.axvline(x=popt[1]+popt[2]*(-3), color='blue', linestyle='--', alpha=1, linewidth=1.5)  
-    #ax1.set_xlim(, 50)
-    #ax1.set_ylim(0, 0.1)
-    ax1.set_ylabel('Probability Density')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-
-    station_name = st.upper()
-    ax1.set_title(f"{station_name}:  {str(ini)[0:10]} to {str(fin)[0:10]}")
-    
-
-
-    # --- Bottom plot: Time series ---
-    ax2.plot(time_axis, data_nan, color='black', label=f'GIC {st.upper()}')
-    ax2.axhline(y=popt[1]+threshold, color='red',linestyle='--', label=f'GPD = {popt[1]+threshold:.2f} ')   # Horizontal line at y=threshold
-    ax2.axhline(y=popt[1]+popt[2]*2, color='green', linestyle='--',label=f'2σ = {popt[1]+popt[2]*2:.2f} nT')  
-    ax2.axhline(y=popt[1]+popt[2]*3, color='blue', linestyle='--',label=f'3σ = {popt[1]+popt[2]*3:.2f} nT')  
-    
-    ax2.axhline(y=popt[1]+threshold*(-1), color='red', linestyle='--')   # Horizontal line at y=threshold  
-    ax2.axhline(y=popt[1]+popt[2]*(-2), color='green', linestyle='--')  
-    ax2.axhline(y=popt[1]+popt[2]*(-3), color='blue', linestyle='--')   
-    ax2.set_xlim(ini, fin)
-    #ax3.set_ylim(0, 0.1)
-    ax2.set_xlabel('Time UT')  # ADDED: x-label for time series
-    ax2.set_ylabel(f'GIC {st.upper()}[A]')  # CHANGED: More appropriate label
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)    
-
-    
-    plt.tight_layout()
-    path = '/home/isaac/rutpy/gicsOutput/'
-    plt.savefig(f'{path}{st}_PDF_ {str(ini)[0:10]}_{str(fin)[0:10]}.V1.png', dpi=300)
-    plt.show()
-    
-    #tomando como base inicial sigma 2
-    
-    return popt[2]*2

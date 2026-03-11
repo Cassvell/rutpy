@@ -3,11 +3,11 @@ import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
 from gicdproc import  process_station_data, df_gic_pp
-from calc_daysdiff import calculate_days_difference
+from modules.calc_daysdiff import calculate_days_difference
 import matplotlib.pyplot as plt
 from gic_threshold import threshold
 from gic_diurnalbase import gic_diurnalbase
-from corr_offset import corr_offset
+from modules.corr_offset import corr_offset
 import os
 
 idate = sys.argv[1]
@@ -29,7 +29,7 @@ ndays = calculate_days_difference(idate, fdate)
 tot_data = (ndays+1)*1440
 
 
-stat = ['QRO','MZT', 'LAV',  'RMY']
+stat = ['LAV','QRO','MZT',   'RMY']
 #stat = ['MZT', 'QRO', 'RMY', 'MZT']
 #st = ['QRO', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
@@ -56,13 +56,14 @@ sys.exit('pruebas para leer pp')
 for i in stat:
     print(f'station:{i}')
     gic_st, T1TW, T2TW = process_station_data(idate, fdate, path, i, idx1, tot_data)
-
+ 
     if not gic_st.isnull().all():
 
         dict_gic[i] = {'gic' : gic_st, 'T1' : T1TW, 'T2' : T2TW}
         
         df_st = pd.DataFrame(dict_gic[i])   
-        #plt.plot()     
+        plt.plot()
+        plt.show()     
         df_st['gic'] = np.where((df_st['gic'] >= 400) | (df_st['gic'] <= -400), np.nan, df_st['gic'])
 
             
@@ -75,17 +76,14 @@ for i in stat:
 
         header = f"{'Datetime':>7}{'gic':>20}{'T1':>13}{'T2':>15}"
             #print(df_shifted.index)
-        
+        sys.exit('end')
         if df_shifted.isna().any().any():
             # Fill numeric columns with -999.999 and object columns with a string placeholder
             numeric_cols = df_shifted.select_dtypes(include=[np.number]).columns
             object_cols = df_shifted.select_dtypes(include=['object']).columns
         
-        #if len(numeric_cols) > 0:
-            #df_shifted[numeric_cols] = df_shifted[numeric_cols].fillna(999.9)       
-    
-        gic_dic[i] = {'gic' : df_shifted['gic'], 'T1' : df_shifted['T1'], 'T2' :  df_shifted['T2']}
-        #sys.exit('end')
+
+        
         for j in range(ndays):
             start_idx = j * 1440
             end_idx = (j + 1) * 1440

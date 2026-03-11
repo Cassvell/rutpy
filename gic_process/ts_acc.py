@@ -193,66 +193,6 @@ def dejump(x, tol):
     return jumps      
 
 #==============================================================================    
-
-def dejump2(x, thr = 2.5 ):
-    
-    """ Pretends to remove steps subtracting a constructed piecewice baseline """
-    # relleno los gaps nan con la mediana de los valores
-    m = np.nanmedian(x)    
-    idx = np.ravel(np.asarray(np.isnan(x)).nonzero())
-    
-    xp = x.copy()
-    xp[idx] = m 
-    dx = abs(np.diff(xp))
-    
-    #mask = np.logical_or(np.isnan(dx).nonzero(), dx >= thr)
-    idx = np.ravel(np.asarray(dx >= thr).nonzero())
-    idx += 1
-    
-    n=len(idx)-1
-    
-    #Descarto los spikes (escalones de ancho 1)   
-    if n > 1:
-
-        for j in range(len(idx)-1):
-            if (idx[j+1]-idx[j] == 1):
-                np.delete(idx, j)
-                j+=1
-            else:
-                j+=1
-            
-    n = len(idx)-1
-    
-    jumps = np.empty(len(x))
-    jumps[:] = np.nan
-    
-    m = np.nanmedian(x[:idx[0]])
-    jumps[:idx[0]] = m
-    
-    
-    if n < 0 :
-        xout = x
-    
-    else:    
-        for j in np.arange(1,n):
-            #if (abs(np.nanmean(x[idx[j-1]:idx[j]])-np.nanmean(x[idx[j]+1:idx[j+1]])) \
-             #   >= thr):
-            
-            u = x[idx[j-1]+1:idx[j]]
-            k = np.nanmedian(u)    
-            jumps[idx[j-1]+1:idx[j]] = k
-            #else:
-             #   u = x[idx[j-1]+1:idx[j+1]]
-             #   k = np.nanmedian(u)    
-             #   jumps[idx[j-1]+1:idx[j+1]] = k
-                
-    jumps[idx[-1]+1:] = np.nanmedian(x[idx[-1]:])
-        
-    xout = x-jumps
-    
-    return xout, jumps
-
-
 # ============================================================================= 
 
 def tsdetrend(y):

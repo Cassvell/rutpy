@@ -2,13 +2,15 @@ import sys
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-from gicdproc import  process_station_data, df_gic_pp, df_gic_processed, df_sym, df_dH_exp
-from calc_daysdiff import calculate_days_difference
 import matplotlib.pyplot as plt
-from gic_threshold import threshold
-from gic_diurnalbase import gic_diurnalbase
-from corr_offset import corr_offset
+from modules.corr_offset import corr_offset, detect_offset
 import os
+from timeit import default_timer as timer
+from modules.window_27 import window_27
+from gicdproc import  df_gic_pp, gic_qd
+from modules.threshold import threshold
+from modules.moving_window import hourly_IQR
+#from modules.threshold import threshold
 
 idate = sys.argv[1]
 fdate = sys.argv[2]
@@ -23,42 +25,94 @@ stat = ['LAV', 'QRO', 'RMY', 'MZT']
 path = f'/home/isaac/datos/gics_obs/'
 
 
-finaldate= datetime(fyear, fmonth,fday)
-nextday = finaldate+timedelta(days=1)
-nextday = str(nextday)[0:10]
-idx1 = pd.date_range(start = pd.Timestamp(idate+ ' 00:00:00'), \
-                          end = pd.Timestamp(fdate + ' 23:59:00'), freq='min')
-
-ndays = calculate_days_difference(idate, fdate)
-tot_data = (ndays+1)*1440
 
 
-dict_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
-pp_gic = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
-dict_qd = {'LAV': [], 'QRO': [], 'RMY': [], 'MZT': []}
 
-data = process_station_data(idate, fdate, path, 'MZT', idx1, tot_data)
+###############################################################################
+###############################################################################
+#ARGUMENTOS DE ENTRADA
+###############################################################################
+idate = sys.argv[1]# "formato(yyyymmdd)"
+fdate = sys.argv[2]
 
-for i in stat:
-    print(f'\n station: {i} \n')
-    data = df_gic_pp(idate, fdate, path, i)
-    data['gic'] = np.where((data['gic'] >= 400) | (data['gic'] <= -400), np.nan, data['gic'])
-    pp_gic[i] = data['gic']
-    if not data['gic'].isnull().all():
+start = timer()
 
-        gic_res, qd = gic_diurnalbase(data['gic'], idate, fdate, i.lower())    
-        #
-        dict_gic[i] = gic_res
-        dict_qd[i] = qd
+iwindows, med_windows, fwindows, nwindows= window_27(idate, fdate, 'date')
+
+dirpath = '/home/isaac/datos/gics_obs/'
+stat  = ['LAV', 'QRO', 'RMY', 'MZT']
+dir_path = f'/home/isaac/datos/gics_obs/qdl/'
+
+#PRIMERA COLUMNA: MODELO DE VARIACION DIURNA
+#SEGUNDA COLUMNA: VARIACION HORA A HORA
+#TERCERA COLUMNA: LINEA BASE DE LA VENTANA DE TIEMPO
+stat_dir_sq = {}
+stat_dir = {}
+amp_dir = {}
+baselines = {}
+
+for st in stat:
+    #print(f'{st}')
+    window_data = gic_qd(idate, fdate, dir_path, st, 'gic')
+    window_data = window_data.replace(999.9, np.nan)
+    stat_dir_sq[st] = window_data
+
+for st in stat:
+    data = df_gic_pp(idate, fdate, dirpath, st)
+    gic = data['gic']
+    stat_dir[st] = gic
+
+for w in range(nwindows):
+    print(f'Window {iwindows[w]} to {fwindows[w]}:')
+    idx_daily = pd.date_range(start = pd.Timestamp(iwindows[w]),  end = pd.Timestamp(fwindows[w]), freq='D')
+    for st in stat_dir:
+        print(f'{st}')
         
-    else:
-        # Create a 1-column DataFrame with idx1 as index, filled with NaN
-        nan_df = pd.DataFrame({i: np.full(len(idx1), np.nan)}, index=idx1)
-        dict_gic[i] = nan_df[i]  # or keep as DataFrame: dict_gic[i] = nan_df
+        #DIVIDIR LOS DATOS DE LAS 4 ESTACIONES EN SEGMENTOS DE 27 DIAS  
+        window_data = stat_dir[st][iwindows[w]:fwindows[w]]
+        window_tmp = stat_dir_sq[st][w*1440:(w+1)*1440]
         
-        # Also create similar for dict_qd if needed
-        dict_qd[i] = pd.DataFrame({i: np.full(len(idx1), np.nan)}, index=idx1)[i]
+        sq_gic = window_tmp.iloc[:,0]
+        baseline = window_tmp.iloc[:,2]
         
+        sq_gic_iterated = np.tile(sq_gic, 27)
+        baseline_iterated = np.tile(baseline, 27)
+        
+        
+        
+        if not np.all(np.isnan(window_data)):      
+            iqr_picks = hourly_IQR(window_data, 60, 0.7)
+
+            threshold_gic = threshold(iqr_picks,iwindows[w], fwindows[w], st, '2s')
+            
+            offset_idx = detect_offset(window_data, 10, 120, threshold_gic/2)
+
+            if not len(offset_idx) == 0:
+                corrected_data = corr_offset(window_data, offset_idx, 10-threshold_gic/2)
+                cleaned_data = corrected_data-sq_gic_iterated-baseline_iterated    
+            else:    
+                cleaned_data = window_data-sq_gic_iterated-baseline_iterated
+        
+        plt.plot(window_data.index, sq_gic_iterated)
+        plt.plot(window_data, 'k')
+        plt.plot(window_data.index, window_data-sq_gic_iterated-baseline_iterated, 'r', linewidth=3)
+        plt.show()
+        #sq_gic = stat_dir_sq[st][iwindows[w]:fwindows[w]]
+        if not np.all(np.isnan(window_data)):
+            #CALCULAR PICOS DE VARIACION IQR POR CADA HORA, CON UNA TOLERANCIA DE 30% DE GAPS 
+            d = 0
+            #corrected_data = window_data - sq_gic - monthly_baseline
+            
+            
+            
+        else:
+            print(f'no data form {st} during the time window')
+
+   
+end = timer()
+print(end - start) 
+
+sys.exit('termina HDTPM!!!')
         
         #plt.plot(gic_res, label=f'{i} GIC no Diurnal Base', alpha=0.7)
 fig, axes = plt.subplots(4, 2, figsize=(25, 20))
@@ -85,7 +139,7 @@ plt.tight_layout()
 plt.savefig(f'/home/isaac/rutpy/processed/gic_processed_{idate}_{fdate}.png', dpi=300)
 plt.close()
 #plt.show()
-#sys.exit('end of child process')
+sys.exit('end of child process')
 output_path = f'/home/isaac/datos/gics_obs/processed/{fyear}/'
 
 for i in stat:

@@ -34,6 +34,7 @@ def norm_model(dp2):
     popt, pcov = curve_fit(gaussian, bin_centers, frequencies, 
                         p0=[1, np.mean(dp2), np.std(dp2)])
     
+    #print(pcov)
     x_fit = np.linspace(min(bin_edges), max(bin_edges), 500)
     y_fit = gaussian(x_fit, *popt)  
     return x_fit, y_fit, popt
@@ -58,8 +59,12 @@ nwindows = ndata // window_len  # 16 ventanas
 time = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:59:00', freq='min')
 time_3h = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:59:00', freq=f'{int(window_len/60)}h')
         
+panel_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+label_idx = 0
 
 fig, axes = plt.subplots(4, 2, figsize=(12, 12))
+
+
 for pair_idx, (station1, station2) in enumerate(station_pairs):
 
     for col_idx, station in enumerate([station1, station2]):
@@ -90,27 +95,30 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
             label=r'$\mathrm{H_{PPEF}}$')
 
         ax.hist(dp2_2,density=True,bins=int(len(dp2_2) / 15),color='orange',histtype='stepfilled',alpha=0.5,
-            label=r'$\mathrm{H_{PPEF2}}$')
+            label=r'$\mathrm{H_{PPEF}^\prime}$')
 
         # =====================
         # Ajsute de Gaussianas
         # =====================
-        ax.plot(x1, y1, 'r-', lw=2,label=fr'$\mu={popt1[0]:.2f},\ \sigma={popt1[1]:.2f}$')
+        ax.plot(x1, y1, 'r-', lw=2,label=fr'$\mu={popt1[1]:.2f},\ \sigma={popt1[2]:.2f}$')
 
-        ax.plot(x2, y2, 'r--', lw=2,label=fr'$\mu={popt2[0]:.2f},\ \sigma={popt2[1]:.2f}$')
+        ax.plot(x2, y2, 'r--', lw=2,label=fr'$\mu={popt2[1]:.2f},\ \sigma={popt2[2]:.2f}$')
 
-        # =====================
-        # 6. Estética
-        # =====================
-        ax.set_xlim(-75, 75)
-        ax.set_ylim(0, 0.1)
+        ax.text(0.03, 0.95, f'({panel_labels[label_idx]})', transform=ax.transAxes,
+        fontsize=14, fontweight='bold', va='top', ha='left')
+        label_idx += 1
+
+        ax.set_xlim(-40, 40)
+        ax.set_ylim(0, 0.25)
         ax.grid(True, alpha=0.3)
         ax.set_title(station.upper(), fontsize=15)
-        ax.set_xlabel('Magnitude [nT]', fontsize=14)
+        
         if col_idx == 0:
             ax.set_ylabel('Probability Density', fontsize=14)
-        ax.legend(fontsize=11)
 
+        ax.legend(fontsize=11)
+    
+ax.set_xlabel('Magnitude [nT]', fontsize=14)
     # Etiqueta del par (lado izquierdo)
     #axes[pair_idx, 0].annotate(f'Pair {pair_idx + 1}',xy=(-0.35, 0.5),xycoords='axes fraction',fontsize=14,
     #    rotation=90,va='center')
@@ -121,33 +129,25 @@ plt.savefig(f'{path2}HPPEFdist_{idate}_{fdate}.png', dpi=300)
 plt.close()
 
 fig, axes = plt.subplots(4, 2, figsize=(12, 12))
+label_idx = 0
 for pair_idx, (station1, station2) in enumerate(station_pairs):
 
     for col_idx, station in enumerate([station1, station2]):
 
         ax = axes[pair_idx, col_idx]
-
-        # =====================
-        #Leer archivo
-        # =====================
         df = pd.read_csv(f'{path}{station}_{idate}_{fdate}.dat',header=None,sep='\\s+')
-
-        # =====================
-        # Series (columnas 2 y 3)
-        # =====================
         dp2_1 = df.iloc[:, 2].dropna().values
         dp2_2 = df.iloc[:, 3].dropna().values
-
-
-        
         
         ax.plot(time, dp2_1,color='navy',alpha=0.8,label=r'$\mathrm{H_{PPEF}}$')
 
         ax.plot(time,dp2_2,color='orange',alpha=0.8,label=r'$\mathrm{H_{PPEF}^\prime}$')
 
-        # =====================
-        # 6. Estética
-        # =====================
+
+        ax.text(0.03, 0.95, f'({panel_labels[label_idx]})', transform=ax.transAxes,
+        fontsize=14, fontweight='bold', va='top', ha='left')
+        label_idx += 1
+    
         ax.set_xlim(time[0], time[-1])
         #ax.set_ylim(0, 0.1)
         ax.grid(True, alpha=0.3)

@@ -7,7 +7,7 @@ import os.path
 import os
 import numpy as np
 from datetime import datetime, timedelta
-from calc_daysdiff import calculate_days_difference
+from modules.calc_daysdiff import calculate_days_difference
 from ts_acc import mz_score
 from gic_threshold import threshold, threshold_sigma
 import matplotlib.dates as mdates
@@ -39,7 +39,7 @@ module_dir = os.path.abspath('/home/isaac/rutpy')
 sys.path.append(module_dir)
 
 # Now you can import the module
-from pick_range import on_move, on_click
+from modules.pick_range import on_move, on_click
 
         
 idate = sys.argv[1]

@@ -1,95 +1,21 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
 import sys
 import os
-from scipy.stats import genpareto, kstest #anderson
-import kneed as kn
-from lmoments3 import distr
-from scipy.optimize import curve_fit
+import calendar
 from scipy.stats import norm
-from scipy.stats import halfnorm, rayleigh
-import datetime
-import time
 import matplotlib.dates as mdates
-import aacgmv2
-module_dir = os.path.abspath('/home/isaac/rutpy/mdataprocess') 
-sys.path.append(module_dir)
-
-# Now you can import the module
-import magdata_processing 
-from threshold import max_IQR
-#from magdata_processing import mlt
-from night_time import night_time
+from modules.obs_info import obs_mlon, obs_mlt, compute_mlt_ts
 
 idate = sys.argv[1]# "formato(yyyy-mm-dd)"
 fdate = sys.argv[2]
-
-def obs_mlon(obs):
-    
-    data = []
-    
-    for i in obs:
-        #print(f'Observatorio: {i.lower()}')
-        if i.lower() == 'teo':
-            net = 'regmex'
-        else:
-            net = 'intermagnet'
-        
-        info = night_time(net, i.lower())
-        mlon = float(info[9])     # station magnetic longitude
-        hemi = info[10]
-
-        if hemi == 'W':
-            mlon = -mlon 
-        #print(i.lower(), mlon)
-        data.append(mlon)
-    return(data)
-
-def obs_mlt(obs_mlon, dt):
-    mlt = aacgmv2.convert_mlt(obs_mlon, dt, m2a=False) 
-    
-    return(mlt)
-
-def compute_mlt_ts(obs_mlon, time_m):
-    """
-    Returns MLT in hours (0–24) for a station over time_m
-    """
-    mlt_edges = []
-
-    index=[0,-1]
-    for j in range(2):
-        tmp_mlt = aacgmv2.convert_mlt(obs_mlon, time_m[j], m2a=False)        
-        duration = datetime.timedelta(hours=tmp_mlt.item())
-        total_minutes_td = duration.total_seconds() / 60
-        seconds = total_minutes_td * 60
-        time_format = time.strftime("%H:%M:%S", time.gmtime(seconds))
-        mlt_edges.append(time_format)
-    
-    idate2 = time_d[0]
-    fdate2 = time_d[1] + datetime.timedelta(days=1)
-    if datetime.datetime.strptime(mlt_edges[0], "%H:%M:%S").time() >= datetime.time(12, 0):
-        idate2 = time_d[0] - datetime.timedelta(days=1)
-        fdate2 = fdate2 - datetime.timedelta(days=1)      
-    else:
-        idate2 = idate2
-        fdate2 = fdate2
-
-    start_date_str = f"{idate2.year}-{idate2.month:02d}-{idate2.day:02d} {mlt_edges[0]}"
-    end_date_str = f"{fdate2.year}-{fdate2.month:02d}-{fdate2.day:02d} {mlt_edges[-1]}"
-    # Crear el date_range
-
-    mlt_series = pd.date_range(start=start_date_str, end=end_date_str, freq='min')
-
-    mlt_series = mlt_series[0:-1]
-    return mlt_series
 
 #sector = ['TW1', 'TW2']
 #####################################################################################################################
 #####################################################################################################################
 #Defining magnetic stations/Observatories
-
+path_times = '/home/isaac/longitudinal_studio/'
 path2 = '/home/isaac/longitudinal_studio/fig/ppef_dist/'
 st_sect = ['teo', 'jai',  'sjg', 'hon', 'gui', 'kak', 'bmt', 'tam']
 station_pairs = [('teo', 'jai'), ('sjg', 'bmt'), ('gui', 'kak'), ('tam', 'hon')]
@@ -108,8 +34,15 @@ time_m = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:59:00', freq=
 time_h = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:00:00', freq='h')
 time_d = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:00:00', freq='D')
 
-target_times = [pd.Timestamp('2015-03-17 13:57:00'), pd.Timestamp('2015-03-17 16:42:00'), 
-                pd.Timestamp('2015-03-17 23:40:00')]
+df_times = pd.read_csv(f'{path_times}{idate}_{fdate}.txt', header = None)
+point_times = df_times[0].tolist()
+target_times = []
+for t in point_times:
+    tmp = pd.Timestamp(t)
+    target_times.append(tmp)
+    
+#target_times = [pd.Timestamp(f'{idate} 13:57:00'), pd.Timestamp(f'{idate} 16:42:00'), 
+#                pd.Timestamp(f'{idate} 19:18:00'), pd.Timestamp(f'{idate} 23:40:00')]
 
 mlon_data = obs_mlon(st_sect)
 mlt_targets = {st: [] for st in st_sect}
@@ -130,12 +63,14 @@ fig, axes = plt.subplots(6, 1, figsize=(16, 20), sharex=False)
 
 df_asy = pd.read_csv(f'{path}{st_sect[0]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
 ASYH = df_asy.iloc[:, 1]
+dt_minutes = 1 
+dASYH_dt = np.gradient(ASYH, dt_minutes)
 
 axes[0].plot(time_m, ASYH, color='darkorange', linewidth=2)
 
 for t in target_times:
     idx = time_m.get_loc(t)    
-    axes[0].text(time_m[idx], 5, time_m[idx].strftime('%H:%M'),color='black',fontsize=18,ha='center',va='bottom')
+    #axes[0].text(time_m[idx], 5, time_m[idx].strftime('%H:%M'),color='black',fontsize=18,ha='center',va='bottom')
 
     axes[0].plot(time_m[idx],ASYH[idx],marker='o',markersize=10,color='black',markeredgecolor='black',zorder=5)
 
@@ -167,8 +102,13 @@ for st in range(len(st_sect)):
     mlt_hours = mlt_hours
     
     UT_bin = (UT_hours * 60).astype(int)      # minutos UT
-    MLT_bin = (np.array(mlt_hours) * 60).astype(int)        
-    
+    MLT_bin = (np.array(mlt_hours) * 60).astype(int)   
+    for t in target_times:
+        idx = time_m.get_loc(t)
+        #print(f'Time: {t}')
+        #print(f'H_I {st_sect[st].upper()} = {H_I[idx]}')
+
+    #sys.exit('end')
     df_station = pd.DataFrame({
     'UT_min': UT_bin,
     'MLT_min': MLT_bin,
@@ -238,13 +178,12 @@ cbar.ax.tick_params(left=False, right=False)
 cbar.set_label(r'$H_I$ [nT]', fontsize=20)
 cbar.ax.yaxis.set_label_position("left")
 cbar.ax.tick_params(labelsize=20)
-    
-xticks_hours = np.arange(0, 49, 6)
 
-xtick_labels = [
-    time_m[int(i / 48 * (len(time_m) - 1))].strftime('%H:%M')
-    for i in xticks_hours
-]
+    
+xticks_times = pd.date_range(start=time_m[0], end=time_m[-1], freq='6h')
+xticks_hours = ( xticks_times.hour + xticks_times.minute / 60 + (xticks_times.day - time_m[0].day) * 24 )
+
+xtick_labels = [t.strftime('%H:%M') for t in xticks_times]
 
 axes[-1].set_xticks(xticks_hours)
 axes[-1].set_xticklabels(xtick_labels, fontsize=20)
@@ -257,21 +196,14 @@ for i in range(len(axes)):
 
         if i < len(axes) - 1:
             # Subplots de series temporales
-            axes[i].axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{idate} 15:10:00'), 
+            axes[i].axvspan(pd.Timestamp(f'{idate} 13:07:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
               alpha=0.3, color='lightgray')
-            axes[i].axvspan(pd.Timestamp(f'{idate} 16:10:00'), pd.Timestamp(f'{idate} 18:00:00'), 
-                        alpha=0.3, color='lightgray')
-            axes[i].axvspan(pd.Timestamp(f'{fdate} 14:10:00'), pd.Timestamp(f'{fdate} 16:10:00'), 
-                        alpha=0.3, color='lightgray')
-            axes[i].axvspan(pd.Timestamp(f'{idate} 23:00:00'), pd.Timestamp(f'{fdate} 00:30:00'), 
-                        alpha=0.3, color='lightgray') 
             
             axes[i].axvline(x=ts, color='black', linestyle='--', linewidth=1.5)
         else:
             # Último subplot: mapa UT–MLT
             ut_hour = ts.hour + ts.minute / 60.0
             axes[i].axvline(x=ut_hour, color='black', linestyle='--', linewidth=1.5)
-
 
 # Loop through station pairs (panels 1-4)
 for pair_idx, (station1, station2) in enumerate(station_pairs):
@@ -281,7 +213,7 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     df1 = pd.read_csv(f'{path}{station1}_{idate}_{fdate}.dat', header=None, sep='\\s+')
     H_I1 = df1.iloc[:, 0]
 
-    
+    ASYH = df1.iloc[:, 1]
     # Load and plot second station
     df2 = pd.read_csv(f'{path}{station2}_{idate}_{fdate}.dat', header=None, sep='\\s+')
     H_I2 = df2.iloc[:, 0]
@@ -296,7 +228,8 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     #important hours
         
     ax.plot(time_m, H_I1, color='magenta', linewidth=2, label=rf'{station1.upper()}, $\phi_m=$ {mlon_data[0]}°')
-    ax.plot(time_m, H_I2, color='green', linewidth=2, label=f'{station2.upper()}, $\phi_m=$ {mlon_data[1]}°')
+    ax.plot(time_m, H_I2, color='green', linewidth=2, label=rf'{station2.upper()}, $\phi_m=$ {mlon_data[1]}°')
+    
     
     yval1 = 0
     yval2 = 0
@@ -305,9 +238,11 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
 
         ax.plot(time_m[idx],H_I1[idx],marker='o',markersize=10,
                 color='magenta',markeredgecolor='black',zorder=5)
+        
+        print(f'H_I {station1.upper()} = {H_I1[idx]}')
         ax.plot(time_m[idx],H_I2[idx],marker='o',markersize=10,
                 color='green',markeredgecolor='black',zorder=5)
-        
+        print(f'H_I {station2.upper()} = {H_I2[idx]}\n')
         if H_I1[idx] > 0 and H_I1[idx] > H_I2[idx]:
             yval1 = 110
             yval2 = -170
@@ -315,10 +250,10 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
             yval1 = -170 
             yval2 = 110
             
-        ax.text(time_m[idx], yval1, mlt1[idx].strftime('%H:%M'),
-                color='magenta',fontsize=18,ha='center',va='bottom')
-        ax.text(time_m[idx], yval2,mlt2[idx].strftime('%H:%M'),
-                color='green',fontsize=18,ha='center',va='bottom')
+        #ax.text(time_m[idx], yval1, mlt1[idx].strftime('%H:%M'),
+        #        color='magenta',fontsize=18,ha='center',va='bottom')
+        #ax.text(time_m[idx], yval2,mlt2[idx].strftime('%H:%M'),
+        #        color='green',fontsize=18,ha='center',va='bottom')
         
     # Set y-limits and labels
     ax.set_xlim(time_m[0], time_m[-1])
@@ -329,22 +264,20 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     ax.legend(loc='upper right', fontsize=20)
     ax.xaxis.set_visible(False)    
 
-#vertical_times = ['04:30:00', '07:00:00', '22:47:00']
-for start, end in [(f'{idate} 02:40:00', f'{idate} 05:10:00'), (f'{idate} 05:50:00', f'{idate} 22:30:00')]: 
-    # Convertir a números de matplotlib (float) 
-    start_num = mdates.date2num(pd.Timestamp(start)) 
-    end_num = mdates.date2num(pd.Timestamp(end)) # Usar transform de datos a coordenadas de figura 
-    trans = axes[0].get_xaxis_transform() # transforma x en datos, y en axes 
-    start_fig = fig.transFigure.inverted().transform(trans.transform((start_num, 1))) 
-    end_fig = fig.transFigure.inverted().transform(trans.transform((end_num, 1))) # Dibujar línea horizontal en coordenadas de figura 
-    
-    fig.lines.append(plt.Line2D([start_fig[0], end_fig[0]], [0.935, 0.935], 
-                                transform=fig.transFigure, color='navy', lw=3, ls='-'))
+# Si las soluciones anteriores no funcionan, puedes crear un diccionario manual
+month_names_en = {
+    1: "January", 2: "February", 3: "March", 4: "April",
+    5: "May", 6: "June", 7: "July", 8: "August",
+    9: "September", 10: "October", 11: "November", 12: "December"
+}
 
-fig.text(0.19, 0.95, 'SSC', ha='center', va='top', fontsize=18, fontweight='bold')
-fig.text(0.34, 0.95, 'MP', ha='center', va='top', fontsize=18, fontweight='bold')
 
-fig.text(0.5, 0.99, 'March 17 & 18, 2015', ha='center', va='top', fontsize=30, fontweight='bold')
+start = time_m[0]
+end = time_m[-1]
+month_name = month_names_en[start.month]
+year = start.strftime("%Y")
+day_range = f"{start.day} - {end.day}"
+fig.text(0.5, 0.99, f"{month_name} {day_range}, {year}", ha='center', va='top', fontsize=30, fontweight='bold')
 
 
 plt.subplots_adjust(hspace=0.1, bottom=0.05, top=0.93, right=0.95, left=0.084)

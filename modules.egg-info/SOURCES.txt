@@ -1,0 +1,11 @@
+setup.py
+modules/__init__.py
+modules/diurnal_variation.py
+modules/moving_window.py
+modules/obs_info.py
+modules/pick_range.py
+modules/threshold.py
+modules.egg-info/PKG-INFO
+modules.egg-info/SOURCES.txt
+modules.egg-info/dependency_links.txt
+modules.egg-info/top_level.txt

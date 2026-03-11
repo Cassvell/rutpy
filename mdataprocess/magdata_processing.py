@@ -11,12 +11,12 @@ from scipy.interpolate import interp1d
 #from scipy.interpolate import NearestNDInterpolator
 import matplotlib.pyplot as plt
 from scipy.signal import medfilt
-from lowpass_filter import aphase, dcomb
+from modules.lowpass_filter import aphase, dcomb
 from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
-from threshold import get_threshold, max_IQR, med_IQR
+from modules.threshold import get_threshold, max_IQR, med_IQR
 from plots import plot_GPD, plot_detrend, plot_qdl ,plot_process
 #from Ffitting import fit_data
-from night_time import night_time
+from modules.obs_info import obs_info
 import os
 from scipy import fftpack, signal
 ###############################################################################

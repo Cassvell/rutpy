@@ -3,21 +3,20 @@ import sys
 import numpy as np
 #from datetime import datetime, timedelta
 #import pandas as pd
-from gicdproc import  process_station_data
-from calc_daysdiff import calculate_days_difference
+#from gicdproc import  process_station_data
+#from module.calc_daysdiff import calculate_days_difference
 import matplotlib.pyplot as plt
-from gic_threshold import threshold
+#from gic_threshold import threshold
 
 
-
-def corr_offset(data, threshold, window_size, stddev):
- # Size of the moving window in minutes
+def detect_offset(data, threshold, window_size, stddev):
     ndata = len(data)
     crossing_indices = []
     median_values = []
     resampled_data = int(ndata/window_size)
     
     threshold_level = threshold - stddev  # Adjust threshold if needed
+    
     for i in range(resampled_data):
         window = data[i*window_size:(i + 1)*window_size]
         
@@ -42,8 +41,16 @@ def corr_offset(data, threshold, window_size, stddev):
             original_index = i * window_size
             crossing_indices.append(original_index)
 
+    return crossing_indices
+
+
+def corr_offset(data, crossing_indices, threshold_level):
+ # Size of the moving window in minutes
+
         
     data_corr_offset = data.copy()
+
+    
     if crossing_indices:   
         c = [0,0]
             
@@ -78,12 +85,9 @@ def corr_offset(data, threshold, window_size, stddev):
                     start_idx = idx
                     end_idx = idx+1
                     sampled_data = data[start_idx:end_idx]
-                    median_w = np.nanmedian(sampled_data)
-                    data_corr_offset[start_idx:end_idx] = sampled_data - median_w
-            
-    
-                    
-
+                    median_w = np.nanmedian(sampled_data)                   
+                    data_corr_offset[start_idx:end_idx] = sampled_data - median_w 
+      
         #caso si, el numero de indices es impar y el final de la ventana muestra offset alterado
         elif c ==[0,1]:
             

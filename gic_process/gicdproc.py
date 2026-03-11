@@ -32,7 +32,7 @@ from scipy import fftpack
 from scipy import signal
 from ts_acc import fixer, mz_score, despike, dejump
 from datetime import datetime, timedelta
-from season_preprocess import window_27
+from modules.window_27 import window_27
 
 from get_files import get_files, list_names, get_file
 
@@ -182,7 +182,7 @@ def process_station_data(i_date, f_date, path2, stat, idx1, tot_data):
         
         SG2_tmp = f"{path2}{year}/{stat}/daily/GIC_{date_str}_{stat}.dat"
         SG2.append(SG2_tmp)
-       # print(SG2)
+        #sprint(SG2)
         #if os.path.isfile(SG2_tmp):
          #   print('exist')
  
@@ -369,7 +369,7 @@ def df_gic_pp(date1, date2, dir_path, stat):
 
    # remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
-
+    #print(list_fnames)
     dfs_c = []
     column_names = ['Datetime', 'gic', 'T1', 'T2']
     for i in range(len(list_fnames)):      
@@ -386,7 +386,12 @@ def df_gic_pp(date1, date2, dir_path, stat):
 
                 # Read data
                 #column_names_modified = ['date', 'time'] + column_names[1:]
-                df_c = pd.read_csv(file_path, header=0, sep='\t')
+                if not stat == 'MZT':
+                #
+                    df_c = pd.read_csv(file_path, header=0, sep='\t')
+                    
+                else:
+                    df_c = pd.read_csv(file_path, header=0, sep=',')    
                 #print(df_c)
                 #sys.exit('end')
                 # Create datetime index
@@ -402,39 +407,37 @@ def df_gic_pp(date1, date2, dir_path, stat):
                 df_c = df_c.set_index(df_c['Datetime'])
                 df_c = df_c[~df_c.index.duplicated(keep='first')]
                 df_c = df_c.replace(999.9, np.nan)
-                
-            else: 
-                # Create consistent empty DataFrame
+            else:
                 tmp_idx = idx1[i*1440: (i+1)*1440]
-                # Use the actual column structure from your data
-                empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
+                empty_data = {col: np.full(1440, np.nan) for col in column_names[0:]}
+                empty_data['Datetime'] = tmp_idx
                 df_c = pd.DataFrame(empty_data)
                 df_c = df_c.set_index(tmp_idx)
-
         except Exception as e:
-            print(f"Error processing file {list_fnames[i]}: {str(e)}")
+            print(f"Not found file {list_fnames[i]}: {str(e)}")
             # Create empty DataFrame on error too
             tmp_idx = idx1[i*1440: (i+1)*1440]
-            empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
+            empty_data = {col: np.full(1440, np.nan) for col in column_names[0:]}
+            empty_data['Datetime'] = tmp_idx
             df_c = pd.DataFrame(empty_data)
             df_c = df_c.set_index(tmp_idx)
     
         dfs_c.append(df_c)     
 
     # Final processing
-    df = pd.concat(dfs_c, axis=0)       
+    df = pd.concat(dfs_c, axis=0)      
     return(df)
 
-def gic_qd(date1, date2, dir_path, stat):
-    iwindows, fwindows = window_27(date1, date2)
+def gic_qd(date1, date2, dir_path, stat, type_data):
+    iwindows, medwindows, fwindows, nwindows = window_27(date1, date2, 'doy')
     dfs_c = []
-    for i in range(len(iwindows)):
-        tmp_wname = f'{dir_path}{stat}/{stat.lower()}_{iwindows[i]}_{fwindows[i]}.qdl.dat'
+    for i in range(nwindows):
+        tmp_wname = f'{dir_path}{stat}/{stat.lower()}_{iwindows[i]}_{fwindows[i]}.qdl.{type_data}.dat'
         file_path = os.path.join(tmp_wname)
         if os.path.isfile(file_path):
-            df_c = pd.read_csv(tmp_wname, header=None, sep='\\s+')
+            df_c = pd.read_csv(tmp_wname, header=None, sep=',')
         else:
-            df_c = pd.DataFrame(np.full((1440, 2), np.nan))
+            df_c = pd.DataFrame(np.full((1440, 3), np.nan))
         
         dfs_c.append(df_c)
     df = pd.concat(dfs_c, axis=0, ignore_index=True)

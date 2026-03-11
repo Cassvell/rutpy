@@ -14,7 +14,7 @@ import sys
 import pandas as pd
 from aux_time_DF import index_gen, convert_date
 from magnetic_datstruct import get_dataframe
-from night_time import night_time
+from modules.obs_info import night_time
 '''
 
 st= sys.argv[1]

@@ -62,12 +62,13 @@ if net == 'regmex':
         elif data_class == 'raw':
             #if st == 'teo' or st == 'jur':
             fname = f"{st}{new_name}rK.min"
-               
+            if not os.path.isfile(path+fname):
+                fname = f"{st}{new_name}rmin.min"
             #elif st == 'coe' or st == 'itu':
             #    fname = f"{st}{day}{month}.{year}m"
        # print(path+fname)
-        fname2 = st+'_'+new_name+'M.dat'
-        fname3 = st+'_'+new_name+'M_XYZ.dat'
+        fname2 = st+'_'+new_name+'m.dat'
+        fname3 = st+'_'+new_name+'m_XYZ.dat'
         filenames.append(fname)
         filenames_out.append(fname2)
         filenames_out2.append(fname3)
@@ -94,63 +95,63 @@ else:
 magdata = get_dataframe(filenames, st, data_class,path, idx, dates, net)
 #magdata = get_dataframe(filenames, path, idx, dates, net)
 H = magdata['H']
-X = magdata['X']
-Y = magdata['Y']
+#X = magdata['X']
+#Y = magdata['Y']
 Z = magdata['Z']
 D = magdata['D']
-I = magdata['I']
+#I = magdata['I']
 
 
-base_lineX = base_line(X, net, st, '2s')
-base_lineY = base_line(Y, net, st, '2s')
-#baseline_curve = base_line(H, net, st, '2s')
+#base_lineX = base_line(X, net, st, '2s')
+#base_lineY = base_line(Y, net, st, '2s')
+baseline_curve = base_line(H, net, st, '2s')
 base_lineZ = base_line(Z, net, st, '2s')
-#base_lineD = base_line(D, net, st, '2s')
+base_lineD = base_line(D, net, st, '2s')
 
 
-#D_detrend = D-base_lineD
-#H_detrend = H-baseline_curve
-X_detrend = X-base_lineX
-Y_detrend = Y-base_lineY
+D_detrend = D-base_lineD
+H_detrend = H-baseline_curve
+#X_detrend = X-base_lineX
+#Y_detrend = Y-base_lineY
 Z_detrend = Z-base_lineZ
 #D_detrend = D-base_lineD
 
 #diurnal base line
 
-#diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+diurnal_baseline, offset = get_diurnalvar(H_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
 diurnal_baselineZ, offsetZ = get_diurnalvar(Z_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
-#diurnal_baselineD, offsetD = get_diurnalvar(D_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
-diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
-diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+diurnal_baselineD, offsetD = get_diurnalvar(D_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+#diurnal_baselineX, offsetX = get_diurnalvar(X_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
+#diurnal_baselineY, offsetY = get_diurnalvar(Y_detrend, idx_daily, net, st, qd_method='qd5', threshold_method='2s')
 
 H_raw = H
 Z_raw = Z
 D_raw = D
-X_raw = X
-Y_raw = Y
+#X_raw = X
+#Y_raw = Y
 
-#D = D_detrend - diurnal_baselineD
+D = D_detrend - diurnal_baselineD
 Z = Z_detrend - diurnal_baselineZ
-#H = H_detrend-diurnal_baseline
-X = X_detrend - diurnal_baselineX
-Y = Y_detrend - diurnal_baselineY
+H = H_detrend-diurnal_baseline
+#X = X_detrend - diurnal_baselineX
+#Y = Y_detrend - diurnal_baselineY
 
 
 
 
 
-#H_noff1 = H-offset
-X_noff1 = X-offsetX
-Y_noff1 = Y-offsetY
+H_noff1 = H-offset
+#X_noff1 = X-offsetX
+#Y_noff1 = Y-offsetY
 Z_noff1 = Z-offsetZ
-#D_noff1 = D-offsetD
+D_noff1 = D-offsetD
 
 #sys.exit('end of the child process')
 dst = []
-#hr = int(len(H)/60)
-#for i in range(hr):
-#    tmp_h = np.nanmedian(H_noff1[i*60:(i+1)*60])
-#    dst.append(tmp_h)
+hr = int(len(H)/60)
+for i in range(hr):
+    tmp_h = np.nanmedian(H_noff1[i*60:(i+1)*60])
+    dst.append(tmp_h)
 
 
 def hourly(data):
@@ -162,12 +163,12 @@ def hourly(data):
     
     return hourly_data
 
-#H_hr = hourly(H_noff1)
+H_hr = hourly(H_noff1)
 Z_hr = hourly(Z_noff1)
-#D_hr = hourly(D_noff1)
+D_hr = hourly(D_noff1)
 
-X_hr = hourly(X_noff1)
-Y_hr = hourly(Y_noff1)
+#X_hr = hourly(X_noff1)
+#Y_hr = hourly(Y_noff1)
 
 #plt.plot(idx, Z_raw, color='k')
 #plt.plot(idx, base_lineZ, color = 'r')
@@ -181,13 +182,13 @@ Y_hr = hourly(Y_noff1)
 
 #
     
-#plot_process(H, H_raw, H_detrend, H_noff1, H_hr, baseline_curve, diurnal_baseline, st, idx_hr, 'H')
-#plot_process(D, D_raw, D_detrend, D_noff1, D_hr, base_lineD, diurnal_baselineD, st, idx_hr, 'D')
-plot_process(X, X_raw, X_detrend, X_noff1, X_hr, base_lineX, diurnal_baselineX, st, idx_hr, 'X')
-plot_process(Y, Y_raw, Y_detrend, Y_noff1, Y_hr, base_lineY, diurnal_baselineY, st, idx_hr, 'Y')
+plot_process(H, H_raw, H_detrend, H_noff1, H_hr, baseline_curve, diurnal_baseline, st, idx_hr, 'H')
+plot_process(D, D_raw, D_detrend, D_noff1, D_hr, base_lineD, diurnal_baselineD, st, idx_hr, 'D')
+#plot_process(X, X_raw, X_detrend, X_noff1, X_hr, base_lineX, diurnal_baselineX, st, idx_hr, 'X')
+#plot_process(Y, Y_raw, Y_detrend, Y_noff1, Y_hr, base_lineY, diurnal_baselineY, st, idx_hr, 'Y')
 plot_process(Z, Z_raw, Z_detrend, Z_noff1, Z_hr, base_lineZ, diurnal_baselineZ, st, idx_hr, 'Z')
 #sys.exit('end of test')
-format = 'XYZ'
+format = 'HDZ'
 if format =='XYZ':
     X = X_noff1+base_lineX+diurnal_baselineX
     Y = Y_noff1+base_lineY+diurnal_baselineY
@@ -210,7 +211,7 @@ if format =='XYZ':
     print(f"Saved: {full_path}")
 
 
-'''
+
 if format =='HDZ':
     H = H_noff1+baseline_curve+diurnal_baseline
     D = D_noff1+base_lineD+diurnal_baselineD
@@ -240,7 +241,7 @@ if format =='HDZ':
     header = f"{'H':>7}{'D':>14}{'Z':>13}{'Hbase':>12}{'Dbase':>10}{'Zbase':>12}{'HSQ':>8}{'DSQ':>10}{'ZSQ':>12}"
 
     # Define path
-    path = f"/home/isaac/datos/{net}/{st}/experiment_{st}/"  
+    path = f"/home/isaac/datos/{net}/{st}/minV2/"  
     os.makedirs(path, exist_ok=True)  # Creates directory if it does not exist
 
     # Iterate over daily indexes
@@ -271,4 +272,3 @@ if format =='HDZ':
                 f.write(line)
 
         print(f"Saved: {full_path}")
-'''

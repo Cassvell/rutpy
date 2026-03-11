@@ -1,66 +1,61 @@
+import sys
 import pandas as pd
 import numpy as np
-import sys
-from calc_daysdiff import calculate_days_difference
 #from Ffitting import fit_data
 import os
-from scipy import fftpack, signal
-from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import h5py
-
-import subprocess
-
-
+from timeit import default_timer as timer
+from modules.window_27 import window_27
+from gicdproc import  df_gic_pp
+from modules.threshold import threshold
+from modules.moving_window import hourly_IQR, max_IQR, med_IQR
+from modules.diurnal_variation import diurnal_variation_model
 
 ###############################################################################
 ###############################################################################
 #ARGUMENTOS DE ENTRADA
 ###############################################################################
-#idate = sys.argv[1]# "formato(yyyymmdd)"
-#fdate = sys.argv[2]
+idate = sys.argv[1]# "formato(yyyymmdd)"
+fdate = sys.argv[2]
 
-def window_27(idate, fdate):
-    ndays = calculate_days_difference(idate, fdate)
+start = timer()
+dirpath = '/home/isaac/datos/gics_obs/'
+iwindows, med_windows, fwindows, nwindows= window_27(idate, fdate, 'date')
 
-    idate = datetime.strptime(idate + ' 00:00:00', '%Y%m%d %H:%M:%S')
-    fdate = datetime.strptime(fdate + ' 23:59:00', '%Y%m%d %H:%M:%S')
+stat = ['LAV', 'QRO', 'RMY', 'MZT']
 
-    nwindows = int(ndays/27)
-    iwindows = []
-    fwindows = []
-    for w in range(nwindows):
-        window_start = idate + timedelta(days=w * 27)
-        window_end = window_start + timedelta(days=26, hours=23, minutes=59)
-        
-        if window_end > fdate:
-            window_end = fdate
-        
-        doi_start = window_start.timetuple().tm_yday
-        doi_end = window_end.timetuple().tm_yday
-        year_start = window_start.year
-        year_end = window_end.year
-        
-        #print(f'Window {w+1}: {year_start:04d}-{doi_start:03d} to {year_end:04d}-{doi_end:03d}')
-        tmp_idate = f"{year_start:04d}-{doi_start}"
-        tmp_fdate = f"{year_end:04d}-{doi_end}"
-        
-        
-        
-        
-        iwindows.append(tmp_idate)
-        fwindows.append(tmp_fdate)
-    return iwindows, fwindows
-    #print(f'\n Window {w+1}: {int(tmp_idate)} to {int(tmp_fdate)} \n')
-    #subprocess.run(['python', 'gic_process.py', tmp_idate, tmp_fdate])
+ndays=27
+stat_dir = {}
+#LEER TODOS LOS DATOS DISPONIBLES ENTRE FECHA INICIAL Y FECHA FINAL Y ALMACENARLOS EN UN DIRECTORIO
+for st in stat:
+    data = df_gic_pp(idate, fdate, dirpath, st)
+    gic = data['gic']
+    stat_dir[st] = gic
     
-###############################################################################
-###############################################################################
-#CALLING THE DATAFRAME IN FUNCTION OF TIME WINDOW
-###############################################################################
-###############################################################################
-#idx = pd.date_range(start = pd.Timestamp(str(idate)), \
-#                        end = pd.Timestamp(str(fdate)), freq='T')
-#idx_daily = pd.date_range(start = pd.Timestamp(str(idate)), \
-#                        end = pd.Timestamp(str(fdate)), freq='D')                        
-#fw_dates = []
+  
+for w in range(nwindows):
+    print(f'Window {iwindows[w]} to {fwindows[w]}:')
+    idx_daily = pd.date_range(start = pd.Timestamp(iwindows[w]),  end = pd.Timestamp(fwindows[w]), freq='D')
+    for st in stat_dir:
+        print(f'{st}')
+        
+        #DIVIDIR LOS DATOS DE LAS 4 ESTACIONES EN SEGMENTOS DE 27 DIAS  
+        window_data = stat_dir[st][iwindows[w]:fwindows[w]]
+
+        if not np.all(np.isnan(window_data)):
+            #CALCULAR PICOS DE VARIACION IQR POR CADA HORA, CON UNA TOLERANCIA DE 30% DE GAPS
+            iqr_picks = hourly_IQR(window_data, 60, 0.7)
+            threshold_gic = threshold(iqr_picks, iwindows[w], fwindows[w], st, '2s')
+            sq_gic, monthly_baseline = diurnal_variation_model(window_data, idx_daily, 10, st.lower(), 'experimental', threshold_gic, 'gic')
+            #corrected_data = window_data - sq_gic - monthly_baseline
+            
+            
+            
+        else:
+            print(f'no data form {st} during the time window')
+end = timer()
+print(end - start)   
+'''
+PARA LA SEGUNDA PARTE, AGREGAR UNA SALIDA DE ARCHIVOS PROCESADOS DONDE SE LES ELIMINE LA VARIACION DIURNA, SE APLANEN LOS CAMBIOS DE OFFSET
+EN EL CASO DE LAV Y SE CONSERVEN LOS THRESHOLDS POR CADA VENTANA DE TIEMPO
+
+'''

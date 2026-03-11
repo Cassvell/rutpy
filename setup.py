@@ -1,0 +1,9 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="modules",
+    version="0.1",
+    packages=find_packages(),
+    description="Paquete compartido entre proyectos",
+    author="Isaac",
+)
