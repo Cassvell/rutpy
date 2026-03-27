@@ -80,15 +80,15 @@ def corr_offset(data, crossing_indices, threshold_level):
                 
             else: 
                 
-                for i in range(len(crossing_indices)):
-                    idx = crossing_indices[i]
-                    start_idx = idx
-                    end_idx = idx+1
-                    sampled_data = data[start_idx:end_idx]
-                    median_w = np.nanmedian(sampled_data)                   
-                    data_corr_offset[start_idx:end_idx] = sampled_data - median_w 
-      
-        #caso si, el numero de indices es impar y el final de la ventana muestra offset alterado
+                for i in range(0, len(crossing_indices), 2):  # Paso de 2
+                    if i+1 < len(crossing_indices):  # Verificar que existe el índice final
+                        start_idx = crossing_indices[i]
+                        end_idx = crossing_indices[i+1]
+                        sampled_data = data[start_idx:end_idx]
+                        median_w = np.nanmedian(sampled_data)
+
+                        data_corr_offset[start_idx:end_idx] = sampled_data - median_w 
+
         elif c ==[0,1]:
             
             if len(crossing_indices) == 1:
@@ -96,19 +96,20 @@ def corr_offset(data, crossing_indices, threshold_level):
                 median_w = np.nanmedian(data[crossing_indices[0]:])
                 data_corr_offset[crossing_indices[0]:] = sampled_data - median_w
             elif len(crossing_indices) > 1:
-                for i in range(len(crossing_indices)):
-                    idx = crossing_indices[i]
-                    if i < len(crossing_indices) - 1:
-                        start_idx = idx
-                        end_idx = idx+1
+
+                for i in range(0, len(crossing_indices), 2):  # Paso de 2
+                    if i+1 < len(crossing_indices):  # Verificar que existe el índice final
+                        start_idx = crossing_indices[i]
+                        end_idx = crossing_indices[i+1]
                         sampled_data = data[start_idx:end_idx]
-                        median_w = np.nanmedian(data[start_idx:end_idx])    
-                        data_corr_offset[start_idx:end_idx] = sampled_data - median_w
+                        median_w = np.nanmedian(sampled_data)
+                        data_corr_offset[start_idx:end_idx] = sampled_data - median_w 
                         
                     else:
-                        sampled_data = data[idx:]
-                        median_w = np.nanmedian(data[idx:])    
-                        data_corr_offset[idx:] = sampled_data - median_w
+                        last_idx = crossing_indices[-1]
+                        sampled_data = data[last_idx:]
+                        median_w = np.nanmedian(data[last_idx:])    
+                        data_corr_offset[last_idx:] = sampled_data - median_w
             
         elif c == [1,0]:
             if len(crossing_indices) == 1:
@@ -118,15 +119,15 @@ def corr_offset(data, crossing_indices, threshold_level):
 
             
             elif len(crossing_indices) > 1:
-                for i in range(len(crossing_indices)):
-                    idx = crossing_indices[i]
-                    if i == 0:
-                        sampled_data = data[:idx]
-                        median_w = np.nanmedian(data[:idx])
-                        data_corr_offset[:idx] = sampled_data - median_w
-                    else:
-                        start_idx = idx
-                        end_idx = idx+1
+                first_idx = crossing_indices[0]
+                sampled_data = data[:first_idx]
+                median_w = np.nanmedian(sampled_data)
+                data_corr_offset[:first_idx] = sampled_data - median_w
+                
+                for i in range(0, len(crossing_indices)-1, 2): 
+                    if not i == 0: 
+                        start_idx = crossing_indices[i]
+                        end_idx = crossing_indices[i+1]
                         
                         sampled_data = data[start_idx:end_idx]
                         median_w = np.nanmedian(data[start_idx:end_idx])

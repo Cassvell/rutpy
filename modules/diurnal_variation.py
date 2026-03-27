@@ -310,7 +310,7 @@ def diurnal_variation_model(data, idx_daily, jump_val, st, qd_method, threshold,
     
                     qdl_corr = qdl[i] - baseline_value
                     # Create xaxis if not defined
-                    plt.plot(xaxis, qdl_corr, alpha=0.5)
+                    plt.plot(xaxis, qdl_corr, color='gray',alpha=0.3)
                         
                     # Reset index if it's a pandas object
                     if hasattr(qdl_corr, 'reset_index'):
@@ -343,7 +343,7 @@ def diurnal_variation_model(data, idx_daily, jump_val, st, qd_method, threshold,
     FF = fourier_fit_with_freqs(tdata, qd_average, new_tdata, freqs)
        #Fourier Series Fitting
     
-    plt.plot(np.linspace(0,23,48), qd_average, 'ko', linewidth=3)
+    plt.plot(np.linspace(0,23,48), qd_average, 'ko', markersize=6)
     #plt.plot(xaxis, T, color='r', linewidth=2)         
     plt.plot(xaxis, FF, color='r', linewidth=3)  
     inicio = idx_daily[0].strftime('%Y-%m-%d')

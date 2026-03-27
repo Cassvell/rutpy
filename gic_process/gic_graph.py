@@ -126,6 +126,7 @@ for i, value in enumerate(k):
 
 k_index = np.argmax(k)
 H_index = np.argmin(H)
+
 print(f'data from: {H_stat.upper()} \n on {k.index[k_index]}, \
     max Kmex value: {np.nanmax(k)}, \n on {H.index[H_index]} min dH: {np.nanmin(H)}')
 

@@ -13,7 +13,8 @@ def hourly_IQR(data, tw, nonan_tolerance):
         if len(current_window) == 0:
             continue  # Skip empty windows
         
-        non_nan_ratio = np.sum(~np.isnan(current_window)) / len(current_window)
+        non_nan_ratio = np.sum(~np.isnan(np.array(current_window))) / len(current_window)
+        
         
         if non_nan_ratio > nonan_tolerance:
             QR1_hr = np.nanquantile(current_window, 0.25)

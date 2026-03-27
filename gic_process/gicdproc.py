@@ -446,9 +446,7 @@ def gic_qd(date1, date2, dir_path, stat, type_data):
 
 
 def df_gic_processed(date1, date2, dir_path, stat):
-    col_names = ['Datetime','gic']
-    
-    
+    col_names = ['DateTime','gic']    
     
     idx1 = pd.date_range(start = pd.Timestamp(str(date1)+' 00:00:00' ), end =\
                          pd.Timestamp(str(date2)+' 23:59:00'), freq='min')
@@ -457,17 +455,16 @@ def df_gic_processed(date1, date2, dir_path, stat):
     idx_daylist = pd.date_range(start = pd.Timestamp(str(date1)), \
                                           end = pd.Timestamp(str(date2)), freq='D')
     idx_list = (idx_daylist.strftime('%Y%m%d')) 
-    str1 = f"gic_{stat}_"
-    ext = ".csv"
+    str1 = f"{stat}_"
+    ext = ".p.csv"
 
    # remote_path= '/data/output/indexes/'+station+'/'
     list_fnames = list_names(idx_list, str1, ext)
-
+    
     dfs_c = []
     column_names = ['Datetime', 'gic']
     for i in range(len(list_fnames)):      
         year = idx_daylist[i].year
-        
         try:
             # Construct full file path
             file_path = os.path.join(dir_path, str(year), stat, list_fnames[i])
@@ -477,36 +474,35 @@ def df_gic_processed(date1, date2, dir_path, stat):
                 
                 tmp_idx = idx1[i*1440: (i+1)*1440]
 
-                df_c = pd.read_csv(file_path, header=None, sep=',', names=column_names, usecols=[0, 1])               
+                df_c = pd.read_csv(file_path, header=0, sep='\t')               
                 
                 
                 # Set index and handle duplicates
-                df_c = df_c.set_index(df_c['Datetime'])
+                df_c = df_c.set_index(df_c['DateTime'])
                 df_c = df_c[~df_c.index.duplicated(keep='first')]
                 df_c = df_c.replace(999.9, np.nan)
-                df_c = df_c.drop(columns=['Datetime'])
+                df_c = df_c.drop(columns=['DateTime'])
                 
-            else: 
-                # Create consistent empty DataFrame
+            #else: 
+            #    tmp_idx = idx1[i*1440: (i+1)*1440]
+            #    empty_data = {col: np.full(1440, np.nan) for col in column_names[0:]}
+            #    empty_data['Datetime'] = tmp_idx
+            #    df_c = pd.DataFrame(empty_data)
+            #    df_c = df_c.set_index(tmp_idx)
+            
+        except Exception as e:
                 tmp_idx = idx1[i*1440: (i+1)*1440]
-                # Use the actual column structure from your data
                 empty_data = {col: np.full(1440, np.nan) for col in column_names[0:]}
+                empty_data['Datetime'] = tmp_idx
                 df_c = pd.DataFrame(empty_data)
                 df_c = df_c.set_index(tmp_idx)
-
-        except Exception as e:
-            print(f"Error processing file {list_fnames[i]}: {str(e)}")
-            # Create empty DataFrame on error too
-            tmp_idx = idx1[i*1440: (i+1)*1440]
-            empty_data = {col: np.full(1440, np.nan) for col in column_names[2:]}
-            df_c = pd.DataFrame(empty_data)
-            df_c = df_c.set_index(tmp_idx)
     
         dfs_c.append(df_c)     
 
     # Final processing
-    df = pd.concat(dfs_c, axis=0)   
-
+    df = pd.concat(dfs_c, axis=0)
+    
+    #print(df)   
     return df
 ###############################################################################
 ###############################################################################

@@ -4,11 +4,32 @@ import sys
 from scipy.interpolate import splrep, BSpline
 from symfit import parameters, variables, sin, cos, Fit
 import numpy as np
-def spl_fit(x,y,x_interp,s):
-    tck = splrep(x, y, s=s)
+import matplotlib.pyplot as plt
+def spl_fit(x,y,x_interp, w):
+    # Eliminar puntos NaN para el ajuste del spline
+    mask = ~np.isnan(y)
+    x_clean = x[mask]
+    y_clean = y[mask]
+    w_clean = w[mask]
+    # Verificar que haya suficientes puntos para la interpolación
+    if len(x_clean) < 4:  # Mínimo de puntos para spline cúbico
+        print(f"Advertencia: Solo {len(x_clean)} puntos válidos. Usando interpolación lineal.")
+        return np.interp(x_interp, x_clean, y_clean)
+    
+    #try:
+    f = 0.2
+
+    s = (len(x_clean)/2) * np.var(y_clean) * f
+    tck = splrep(x_clean, y_clean, k=3, w=w_clean, s=s)
     yfit = BSpline(*tck)(x_interp)
     return yfit
- 
+    
+   # except Exception as e:
+   #     print(f"Error en spline: {e}. Usando interpolación lineal.")
+   #     return np.interp(x_interp, x_clean, y_clean)
+
+    
+    
 def fourier_series(x, f, n):
     """
     Returns a symbolic fourier series of order `n`.

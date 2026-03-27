@@ -36,11 +36,11 @@ time_d = pd.date_range(start=f'{idate} 00:00:00', end=f'{fdate} 23:00:00', freq=
 
 df_times = pd.read_csv(f'{path_times}{idate}_{fdate}.txt', header = None)
 point_times = df_times[0].tolist()
+
 target_times = []
 for t in point_times:
     tmp = pd.Timestamp(t)
-    target_times.append(tmp)
-    
+    target_times.append(tmp)  
 #target_times = [pd.Timestamp(f'{idate} 13:57:00'), pd.Timestamp(f'{idate} 16:42:00'), 
 #                pd.Timestamp(f'{idate} 19:18:00'), pd.Timestamp(f'{idate} 23:40:00')]
 
@@ -68,9 +68,12 @@ dASYH_dt = np.gradient(ASYH, dt_minutes)
 
 axes[0].plot(time_m, ASYH, color='darkorange', linewidth=2)
 
-for t in target_times:
-    idx = time_m.get_loc(t)    
-    #axes[0].text(time_m[idx], 5, time_m[idx].strftime('%H:%M'),color='black',fontsize=18,ha='center',va='bottom')
+for t in range(len(target_times)):
+    idx = time_m.get_loc(target_times[t])    
+
+    
+    bbox_props = dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.4)    
+    axes[0].text(time_m[idx], 5, t+1,color='black',fontsize=18,ha='center',va='bottom', bbox=bbox_props)
 
     axes[0].plot(time_m[idx],ASYH[idx],marker='o',markersize=10,color='black',markeredgecolor='black',zorder=5)
 
@@ -87,7 +90,7 @@ df_all = []
 for st in range(len(st_sect)):
     df = pd.read_csv(f'{path}{st_sect[st]}_{idate}_{fdate}.dat', header=None, sep='\\s+')
     H_I = df.iloc[:, 0]    
-    mlt_series = compute_mlt_ts(mlon_data[st], time_m)    
+    mlt_series = compute_mlt_ts(mlon_data[st], time_m, time_d)    
     
     mlt_hours = (
     mlt_series.hour
@@ -220,8 +223,8 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     
     mlon_data = obs_mlon([station1, station2])
     
-    mlt1 = compute_mlt_ts(mlon_data[0], time_m)    
-    mlt2 = compute_mlt_ts(mlon_data[1], time_m)
+    mlt1 = compute_mlt_ts(mlon_data[0], time_m, time_d)    
+    mlt2 = compute_mlt_ts(mlon_data[1], time_m, time_d)
 
         
     #dlon = ((mlon_data[1] - mlon_data[0] + 180) % 360) - 180
@@ -233,15 +236,16 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
     
     yval1 = 0
     yval2 = 0
-    for t in target_times:
-        idx = time_m.get_loc(t)
-
+    for t in range(len(target_times)):
+        idx = time_m.get_loc(target_times[t])
+        
         ax.plot(time_m[idx],H_I1[idx],marker='o',markersize=10,
                 color='magenta',markeredgecolor='black',zorder=5)
         
         print(f'H_I {station1.upper()} = {H_I1[idx]}')
         ax.plot(time_m[idx],H_I2[idx],marker='o',markersize=10,
                 color='green',markeredgecolor='black',zorder=5)
+        
         print(f'H_I {station2.upper()} = {H_I2[idx]}\n')
         if H_I1[idx] > 0 and H_I1[idx] > H_I2[idx]:
             yval1 = 110
@@ -249,11 +253,10 @@ for pair_idx, (station1, station2) in enumerate(station_pairs):
         else:
             yval1 = -170 
             yval2 = 110
-            
-        #ax.text(time_m[idx], yval1, mlt1[idx].strftime('%H:%M'),
-        #        color='magenta',fontsize=18,ha='center',va='bottom')
-        #ax.text(time_m[idx], yval2,mlt2[idx].strftime('%H:%M'),
-        #        color='green',fontsize=18,ha='center',va='bottom')
+        
+       # bbox_props = dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.4)    
+       # ax.text(time_m[idx], yval1, t+1, color='magenta',fontsize=18,ha='center',va='bottom', bbox=bbox_props)
+       # ax.text(time_m[idx], yval2, t+1, color='green',fontsize=18,ha='center',va='bottom', bbox=bbox_props)
         
     # Set y-limits and labels
     ax.set_xlim(time_m[0], time_m[-1])

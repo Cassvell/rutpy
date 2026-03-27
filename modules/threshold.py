@@ -5,7 +5,10 @@ import lmoments3 as lm
 #from scipy.stats import genpareto, kstest #anderson
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from scipy.optimize import curve_fit
+from scipy.special import erf
+import sys
+import os
 def gpd_cdf(x, k, sigma, mu):
     """
     Generalized Pareto Distribution CDF
@@ -163,6 +166,157 @@ def final_params(sorted_picks_norp, cdf,bound):
 
     return definitive_params
 
+
+def gaussian(x, H, A, x0, sigma):
+    return H + A * np.exp(-(x - x0)**2 / (2 * sigma**2))
+
+def gaussian_fit(xdata, ydata):
+    # Estimación inicial mejorada
+    H0 = np.min(ydata)
+    A0 = np.max(ydata) - np.min(ydata)
+    
+    # Encontrar el pico de manera más robusta
+    max_idx = np.argmax(ydata)
+    x0_est = xdata[max_idx]
+    
+    # Estimar sigma usando FWHM (Full Width at Half Maximum)
+    half_max = (np.max(ydata) + np.min(ydata)) / 2
+    indices_above_half = np.where(ydata >= half_max)[0]
+    
+    if len(indices_above_half) >= 2:
+        # Ancho a mitad de altura
+        fwhm = xdata[indices_above_half[-1]] - xdata[indices_above_half[0]]
+        sigma0 = fwhm / (2 * np.sqrt(2 * np.log(2)))  # Relación FWHM-sigma
+    else:
+        # Fallback: usar rango/4
+        sigma0 = (xdata[-1] - xdata[0]) / 4
+    
+    # Asegurar sigma positivo en estimación inicial
+    sigma0 = max(sigma0, (xdata[1] - xdata[0]))  # Mínimo el ancho de bin
+    
+    initial_guess = [H0, A0, x0_est, sigma0]
+    
+    # Límites más ajustados
+    bounds_lower = [0, 0, xdata[0], sigma0/10]
+    bounds_upper = [np.max(ydata), np.max(ydata)*2, xdata[-1], (xdata[-1]-xdata[0])]
+    
+    try:
+        parameters, _ = curve_fit(gaussian, xdata, ydata, p0=initial_guess,
+                                  bounds=(bounds_lower, bounds_upper))
+    except:
+        # Si falla, intentar sin bounds pero con sigma positivo forzado
+        parameters, _ = curve_fit(gaussian, xdata, ydata, p0=initial_guess)
+        parameters[3] = abs(parameters[3])  # Forzar sigma positivo
+    
+    H_fit, A_fit, x0_fit, sigma_fit = parameters
+    fit_y = gaussian(xdata, H_fit, A_fit, x0_fit, sigma_fit)
+    
+    return fit_y, [H_fit, A_fit, x0_fit, sigma_fit]
+
+
+def half_gaussian_fit(xdata, ydata):
+    """
+    Ajuste para distribución medio-gaussiana (half-normal)
+    Asume que los datos son valores absolutos (x >= 0)
+    """
+    # Estimación inicial
+    H0 = np.min(ydata)
+    A0 = np.max(ydata) - np.min(ydata)
+    # Para half-gaussian, el pico está en x=0
+    # Estimamos sigma a partir del decaimiento
+    half_max = np.max(ydata) / 2
+    idx_half = np.where(ydata <= half_max)[0]
+    if len(idx_half) > 0:
+        sigma0 = xdata[idx_half[0]] / np.sqrt(2*np.log(2))
+    else:
+        sigma0 = (xdata[-1] - xdata[0]) / 4
+    
+    initial_guess = [H0, A0, sigma0]
+    
+    try:
+        parameters, _ = curve_fit(half_gaussian, xdata, ydata, p0=initial_guess)
+        return parameters
+    except:
+        print("Error en ajuste half-gaussian, usando valores iniciales")
+        return initial_guess
+
+def half_gaussian(x, H, A, sigma):
+    """
+    Distribución medio-gaussiana (half-normal)
+    Para x >= 0, con media en 0
+    """
+    return H + A * np.exp(-(x)**2 / (2 * sigma**2))
+
+def folded_gaussian(x, H, A, mu, sigma):
+    """
+    Distribución normal plegada (folded normal)
+    Para |x| con media mu y sigma
+    """
+    return H + A * (1/np.sqrt(2*np.pi*sigma**2)) * (
+        np.exp(-(x - mu)**2/(2*sigma**2)) + 
+        np.exp(-(x + mu)**2/(2*sigma**2))
+    )
+
+def half_normal_cdf(x, sigma):
+    """
+    CDF de la distribución half-normal
+    F(x) = erf(x/(σ√2)) para x ≥ 0
+    """
+    return erf(x / (sigma * np.sqrt(2)))
+
+def half_normal_cdf_with_offset(x, sigma, offset):
+    """
+    CDF de half-normal con offset (por si la CDF no empieza en 0)
+    """
+    return offset + (1 - offset) * erf(x / (sigma * np.sqrt(2)))
+
+def fit_half_normal_cdf(xdata, ydata):
+    """
+    Ajusta una CDF half-normal a los datos
+    """
+    # Estimación inicial de sigma usando el percentil 68% (equivalente a 1 sigma en half-normal)
+    # En half-normal, el percentil 68% corresponde a ~1.6σ aproximadamente
+    idx_68 = np.where(ydata >= 0.68)[0]
+    if len(idx_68) > 0:
+        x_68 = xdata[idx_68[0]]
+        sigma0 = x_68 / np.sqrt(2)  # Aproximación inicial
+    else:
+        sigma0 = np.percentile(xdata, 95) / 2  # Fallback
+    
+    # Intentar ajuste con y sin offset
+    try:
+        # Primero intentar con offset
+        params, _ = curve_fit(half_normal_cdf_with_offset, xdata, ydata, 
+                             p0=[sigma0, 0], 
+                             bounds=([1e-10, -0.1], [np.inf, 0.1]))
+        sigma_fit, offset_fit = params
+        fit_y = half_normal_cdf_with_offset(xdata, sigma_fit, offset_fit)
+        return fit_y, sigma_fit, offset_fit
+    except:
+        # Si falla, intentar sin offset
+        try:
+            params, _ = curve_fit(half_normal_cdf, xdata, ydata, p0=[sigma0])
+            sigma_fit = params[0]
+            fit_y = half_normal_cdf(xdata, sigma_fit)
+            return fit_y, sigma_fit, 0
+        except:
+            # Si todo falla, usar estimación inicial
+            print("Warning: Ajuste de CDF falló, usando estimación inicial")
+            sigma_fit = sigma0
+            fit_y = half_normal_cdf(xdata, sigma_fit)
+            return fit_y, sigma_fit, 0
+
+
+
+def nbin_compute(data, ndata):
+    norm_dist = pd.Series(data)
+    q1 = norm_dist.quantile(0.25)
+    q3 = norm_dist.quantile(0.75)
+    iqr = q3-q1
+    
+    bin_width = (2*iqr) / ndata**(1/3)
+    bin_count = int(np.ceil((norm_dist.max() - norm_dist.min()) / bin_width))
+    return(bin_count)
 
 def threshold(picks, i_date, f_date, st, method):
     picks_np_array = np.array(picks)
@@ -331,3 +485,113 @@ def threshold(picks, i_date, f_date, st, method):
 
 
     return threshold
+
+
+def calculate_fwhm(x_data, y_data):
+    """
+    Calculates the FWHM of a single peak in sampled data.
+    Assumes a single, well-defined peak.
+    """
+    half_max = np.max(y_data) / 2.0
+    # Find the indices where the data crosses the half-maximum value
+    signs = np.sign(np.add(y_data, -half_max))
+    zero_crossings = (signs[0:-2] != signs[1:-1])
+    zero_crossings_i = np.where(zero_crossings)[0]
+
+    if zero_crossings_i.size < 2:
+        return None # FWHM not well-defined for this data
+
+    # Interpolate to find the exact x values at half maximum
+    left_x = x_data[zero_crossings_i[0]] + (x_data[zero_crossings_i[0]+1] - x_data[zero_crossings_i[0]]) * ((half_max - y_data[zero_crossings_i[0]]) / (y_data[zero_crossings_i[0]+1] - y_data[zero_crossings_i[0]]))
+    right_x = x_data[zero_crossings_i[1]] + (x_data[zero_crossings_i[1]+1] - x_data[zero_crossings_i[1]]) * ((half_max - y_data[zero_crossings_i[1]]) / (y_data[zero_crossings_i[1]+1] - y_data[zero_crossings_i[1]]))
+
+    fwhm = right_x - left_x
+    return fwhm
+
+def calculate_cdf_fwhm_percentile(data):
+    """
+    Calcula FWHM para CDF usando percentiles
+    """
+    q1 = np.percentile(data, 25)   # Primer cuartil (25%)
+    q3 = np.percentile(data, 75)   # Tercer cuartil (75%)
+    fwhm_cdf = q3 - q1
+    return fwhm_cdf, q1, q3
+
+def gic_threshold(data, st, window_idx):
+    
+    data = np.array(data).flatten()
+    ndata = len(data)
+
+    data = data[~np.isnan(data)]
+    
+    
+    nbins = nbin_compute(data, ndata)
+
+    frequencies, bin_edges = np.histogram(data, bins=nbins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    cdf = np.arange(1, len(data)+1) / len(data)    
+    fit_y, params = gaussian_fit(bin_centers, frequencies)
+    H_fit, A_fit, x0_fit, sigma_fit = params
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Gráfico 1: Histograma con ajuste gaussiano
+    ax1.bar(bin_centers, frequencies, width=bin_edges[1]-bin_edges[0], 
+            alpha=0.6, color='navy')
+    ax1.plot(bin_centers, fit_y, 'r-', linewidth=2, label='Gaussian fit')
+    
+    
+    FWHM = calculate_fwhm(bin_centers, fit_y)
+    #FWHM = (2*np.sqrt(2*np.log(2)))*sigma_fit
+    
+    
+    ax1.axvline(x=x0_fit, color='darkorange', linestyle='-', linewidth=2, label=f'Media ($\mu$) = {x0_fit:.3f}')
+    ax1.axvline(x=x0_fit - FWHM/2, color='darkorange', linestyle='--', linewidth=1.5, label=f'$FWHM = {FWHM:.3f}$')
+    ax1.axvline(x=x0_fit + FWHM/2, color='darkorange', linestyle='--', linewidth=1.5)     
+    
+    ax1.set_xlabel('GIC [A]')
+    ax1.set_ylabel('Probability Density')
+    #ax1.set_title(f'GICs Distribution - {st}')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Gráfico 2: CDF (Función de Distribución Acumulada)
+    
+    data_sorted = np.sort(np.abs(data))
+    ax2.plot(data_sorted, cdf, color='navy', linewidth=2)
+  
+    x_fit = data_sorted
+    fit_y, sigma_fit, offset_fit = fit_half_normal_cdf(x_fit, cdf)    
+    idx_95 = np.argmin(np.abs(fit_y - 0.95))
+    valor_p = x_fit[idx_95]
+    
+    ax2.plot(x_fit, fit_y, 'r-', linewidth=2, label=f'Half-Normal fit')
+    ax2.axvline(x=valor_p, color='green', linestyle='-', linewidth=2, 
+            alpha=0.9, label=f'CDF 95% = {valor_p:.3f} A')
+
+# Línea para μ + FWHM (2×FWHM desde la media)
+    ax2.axvline(x=x0_fit + FWHM, color='green', linestyle=':', linewidth=2, 
+            alpha=0.9, label=f'μ + FWHM = {x0_fit + FWHM:.3f} A')
+
+# Línea para μ + FWHM/2
+    ax2.axvline(x=x0_fit + FWHM/2, color='green', linestyle='--', linewidth=2, 
+            alpha=0.9, label=f'μ + FWHM/2 = {x0_fit + FWHM/2:.3f} A')
+    #ax2.hist(data, bins=nbins, density=True, cumulative=True, alpha=0.7, color='skyblue', label='CDF empírica')
+    ax2.set_xlabel('GIC [A]')
+    ax2.set_ylabel('Cumulative distribution')
+    ax2.set_ylim(0,1.1)
+   # ax2.set_title('Función de Distribución Acumulada')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    fig.suptitle(f'GICs {st} Distribution during Window {window_idx}')
+    plt.tight_layout()
+    
+    save_path = f'/home/isaac/gics_rv/fig/distributions/{st}/{st}_{window_idx}.minmax.png'
+    directory = os.path.dirname(save_path)
+    if directory and not os.path.exists(save_path):
+        os.makedirs(directory, exist_ok=True)
+    plt.savefig(f'{save_path}', dpi=300)
+    plt.close()
+    
+    return x0_fit, FWHM, valor_p

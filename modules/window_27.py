@@ -17,11 +17,12 @@ def window_27(idate, fdate, format):
         window_start = idate + timedelta(days=w * 27)
         window_end = window_start + timedelta(days=26, hours=23, minutes=59)
         window_med = window_start + timedelta(days=12, hours=23, minutes=59)
+        
         if window_end >= fdate:
             window_end = fdate
         #print(f'\n Window {w+1}: {(window_start)} to {(window_end)} \n')
         doi_start = window_start.timetuple().tm_yday
-        doi_med = window_start.timetuple().tm_yday
+        doi_med = window_med.timetuple().tm_yday
         doi_end = window_end.timetuple().tm_yday
         year_start = window_start.year
         year_med = window_med.year

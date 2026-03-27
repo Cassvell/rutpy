@@ -3,18 +3,46 @@ import numpy as np
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-path = '/home/isaac/geomstorm/rutpy/'
-df_H = pd.read_csv(path+'mex_202405.delta_H.early', header=21, sep='\s+').T
-df_k = pd.read_csv(path+'mex_202405.k_index.early', header=21, sep='\s+').T
-H = df_H.iloc[2:-2, 9:14].melt().drop('variable',axis=1).rename({'value':'H'},axis=1)
-k = df_k.iloc[2:10, 9:14].melt().drop('variable',axis=1).rename({'value':'K'},axis=1)
+from gicdproc import df_dH, df_Kloc
+import sys
+from datetime import datetime, timedelta
+H_stat = sys.argv[1]
+i_date = sys.argv[2]
 
-time_H = pd.date_range(start = pd.Timestamp('2024-05-10 00:00:00'), \
-                          end = pd.Timestamp('2024-05-14 23:00:00'), freq='H')
-k.index = pd.date_range(start='2024-05-10 00:00:00', periods=len(k), freq='3H')
-H = H.set_axis(time_H)
+# Set f_date - use provided value or default to i_date
+f_date = sys.argv[3] 
 
+dir_path = f'/home/isaac/datos/dH_{str(H_stat)}/'
 
+fdate = datetime.strptime(f_date, '%Y%m%d')
+fdate2 = fdate + timedelta(days=1)
+fdate2 = str(fdate2.strftime('%Y%m%d'))
+
+H = df_dH(i_date, f_date, dir_path, H_stat)
+
+###############################################################################
+###############################################################################
+dir_path = '/home/isaac/datos/Kmex/'
+k = df_Kloc(i_date, f_date, dir_path, H_stat)
+k = round(k)
+
+colorsValue = []
+for i, value in enumerate(k):
+    if value > 9:
+        k[i] = np.nan  # Set value to NaN if it's greater than 9
+        colorsValue.append('gray')  # Optional: You can assign a color for NaN values
+    elif value < 4:
+        colorsValue.append('green')
+    elif value == 4:
+        colorsValue.append('yellow')
+    else:
+        colorsValue.append('red')
+
+k_index = np.argmax(k)
+H = np.argmin(H)
+
+print(k)
+sys.exit()
 k = k/10
 
 colorsValue = []
@@ -30,8 +58,8 @@ for value in k['K']:
         
 
 # Define time limits
-inicio_k = pd.Timestamp('2024-05-10 00:00:00')
-final_k = pd.Timestamp('2024-05-14 00:00:00')
+inicio_k = pd.Timestamp('2026-03-20 00:00:00')
+final_k = pd.Timestamp('2026-03-26 21:00:00')
 fig, ax = plt.subplots(2, figsize=(12, 14))
 
 pos = ax[0].get_position()
@@ -69,8 +97,8 @@ ax[0].legend(
 
 
 # First plot: DH values
-inicio_H = pd.Timestamp('2024-05-10 01:00:00')
-final_H = pd.Timestamp('2024-05-14 00:00:00')
+inicio_H = pd.Timestamp('2026-03-20 01:00:00')
+final_H = pd.Timestamp('2026-03-26 23:00:00')
 
 pos = ax[1].get_position()
 ax[1].set_position([pos.x0, pos.y0* 0.3, pos.width, pos.height])
