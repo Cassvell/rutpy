@@ -60,6 +60,7 @@ def linreg(data):
     
     median_res = np.median(residuos)
     return residuos, median_res
+
 idate = sys.argv[1]
 fdate = sys.argv[2]
 
@@ -68,37 +69,11 @@ dir_path = '/home/isaac/gics_rv/'
 stations = ['LAV', 'QRO', 'RMY', 'MZT']
 # Crear figura con subplots
 n_plots = len(stations)
-n_cols = 1
-n_rows = (n_plots + n_cols - 1) 
+n_cols = 2
+n_rows = (2) 
 
-fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5*n_rows))
-axes = axes.flatten()
-
-# Crear puntos para el ajuste suave
-x_data_smooth = np.linspace(0, 40, 200)  # Menos puntos para mayor suavidad
-
-iwindows, medwindows, fwindows, nwindows= window_27(idate, fdate, 'date')
-
-grid_positions = []
-for w in range(len(iwindows)):
-    pos = w * 1440   # Centro de cada ventana
-    grid_positions.append(pos)
-
-xticks_positions = []
-xticks_labels = []
-x_original = np.arange(0, 42)
-x_data = (x_original*1440+720)
-for w in range(0, nwindows, 4):  # Cada 3 ventanas
-    # Posición en el medio de la ventana
-    pos = w * 1440 
-    
-    # Formato yyyy1mm1dd1-yyyy2mm2dd2
-    date = medwindows[w].strftime('%Y%m%d')
-
-    label = f'{date}'
-    
-    xticks_positions.append(pos)
-    xticks_labels.append(label)          
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
+axes = axes.flatten()  
 
 for idx, st in enumerate(stations):
     df = pd.read_csv(f'{dir_path}{st}_thresholds.minmax.csv', header=0, sep=',')
@@ -109,7 +84,11 @@ for idx, st in enumerate(stations):
     print(f'{st}')
     print(rf'MEDIA: {np.nanmedian(media):.2f}, FWHM*2: {np.nanmedian(FWHM):.2f}, $\sigma$ FWHM*2: {np.nanstd(FWHM):.2f}, acc95: {np.nanmedian(acc95):.2f}, $\sigma$ acc95: {np.nanstd(acc95):.2f}')
     
-    
+    median_fwhm = np.nanmedian(FWHM)
+    std_fwhm = np.nanstd(FWHM)
+    median_acc95 = np.nanmedian(acc95)
+    std_acc95 = np.nanstd(acc95)
+
     #print(media)
     # Eliminar valores NaN
     mask_FWHM = ~np.isnan(FWHM)
@@ -121,29 +100,40 @@ for idx, st in enumerate(stations):
     
     #y = coef[0]*x_points+coef[1]
     
+    xfixed1 = np.full(len(media), 0.3)
+    xfixed2 = np.full(len(media), 0.6)
+
+    axes[idx].plot(xfixed1, FWHM, 'ko', markersize=12, alpha=0.2, label=r'$FWHM$')    
+    axes[idx].plot(xfixed2, acc95, 'ro', markersize=12, alpha=0.2, label= r'$95\%$ cdf')    
     
-    axes[idx].plot(x_data, media+FWHM, 'ko', markersize=8, label=r'$2 \cdot FWHM + \mu $')    
-    axes[idx].plot(x_data, acc95, 'ro', markersize=8, label= r'$95\%$ cdf'    )
+    axes[idx].errorbar(0.3, median_fwhm, yerr=std_fwhm, 
+                   fmt='ko', markersize=20, capsize=10, capthick=2,
+                   elinewidth=2, markeredgewidth=2, alpha=1.0)
+
+    axes[idx].errorbar(0.6, median_acc95, yerr=std_acc95, 
+                   fmt='ro', markersize=20, capsize=10, capthick=2,
+                   elinewidth=2, markeredgewidth=2, alpha=1.0)    
+    
     # Configuraciones del gráfico
-    #axes[idx].set_xlim(-1, len(FWHM))
+    axes[idx].set_xlim(0, 1)
     axes[idx].tick_params(axis='both', which='major', labelsize=15)
-    axes[idx].set_ylabel(f'{st} Thresholds', fontsize=15)
+    axes[idx].set_ylabel(f'{st} Thresholds [A]', fontsize=15)
     axes[idx].grid(True, alpha=0.3)
     
     if idx >= len(stations) - n_cols:
-        axes[idx].set_xticks(xticks_positions)
-        axes[idx].set_xticklabels(xticks_labels, ha='left', fontsize=15)
-        axes[idx].set_xlabel('Windows [days]', fontsize=15)
+    #    axes[idx].set_xticks(xticks_positions)
+    #    axes[idx].set_xticklabels(xticks_labels, ha='left', fontsize=15)
+    #    axes[idx].set_xlabel('Windows [days]', fontsize=15)
         axes[idx].legend(fontsize=15)
-    else:
+    #else:
         
-        axes[idx].set_xticklabels([])
+    axes[idx].set_xticklabels([])
 
 # Ocultar subplots vacíos
 for idx in range(len(stations), len(axes)):
     axes[idx].set_visible(False)
 
-plt.suptitle('Thresholds by 27 days period', fontsize=24)
+#plt.suptitle('Thresholds dispersion', fontsize=24)
 plt.tight_layout()
 plt.savefig(f'{dir_path}fig/whitenoise.minmax.png', dpi=300)
 plt.close()
