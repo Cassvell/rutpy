@@ -3,11 +3,13 @@ import numpy as np
 import pandas as pd
 from scipy import interpolate
 import matplotlib.dates as mdates
+
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from gicdproc import gic_qd
 from modules.window_27 import window_27
 from modules.smooth_trend import splrep
+from modules.obs_info import obs_info, obs_mlon, obs_mlt
 from scipy.interpolate import splrep, BSpline
 from sklearn.metrics import r2_score, mean_squared_error
 from symfit import parameters, variables, sin, cos, Fit
@@ -127,35 +129,16 @@ def season_qd(struct):
 
 
 def season_qd_2(struct):
-    iwindows, medwindows, fwindows, nwindows= window_27(idate, fdate, 'date')
-    
-    grid_positions = []
-    for w in range(len(iwindows)):
-        pos = w * 1440   # Centro de cada ventana
-        grid_positions.append(pos)
-
-    xticks_positions = []
-    xticks_labels = []
-
-    for w in range(0, nwindows, 3):  # Cada 3 ventanas
-        # Posición en el medio de la ventana
-        pos = w * 1440 
-        
-        # Formato yyyy1mm1dd1-yyyy2mm2dd2
-        date = medwindows[w].strftime('%Y%m%d')
-
-        label = f'{date}'
-        
-        xticks_positions.append(pos)
-        xticks_labels.append(label)    
         
     fig, axes = plt.subplots(4, 2, figsize=(18, 16))
 
     x_min = 0
     x_max = 23
     x = np.linspace(0,24,1440)
-    equinox = [3,4,5,6,10,11,12,13,17,18,19,24,25,26,31,32,33,37,38,39,40]
-    solsticio = [1,2,7,8,9,14,15,16,20,21,22,23,27,28,29,30,34,35,36,41,42]
+    #equinox = [3,4,5,6,10,11,12,13,17,18,19,24,25,26,31,32,33,37,38,39,40]
+    #solsticio = [1,2,7,8,9,14,15,16,20,21,22,23,27,28,29,30,34,35,36,41,42]
+    prim_mitad = [3,4,5,6,7,8,9,17,18,19,20,21,22,23,31,32,33,34,35,36]
+    seg_mitad = [1,2,10,11,12,13,14,15,16,24,25,26,27,28,29,30,37,38,39,40,41,42,43]
     
     eq_prim = [3,4,5,6,17,18,19,31,32,33]
     eq_ot = [10,11,12,13,24,25,26,37,38,39,40]
@@ -166,24 +149,43 @@ def season_qd_2(struct):
     for idx, (station, data) in enumerate(struct.items()):
         data_st = data.iloc[:,0]
         
-        axes[0, 0].set_title(f'Equinox seasons', fontsize=12, fontweight='bold')
+        #axes[0, 0].set_title(f'Equinox seasons', fontsize=12, fontweight='bold')
     # Right subplot (solstice)
-        axes[0, 1].set_title(f'Solstice seasons', fontsize=12, fontweight='bold')
+        #axes[0, 1].set_title(f'Solstice seasons', fontsize=12, fontweight='bold')
         added_labels_eq = set()
         added_labels_sol = set()
+        
+        if station == 'LAV':
+            ymin = -2
+            ymax = 4.25
+            mlt = -6
+        elif station == 'QRO':
+            ymin = -4
+            ymax = 5.5     
+            mlt = -7   
+        elif station == 'RMY':
+            ymin = -0.4
+            ymax = 0.5 
+            mlt = -6   
+        elif station == 'MZT':
+            ymin = -1.25
+            ymax = 1.25       
+            mlt = -7   
+            
+        x_mlt = (x - mlt) % 24     
         for j in range(1, 42):
             daily_model = data_st[j*1440:(j+1)*1440]
             
             # Check if current day index is in equinox or solstice
-            if j in equinox:
+            if j in prim_mitad:
                 # Plot in left subplot (equinox)
                 if j in eq_prim: 
                     color = 'green'
                     label = 'Spring'
-                elif j in eq_ot:
+                elif j in sol_ver:
                     
-                    color = 'brown'
-                    label = 'Fall'
+                    color = 'red'
+                    label = 'Summer'
                 
                 if label not in added_labels_eq:
                     axes[idx, 0].plot(x, daily_model, color=color, label=label, linewidth=1, alpha=0.7)
@@ -193,14 +195,14 @@ def season_qd_2(struct):
                 
                 
                 
-            elif j in solsticio:
+            elif j in seg_mitad:
                 
                 if j in sol_inv:
                     color = 'blue'
                     label='Winter'
-                elif j in sol_ver:
+                elif j in eq_ot:
                     color = 'darkorange'
-                    label = 'Summer'
+                    label = 'Autum'
                 if label not in added_labels_eq:
                     axes[idx, 1].plot(x, daily_model, color=color, label=label, linewidth=1, alpha=0.7)
                     added_labels_eq.add(label)
@@ -208,22 +210,27 @@ def season_qd_2(struct):
                     axes[idx, 1].plot(x, daily_model, color=color, linewidth=1, alpha=0.7)
     
     
-    
+
         # Configure left subplot (equinox)
         axes[idx, 0].set_ylabel(f'{station} - GIC QD model [A]', fontsize=15)
         axes[idx, 0].set_xlim(0, x_max)
+        axes[idx, 0].set_ylim(ymin, ymax) 
         axes[idx, 0].set_xlabel('UT [h]', fontsize=15)
         axes[idx, 0].grid(True, alpha=0.3)
         axes[idx,0].legend(fontsize=15)
         axes[idx, 0].tick_params(axis='both', labelsize=14)
-        # Configure right subplot (solstice)
+        axes[idx, 0].set_xticks([3,6,9,12,15,18,21])
+        axes[idx, 1].set_xticks([3,6,9,12,15,18,21])
+        axes[idx, 0].set_xticklabels(['3','6', '9', '12', '15', '18', '21'])
+        axes[idx, 1].set_xticklabels(['3','6', '9', '12', '15', '18', '21'])        
         axes[idx, 1].set_ylabel(f'{station} - GIC QD model [A]', fontsize=15)
         axes[idx, 1].set_xlim(0, x_max)
+        axes[idx, 1].set_ylim(ymin, ymax)         
         axes[idx, 1].set_xlabel('UT [h]', fontsize=15)
         axes[idx, 1].grid(True, alpha=0.3)
         axes[idx, 1].legend(fontsize=15)
         axes[idx, 1].set_ylabel('')  
-        axes[idx, 1].set_yticks([])  
+        #axes[idx, 1].set_yticks([])  
         axes[idx, 1].tick_params(axis='both', labelsize=14)
         
         if idx == 3:  # Última fila
@@ -239,7 +246,7 @@ def season_qd_2(struct):
 
         
     plt.tight_layout()
-    plt.savefig('/home/isaac/gics_rv/fig/QD_seasonal_stacked_e_s.png', dpi=300)
+    plt.savefig('/home/isaac/gics_rv/fig/QD_seasonal_stacked_e_s_V2.png', dpi=300)
     plt.show()
 
 def season_amp(struct):    
@@ -551,19 +558,20 @@ for st in stat:
     #print(f'{st}')
     window_data = gic_qd(idate, fdate, dir_path, st, 'gic')
     window_data = window_data.replace(999.9, np.nan)
+
     stat_dir[st] = window_data
     qd_amplitudes, st_max, st_min = extract_amplitudes(window_data)
-    amp_dir[st] = {
-                    'amplitudes': qd_amplitudes,
+    
+    amp_dir[st] = {'amplitudes': qd_amplitudes,
                     'max': st_max,
                     'min': st_min}
 
     
 #plot_season = season_qd(stat_dir)
-#plot_season = season_qd_2(stat_dir)
+plot_season = season_qd_2(stat_dir)
 #plot_amp = season_amp(amp_dir)
 
-plot_baseline = baseline_plot(stat_dir)
+#plot_baseline = baseline_plot(stat_dir)
 
 sys.exit('end')
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -596,6 +604,7 @@ for idx, (station, data) in enumerate(stat_dir.items()):
             marker='o', markersize=3, linewidth=1.5, color='blue', alpha=0.7)
     
     ax.set_xlim(df_station.index[0], df_station.index[-1])
+
     ax.set_title(f'GIC detector: {station}', fontsize=16, fontweight='bold')
     ax.set_xlabel('Universal Time [h]', fontsize=16)
     ax.set_ylabel(r'$\sigma_{stack}$ [A]', fontsize=16)

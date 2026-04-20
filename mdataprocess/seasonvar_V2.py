@@ -6,26 +6,14 @@ Created on Tue Jun 18 14:52:48 2024
 """
 import pandas as pd
 import numpy as np
-#from statistics import mode
-#from datetime import datetime
-# Ajuste de distribuciones
+
 import sys
-#from numpy.linalg import LinAlgError
-#from scipy.interpolate import splrep, splev
-#from scipy.interpolate import interp1d
-#from scipy.ndimage import gaussian_filter1d
-#from scipy.interpolate import NearestNDInterpolator
-from magnetic_datstruct import get_dataframe
-from scipy.signal import medfilt
-from aux_time_DF import index_gen, convert_date
-from modules.lowpass_filter import aphase, dcomb
-from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
-from modules.threshold import get_threshold, max_IQR, med_IQR
+from modules.window_27 import window_27
+from modules.diurnal_variation import diurnal_variation_model
+from mdataprocess import base_line
 #from Ffitting import fit_data
-from modules.obs_info import night_time
 import os
 from scipy import fftpack, signal
-from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import h5py
 ###############################################################################
@@ -33,14 +21,10 @@ import h5py
 #ARGUMENTOS DE ENTRADA
 ###############################################################################
 ###############################################################################
-st= sys.argv[1]
 idate = sys.argv[2]# "formato(yyyymmdd)"
 fdate = sys.argv[3]
 
-idate = datetime.strptime(idate + ' 00:00:00', '%Y%m%d %H:%M:%S')
-fdate = datetime.strptime(fdate + ' 23:59:00', '%Y%m%d %H:%M:%S')
-
-ventana_final = fdate - timedelta(days=27)-timedelta(hours=23)-timedelta(minutes=59)
+iwindows, medwindows, fwindows, nwindows= window_27(idate, fdate, 'date')
 ###############################################################################
 ###############################################################################
 #CALLING THE DATAFRAME IN FUNCTION OF TIME WINDOW
@@ -62,7 +46,7 @@ fw_dates = []
 net = 'regmex'    
 path = f"/home/isaac/datos/{net}/{st}/{st}_raw/"
 path_qdl = '/home/isaac/rutpy/mdataprocess/qdl_training/' 
-h5_filename = "output_data.h5"
+
 def fill_gap(data):
 
         def nan_helper(y):    
