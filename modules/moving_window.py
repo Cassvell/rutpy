@@ -90,7 +90,7 @@ def med_IQR(data, tw_pick, nonan_tolerance, method='iqr'):
     ndays = int(ndata / 1440)
 
     if tw_pick == 0 or 24 % tw_pick != 0:
-        print('Error: Please enter a time window in hours, divisor of 24 hours.')
+        print('Error: Please enter a time window in hours, divisor of 24 hours puto.')
         import sys
         sys.exit()
     

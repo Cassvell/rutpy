@@ -14,7 +14,7 @@ import sys
 import pandas as pd
 from aux_time_DF import index_gen, convert_date
 from magnetic_datstruct import get_dataframe
-from modules.obs_info import night_time
+from modules.obs_info import obs_info
 '''
 
 st= sys.argv[1]
@@ -44,7 +44,7 @@ for i in idx_daily:
 
 def night_hours(data, net, st):
     
-    info = night_time(net, st)
+    info = obs_info(net, st)
     utc = info[11]
     try:
         utc = int(utc)  
@@ -102,7 +102,7 @@ def night_hours(data, net, st):
 
 def mode_nighttime(data, mv, net, st):
     
-    info = night_time(net, st)
+    info = obs_info(net, st)
     utc = info[11]
     try:
         utc = int(utc)  

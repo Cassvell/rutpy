@@ -12,8 +12,9 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from scipy.signal import medfilt
 from modules.lowpass_filter import aphase, dcomb
-from typical_vall import night_hours, mode_nighttime, typical_value, gaus_center, mode_hourly
-from modules.threshold import get_threshold, max_IQR, med_IQR
+from typical_vall import mode_nighttime, typical_value, gaus_center, mode_hourly
+from modules.threshold import threshold
+from modules.moving_window import hourly_IQR, max_IQR, med_IQR
 from plots import plot_GPD, plot_detrend, plot_qdl ,plot_process
 #from Ffitting import fit_data
 from modules.obs_info import obs_info
@@ -42,7 +43,7 @@ def base_line(data, net, st,threshold_method):
     daily_mode = mode_nighttime(data, 60, net, st)
     
     
-    night_data = night_hours(data, net, st)   
+    #night_data = night_hours(data, net, st)   
     
 
     daily_gauss = []
@@ -61,27 +62,23 @@ def base_line(data, net, st,threshold_method):
     daily_stacked = daily_mode
 ###############################################################################
 ###############################################################################
-#Use of threshold for identify and Isolate disturbed days from non disturbed
-###############################################################################
-###############################################################################
     #We determine first an array of variation picks using Inter Quartil Range
     pickwindow = [3,4]
     original_daily_stacked = np.copy(daily_stacked)
+    iqr_picks = hourly_IQR(data, 60, 0.7)
     
-    picks = max_IQR(data, 60, pickwindow[0], method='iqr')
-    
-    threshold = get_threshold(picks, st, method=threshold_method)
+    iqr_maxpicks = max_IQR(data, 24, 0.8, method='iqr')
+    daily_picks = med_IQR(data, 24, 0.8, method='stddev')   
+    mdatathreshold = threshold(iqr_picks, None, None, st, '2s')
     
     # Daily IQR picks and classification
-    daily_picks = med_IQR(data, 60, 24, method='iqr')
-    
+    #daily_picks = med_IQR(data, 60, 24, method='iqr')
+
     for j in range(len(daily_stacked)):
-        # Ensure daily_picks is long enough
-        #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
-        if len(daily_picks) > j and ((daily_picks[j] >= threshold) or np.isnan(daily_picks[j])):
+       if (daily_picks[j] >= mdatathreshold) or (iqr_maxpicks[j] > mdatathreshold) or np.isnan(daily_picks[j]):
             daily_stacked[j] = np.nan
             #print(f'fecha: {idx_daily[j]}, valor diario: {daily_stacked[j]}, iqr max: {daily_picks[j]}')
-
+    
     #print(daily_picks)
     
     #sys.exit('end')

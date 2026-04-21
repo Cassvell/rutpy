@@ -477,7 +477,7 @@ def threshold(picks, i_date, f_date, st, method):
 
 
         plt.tight_layout()
-        plt.savefig(f'/home/isaac/rutpy/gicsOutput/gic_dist/CDF_{st}_{i_date}_{f_date}.png', dpi=300)
+        #plt.savefig(f'/home/isaac/rutpy/gicsOutput/gic_dist/CDF_{st}_{i_date}_{f_date}.png', dpi=300)
         plt.close()
         threshold = u_0
 

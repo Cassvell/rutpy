@@ -365,12 +365,12 @@ def diurnal_variation_model(data, idx_daily, jump_val, st, qd_method, threshold,
     plt.ylabel('Quiet day records [A]')
     plt.xlabel('UT [h]')
     plt.tight_layout() 
-    path_figure = f'{path}/QDL_GICS/{st.upper()}/'
-    directory = os.path.dirname(path_figure)
-    if directory and not os.path.exists(path_figure):
-        os.makedirs(directory, exist_ok=True)
-    plt.savefig(f'{path_figure}{st}_{inicio}_{final}_{data_type}.png')
-    plt.close()
+    #path_figure = f'{path}/QDL_GICS/{st.upper()}/'
+    #directory = os.path.dirname(path_figure)
+    #if directory and not os.path.exists(path_figure):
+    #    os.makedirs(directory, exist_ok=True)
+    #plt.savefig(f'{path_figure}{st}_{inicio}_{final}_{data_type}.png')
+    plt.show()
 
         #archivos de salida 2: 
         #modelo QDL y stddev con máximas y mínimas amplitudes
